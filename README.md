@@ -10,6 +10,15 @@ dependencies, iOS 17+.
 
 The full product spec lives in [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md).
 
+## Current status: pipeline test (Step 1)
+
+The app is intentionally a **minimal dummy** right now — a single welcome screen
+with no functionality — so the first job is proving the toolchain end-to-end:
+open in Xcode → build → install on device. The full app scaffold (models,
+store, roster, live scoring, summary) is preserved in the [`Staged/`](Staged/)
+folder and will be reintroduced with a WWDC-aligned design pass once the first
+device install is confirmed.
+
 ## Getting started (Mac Mini)
 
 ```bash
