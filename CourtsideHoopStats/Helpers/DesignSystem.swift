@@ -1,14 +1,30 @@
 import SwiftUI
 
 // MARK: - Palette
+//
+// Design pass (CLAUDE.md settled decision #2): the app follows the system
+// light/dark appearance — no forced dark mode — so it stays legible in a bright
+// gym. Grass-green is the single accent. Liquid Glass lives only in the chrome
+// (nav/tab bars, the floating action bar); content surfaces stay solid and
+// high-contrast. Screens use the system grouped-background colors so they adapt
+// automatically; the only intentionally-fixed element is the scoreboard banner,
+// which reads as a real (always-dark) gym scoreboard in both appearances.
 
 extension Color {
-    /// Dark forest green — primary background / court aesthetic.
-    static let courtGreen = Color(red: 0.06, green: 0.18, blue: 0.12)
-    /// Slightly lighter card surface sitting on the court background.
-    static let courtCard = Color(red: 0.11, green: 0.26, blue: 0.18)
-    /// Bright grass green — accent for scores, selection, primary actions.
-    static let grassGreen = Color(red: 0.30, green: 0.78, blue: 0.31)
+    /// The app accent — grass green, tuned per appearance so it keeps strong
+    /// contrast as *text* (scores, "+2") on both light and dark surfaces.
+    /// A deep green on light, a brighter green on dark.
+    static let grassGreen = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.35, green: 0.82, blue: 0.42, alpha: 1)
+            : UIColor(red: 0.13, green: 0.55, blue: 0.24, alpha: 1)
+    })
+
+    /// Fixed dark green used *only* for the scoreboard banner (see note above).
+    static let scoreboardGreen = Color(red: 0.06, green: 0.18, blue: 0.12)
+    /// The bright grass green used on the always-dark scoreboard, regardless of
+    /// the system appearance.
+    static let scoreboardAccent = Color(red: 0.35, green: 0.82, blue: 0.42)
 }
 
 // MARK: - Jersey badge
@@ -30,7 +46,8 @@ struct JerseyBadge: View {
 
 // MARK: - Scoreboard
 
-/// Compact scoreboard shown at the top of the live-scoring screen.
+/// Compact scoreboard shown at the top of the live-scoring screen. Intentionally
+/// a solid dark banner in both light and dark mode — highest contrast courtside.
 struct ScoreboardView: View {
     let ourName: String
     let ourScore: Int
@@ -56,7 +73,7 @@ struct ScoreboardView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
-        .background(Color.courtGreen)
+        .background(Color.scoreboardGreen)
     }
 
     private func teamColumn(name: String, score: Int, highlight: Bool) -> some View {
@@ -68,7 +85,7 @@ struct ScoreboardView: View {
             Text("\(score)")
                 .font(.system(size: 40, weight: .heavy, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(highlight ? Color.grassGreen : .white)
+                .foregroundStyle(highlight ? Color.scoreboardAccent : .white)
         }
         .frame(maxWidth: .infinity)
     }

@@ -1,34 +1,20 @@
 import SwiftUI
 
-/// Placeholder "dummy" screen used to validate the build + device-install
-/// pipeline before real features are added. The full app scaffold lives in
-/// the repo's `Staged/` folder and will be reintroduced (with the WWDC-aligned
-/// design pass) once this first install is confirmed working on device.
+/// Root tab container.
+///
+/// Phase 1 of the staged-code reintroduction: only the Roster tab is wired up
+/// while its design pass is verified on device. The Games tab (and the live
+/// scoring / summary screens behind it) lands in the next phase.
 struct ContentView: View {
     var body: some View {
-        ZStack {
-            Color(red: 0.06, green: 0.18, blue: 0.12)
-                .ignoresSafeArea()
-
-            VStack(spacing: 16) {
-                Image(systemName: "basketball.fill")
-                    .font(.system(size: 72))
-                    .foregroundStyle(Color(red: 0.30, green: 0.78, blue: 0.31))
-
-                Text("Courtside Hoop Stats")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-
-                Text("Build test successful 🏀")
-                    .font(.headline)
-                    .foregroundStyle(.white.opacity(0.7))
-            }
-            .padding()
+        TabView {
+            RosterView()
+                .tabItem { Label("Roster", systemImage: "person.3.fill") }
         }
     }
 }
 
 #Preview {
     ContentView()
+        .environmentObject(AppStore())
 }
