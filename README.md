@@ -24,7 +24,6 @@ device install is confirmed.
 ```bash
 git clone https://github.com/thomashan1/courtside-hoop-stats.git
 cd courtside-hoop-stats
-git checkout claude/ios-basketball-stats-app-wxo4ds
 open CourtsideHoopStats.xcodeproj
 ```
 
@@ -44,7 +43,7 @@ groups, `objectVersion = 77`).
 Git is the shared source of truth between local Xcode development and cloud
 Claude Code sessions.
 
-- **Pull before you start** local work: `git pull origin claude/ios-basketball-stats-app-wxo4ds`
+- **Pull before you start** local work: `git pull origin main`
 - **Commit & push** any local changes before a cloud session edits the project,
   so nothing gets clobbered.
 - Because the project uses synchronized folder groups, new Swift files added on
