@@ -6,8 +6,8 @@ then `docs/REQUIREMENTS.md` for the full product spec.
 ## What this is
 
 A native iOS app for tracking youth basketball game stats courtside, replacing a
-manual spreadsheet. SwiftUI, iOS 17+ baseline (see open decision on raising it),
-zero third-party dependencies, UserDefaults/JSON persistence. Primary user is one
+manual spreadsheet. SwiftUI, **iOS 26 minimum**, zero third-party dependencies,
+UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
@@ -57,18 +57,23 @@ tap targets, and error recovery are the top UX priorities.**
 - **Skip (irrelevant):** reorderable grid containers (List `.onMove` already
   works), Document API (we use UserDefaults), foldable/adaptive, AsyncImage.
 
-## ⚠️ OPEN DECISIONS (need Thomas before the design pass)
+## Settled decisions
 
-1. **Minimum iOS target:** iOS 26 (recommended — direct Liquid Glass, cleanest)
-   vs keep iOS 17+ (broader, but every glass touch needs `if #available`).
-2. **Visual direction:** adaptive & glass-forward (recommended — system
-   light/dark, grass-green accent, glass shines) vs brand-forward dark court
-   (immersive dark green, forced dark mode).
+1. **Minimum iOS target: iOS 26.** The only end user is on iOS 26, so this keeps
+   the code simple and lets us use Liquid Glass directly (no `if #available`
+   fallbacks). → Project `IPHONEOS_DEPLOYMENT_TARGET` still needs to change from
+   17.0 to 26.0 — **pending, a terminal/project change.**
+2. **Visual direction: adaptive.** Follow the system light/dark appearance (NO
+   forced dark mode) so it stays readable in a bright gym. Grass-green as the
+   accent color. Liquid Glass only in the chrome (nav bar, tab bar, floating
+   controls); content — player cards, scoreboard, stat tables — stays solid and
+   high-contrast for courtside legibility.
 
 ## Next steps
 
-1. Confirm the two open decisions above.
-2. Reintroduce `Staged/` code with the design pass applied.
+1. **(Terminal/project)** Set `IPHONEOS_DEPLOYMENT_TARGET` to 26.0.
+2. Reintroduce `Staged/` code with the design pass applied (adaptive light/dark,
+   Liquid Glass in chrome only).
 3. Build screen by screen: Roster → Games list → Live Scoring (core) → Summary.
 
 ## MVP defaults chosen for the spec's open questions
@@ -84,6 +89,10 @@ tap targets, and error recovery are the top UX priorities.**
 ## Workflow & git
 
 - **Git is the source of truth** between Thomas's Mac and any cloud Claude session.
+- **Role split (current):** the cloud session is for **design discussion** and may
+  edit/push **Markdown docs only** (e.g. this file, `docs/*.md`). All **code**
+  (Swift, the Xcode project) is generated and pushed **only from the local
+  terminal** session.
 - **One driver at a time:** whoever is working commits and pushes; the other
   pulls *before* starting. Avoid both editing `project.pbxproj` simultaneously.
 - A **local** Claude session can build/run in Xcode and verify compiles; a
