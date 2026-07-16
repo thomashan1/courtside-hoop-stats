@@ -50,7 +50,7 @@ struct GameSummaryView: View {
             Text("\(score)")
                 .font(.system(size: 36, weight: .heavy, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(highlight ? Color.grassGreen : .primary)
+                .foregroundStyle(highlight ? Color.teamAccent : .primary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -58,7 +58,7 @@ struct GameSummaryView: View {
     private var resultBadge: some View {
         let (text, color): (String, Color) = {
             switch game.result {
-            case .win:  return ("WIN", .grassGreen)
+            case .win:  return ("WIN", .teamAccent)
             case .loss: return ("LOSS", .red)
             case .tie:  return ("TIE", .gray)
             }

@@ -13,6 +13,11 @@ struct Player: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var name: String
     var number: String          // jersey number, stored as String (handles "0", "00")
+
+    /// First name only, e.g. "Ava M." -> "Ava".
+    var firstName: String {
+        String(name.split(separator: " ").first ?? "")
+    }
 }
 
 // MARK: - Events

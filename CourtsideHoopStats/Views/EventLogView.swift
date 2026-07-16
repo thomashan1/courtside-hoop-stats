@@ -123,7 +123,7 @@ struct EventLogRow: View {
             if event.type.points > 0 {
                 Text("+\(event.type.points)")
                     .font(.caption).bold()
-                    .foregroundStyle(Color.grassGreen)
+                    .foregroundStyle(Color.teamAccent)
                     .monospacedDigit()
             }
 

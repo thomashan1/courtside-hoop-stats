@@ -73,7 +73,7 @@ struct LiveScoringView: View {
                 )
                 .padding(.top, 40)
             } else {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(store.team.players) { player in
                         PlayerCard(
                             player: player,
@@ -129,7 +129,7 @@ struct LiveScoringView: View {
                         .font(.subheadline)
                 }
                 .disabled(game.events.isEmpty)
-                .tint(.grassGreen)
+                .tint(.teamAccent)
             }
 
             HStack(spacing: 8) {
@@ -149,8 +149,8 @@ struct LiveScoringView: View {
                     .font(.subheadline).bold()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.grassGreen.opacity(0.20)))
-                    .foregroundStyle(Color.grassGreen)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.teamAccent.opacity(0.20)))
+                    .foregroundStyle(Color.teamAccent)
             }
         }
         .padding()
@@ -169,7 +169,7 @@ struct LiveScoringView: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(enabled ? Color.grassGreen : Color(.tertiarySystemFill))
+                        .fill(enabled ? Color.teamAccent : Color(.tertiarySystemFill))
                 )
                 .foregroundStyle(enabled ? .white : Color.secondary)
         }
@@ -258,28 +258,34 @@ private struct PlayerCard: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    /// Compact identity: first name + jersey number, e.g. "Ava #4".
+    private var idLabel: String {
+        let number = player.number.isEmpty ? "" : "#\(player.number)"
+        return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
-                JerseyBadge(number: player.number, size: 42)
-                Text(player.name)
-                    .font(.caption).bold()
+            VStack(spacing: 2) {
+                Text(idLabel)
+                    .font(.subheadline).bold()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(.primary)
-                Text("\(points)")
-                    .font(.title3).bold()
+                Text("\(points) pts")
+                    .font(.caption).bold()
                     .monospacedDigit()
-                    .foregroundStyle(Color.grassGreen)
+                    .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.grassGreen.opacity(0.18)
+                    .fill(isSelected ? Color.teamAccent.opacity(0.18)
                                      : Color(.secondarySystemGroupedBackground))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(isSelected ? Color.grassGreen : .clear, lineWidth: 2.5)
+                            .stroke(isSelected ? Color.teamAccent : .clear, lineWidth: 2.5)
                     )
             )
         }

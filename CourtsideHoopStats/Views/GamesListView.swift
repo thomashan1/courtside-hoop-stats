@@ -86,8 +86,8 @@ struct GameRowView: View {
                     .font(.caption2).bold()
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.grassGreen.opacity(0.25)))
-                    .foregroundStyle(Color.grassGreen)
+                    .background(Capsule().fill(Color.teamAccent.opacity(0.25)))
+                    .foregroundStyle(Color.teamAccent)
             }
         }
         .padding(.vertical, 2)
@@ -96,7 +96,7 @@ struct GameRowView: View {
     private var resultBadge: some View {
         let (text, color): (String, Color) = {
             switch game.result {
-            case .win:  return ("W", .grassGreen)
+            case .win:  return ("W", .teamAccent)
             case .loss: return ("L", .red)
             case .tie:  return ("T", .gray)
             }

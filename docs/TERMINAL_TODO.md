@@ -13,24 +13,13 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
-- [ ] **Switch the app theme from green to Swish Warriors blue.**
-  Decided in a design session. (The app *icon* is now on team blue too — see
-  Done — so the icon and UI will match.)
-  Keep the existing **adaptive light/dark** structure — just swap the green brand
-  palette for blue equivalents:
-  - **`Assets.xcassets/AccentColor.colorset`:**
-    - Light / default: sRGB `red 0.118, green 0.373, blue 0.812` (#1E5FCF)
-    - Dark: sRGB `red 0.357, green 0.612, blue 0.961` (#5B9CF5)
-  - **`DesignSystem.swift`** (and any hardcoded greens in the views): remap the
-    brand colors to blue, preserving the light/dark treatment —
-    - accent / selected player / primary action (was grass green) → **#1E5FCF**
-      light, **#5B9CF5** dark
-    - solid scoreboard banner (was dark court green) → deep navy **#0C2C5E**
-    - tinted card / surface (was court-green tint) → blue-tinted equivalent
-      (≈ **#10233F** dark, **#E8F0FB** light)
-  - Reference/identity blue is **#2F76E3**.
-  - Build once in **both** light and dark to confirm contrast still reads
-    courtside, then commit + push.
+- [ ] **Add unit tests for the model logic.** Not urgent — do eventually.
+  Cover the derived, pure logic in `Models.swift`: `Game.stats(for:)`,
+  `periodBreakdown()`, `ourScore` / `opponentScore`, `result`, and
+  `currentPeriod` / `isFinalPeriod`. These have no UI dependencies and are the
+  app's real computation, so they're cheap, high-value tests (and a safety net
+  before the CloudKit sharing rework). Add a unit test target if one doesn't
+  exist yet.
 
 - [ ] **Multi-user sharing (Thomas + wife see games/stats near-live).**
   ⛔️ **Blocked / deferred** — do **not** start until the local single-device app
@@ -43,6 +32,15 @@ session** — the terminal is the only session that writes code and pushes it.
 ---
 
 ## Done
+
+- [x] **Switch the app theme from green to Swish Warriors blue.**
+  Remapped the brand palette to blue, preserving the adaptive light/dark
+  treatment. Renamed the color constants off "green" so they're honest:
+  `grassGreen → teamAccent` (#1E5FCF light / #5B9CF5 dark),
+  `scoreboardGreen → scoreboardBackground` (deep navy #0C2C5E), and the
+  scoreboard accent → #5B9CF5. `AccentColor.colorset` updated to match. Blue-
+  tinted card/surfaces come from `teamAccent` at low opacity (adapts
+  automatically). Built + verified in both light and dark. Shipped via PR.
 
 - [x] **Raise minimum iOS version to 26.**
   Changed `IPHONEOS_DEPLOYMENT_TARGET` from `17.0` to `26.0` in **both** the Debug
