@@ -13,7 +13,8 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
-- [ ] **Add unit tests for the model logic.** Not urgent — do eventually.
+- [ ] **Add unit tests for the model logic.** ⭐ Prioritized — Thomas wants this
+  started next.
   Cover the derived, pure logic in `Models.swift`: `Game.stats(for:)`,
   `periodBreakdown()`, `ourScore` / `opponentScore`, `result`, and
   `currentPeriod` / `isFinalPeriod`. These have no UI dependencies and are the
