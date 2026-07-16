@@ -49,11 +49,15 @@ session** — the terminal is the only session that writes code and pushes it.
   Verified with a clean `xcodebuild` for `generic/platform=iOS` (Debug):
   **BUILD SUCCEEDED**.
 
-- [x] **App icon added (Thomas-generated realistic basketball on dark).**
-  Committed from the cloud session (image asset). Thomas generated the icon art;
-  it was processed into a full-bleed, opaque **1024×1024** PNG (white margin +
-  rounded corners removed so iOS masks the squircle itself) and wired up:
+- [x] **App icon added (realistic basketball + stats bars on team blue).**
+  Committed from the cloud session (image asset). Final icon composites a
+  high-resolution realistic basketball crowning a rising bar chart on a blue
+  gradient — full-bleed, opaque **1024×1024**, no rounded corners (iOS masks the
+  squircle). Wired up:
   - `CourtsideHoopStats/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`
   - `AppIcon.appiconset/Contents.json` references it as the universal 1024 image.
-  **Next time at the Mac:** just build + install and confirm it appears on the
-  home screen (no action needed unless it looks wrong).
+  **Next time at the Mac:** build + install and confirm it appears on the home
+  screen (no action needed unless it looks wrong).
+  ⚠️ **App Store note:** the ball art is from a stock image — fine for personal
+  use, but confirm usage rights (or swap in owned art) before any App Store
+  submission.
