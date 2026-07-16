@@ -11,20 +11,21 @@ import SwiftUI
 // which reads as a real (always-dark) gym scoreboard in both appearances.
 
 extension Color {
-    /// The app accent — grass green, tuned per appearance so it keeps strong
-    /// contrast as *text* (scores, "+2") on both light and dark surfaces.
-    /// A deep green on light, a brighter green on dark.
-    static let grassGreen = Color(uiColor: UIColor { traits in
+    /// The team/brand accent — Swish Warriors blue, tuned per appearance so it
+    /// keeps strong contrast as *text* (scores, "+2") on both light and dark
+    /// surfaces. Deep blue (#1E5FCF) on light, brighter blue (#5B9CF5) on dark.
+    static let teamAccent = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? UIColor(red: 0.35, green: 0.82, blue: 0.42, alpha: 1)
-            : UIColor(red: 0.13, green: 0.55, blue: 0.24, alpha: 1)
+            ? UIColor(red: 0.357, green: 0.612, blue: 0.961, alpha: 1)  // #5B9CF5
+            : UIColor(red: 0.118, green: 0.373, blue: 0.812, alpha: 1)  // #1E5FCF
     })
 
-    /// Fixed dark green used *only* for the scoreboard banner (see note above).
-    static let scoreboardGreen = Color(red: 0.06, green: 0.18, blue: 0.12)
-    /// The bright grass green used on the always-dark scoreboard, regardless of
-    /// the system appearance.
-    static let scoreboardAccent = Color(red: 0.35, green: 0.82, blue: 0.42)
+    /// Fixed deep navy (#0C2C5E) used *only* for the scoreboard banner — an
+    /// intentionally-dark, always-high-contrast element.
+    static let scoreboardBackground = Color(red: 0.047, green: 0.173, blue: 0.369)
+    /// The bright blue (#5B9CF5) used on the always-dark scoreboard, regardless
+    /// of the system appearance.
+    static let scoreboardAccent = Color(red: 0.357, green: 0.612, blue: 0.961)
 }
 
 // MARK: - Jersey badge
@@ -40,7 +41,7 @@ struct JerseyBadge: View {
             .monospacedDigit()
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(Circle().fill(Color.grassGreen))
+            .background(Circle().fill(Color.teamAccent))
     }
 }
 
@@ -73,7 +74,7 @@ struct ScoreboardView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 12)
-        .background(Color.scoreboardGreen)
+        .background(Color.scoreboardBackground)
     }
 
     private func teamColumn(name: String, score: Int, highlight: Bool) -> some View {
