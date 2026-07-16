@@ -13,6 +13,25 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
+- [ ] **Switch the app theme from green to Swish Warriors blue.**
+  Decided in a design session (the icon is going blue too, to match). Keep the
+  existing **adaptive light/dark** structure — just swap the green brand palette
+  for blue equivalents:
+  - **`Assets.xcassets/AccentColor.colorset`:**
+    - Light / default: sRGB `red 0.118, green 0.373, blue 0.812` (#1E5FCF)
+    - Dark: sRGB `red 0.357, green 0.612, blue 0.961` (#5B9CF5)
+  - **`DesignSystem.swift`** (and any hardcoded greens in the views): remap the
+    brand colors to blue, preserving the light/dark treatment —
+    - accent / selected player / primary action (was grass green) → **#1E5FCF**
+      light, **#5B9CF5** dark
+    - solid scoreboard banner (was dark court green) → deep navy **#0C2C5E**
+    - tinted card / surface (was court-green tint) → blue-tinted equivalent
+      (≈ **#10233F** dark, **#E8F0FB** light)
+  - Reference/identity blue is **#2F76E3** (matches the icon background).
+  - Build once in **both** light and dark to confirm contrast still reads
+    courtside, then commit + push. Exact shade can be fine-tuned later once the
+    icon is locked.
+
 - [ ] **Multi-user sharing (Thomas + wife see games/stats near-live).**
   ⛔️ **Blocked / deferred** — do **not** start until the local single-device app
   is stable and device-tested. Native approach is CloudKit `CKShare` (the iCloud
