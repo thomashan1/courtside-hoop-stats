@@ -149,17 +149,19 @@ struct Game: Identifiable, Codable {
         return .tie
     }
 
-    /// Per-period score deltas, derived from the cumulative running totals.
+    /// Per-period score deltas. Our points are derived from events (so the
+    /// breakdown always matches the event-sourced final score, even after an
+    /// event is edited or deleted); the opponent side comes from the recorded
+    /// cumulative running totals.
     func periodBreakdown() -> [(period: Int, our: Int, opponent: Int)] {
         var rows: [(Int, Int, Int)] = []
-        var prevOur = 0
         var prevOpp = 0
         for period in 1...periodFormat.periodCount {
             guard let score = periodEndScores[period] else { break }
-            rows.append((period,
-                         score.ourRunningTotal - prevOur,
-                         score.opponentRunningTotal - prevOpp))
-            prevOur = score.ourRunningTotal
+            let ourDelta = events
+                .filter { $0.period == period }
+                .reduce(0) { $0 + $1.type.points }
+            rows.append((period, ourDelta, score.opponentRunningTotal - prevOpp))
             prevOpp = score.opponentRunningTotal
         }
         return rows
