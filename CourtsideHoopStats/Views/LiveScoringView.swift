@@ -258,10 +258,10 @@ private struct PlayerCard: View {
     let isSelected: Bool
     let onTap: () -> Void
 
-    /// Compact identity: initials + jersey number, e.g. "AM #4".
+    /// Compact identity: first name + jersey number, e.g. "Ava #4".
     private var idLabel: String {
         let number = player.number.isEmpty ? "" : "#\(player.number)"
-        return [player.initials, number].filter { !$0.isEmpty }.joined(separator: " ")
+        return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     var body: some View {
