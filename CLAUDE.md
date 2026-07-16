@@ -3,6 +3,9 @@
 Project context for any Claude Code session (local or cloud). Read this first,
 then `docs/REQUIREMENTS.md` for the full product spec.
 
+> **Local terminal session:** check **`docs/TERMINAL_TODO.md`** for tasks queued
+> from design sessions, and do them (that file is the cloud→terminal work queue).
+
 ## What this is
 
 A native iOS app for tracking youth basketball game stats courtside, replacing a
