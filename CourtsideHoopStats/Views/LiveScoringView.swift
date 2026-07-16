@@ -91,19 +91,13 @@ struct LiveScoringView: View {
     // MARK: - Event log
 
     private var eventLog: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Event Log")
                 .font(.headline)
                 .foregroundStyle(.primary)
 
-            if game.events.isEmpty {
-                Text("No events yet. Select a player, then tap an action.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(Array(game.events.reversed())) { event in
-                    EventLogRow(event: event, player: player(for: event.playerID), format: game.periodFormat)
-                }
+            EventLogView(game: $game, players: store.team.players) {
+                store.updateGame(game)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -290,44 +284,6 @@ private struct PlayerCard: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Event log row
-
-private struct EventLogRow: View {
-    let event: GameEvent
-    let player: Player?
-    let format: PeriodFormat
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(format.periodLabel(event.period))
-                .font(.caption2).bold()
-                .foregroundStyle(.secondary)
-                .frame(width: 30, alignment: .leading)
-
-            JerseyBadge(number: player?.number ?? "?", size: 24)
-
-            Text(player?.name ?? "Unknown")
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-
-            Spacer()
-
-            Text(event.type.logLabel)
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-
-            if event.type.points > 0 {
-                Text("+\(event.type.points)")
-                    .font(.caption).bold()
-                    .foregroundStyle(Color.grassGreen)
-            }
-        }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
     }
 }
 

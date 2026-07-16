@@ -18,6 +18,7 @@ struct GameSummaryView: View {
             finalScoreSection
             periodSection
             statsSection
+            eventLogSection
             notesSection
             detailsSection
         }
@@ -152,6 +153,16 @@ struct GameSummaryView: View {
                     .monospacedDigit()
                     .frame(width: 42)
                 }
+            }
+        }
+    }
+
+    // MARK: - Event log (editable)
+
+    private var eventLogSection: some View {
+        Section("Event Log") {
+            EventLogView(game: $game, players: store.team.players) {
+                store.updateGame(game)
             }
         }
     }
