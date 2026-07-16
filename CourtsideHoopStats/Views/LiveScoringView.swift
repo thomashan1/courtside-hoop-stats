@@ -73,7 +73,7 @@ struct LiveScoringView: View {
                 )
                 .padding(.top, 40)
             } else {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(store.team.players) { player in
                         PlayerCard(
                             player: player,
@@ -260,19 +260,19 @@ private struct PlayerCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
-                JerseyBadge(number: player.number, size: 42)
+            VStack(spacing: 4) {
+                JerseyBadge(number: player.number, size: 34)
                 Text(player.name)
                     .font(.caption).bold()
                     .lineLimit(1)
                     .foregroundStyle(.primary)
                 Text("\(points)")
-                    .font(.title3).bold()
+                    .font(.headline).bold()
                     .monospacedDigit()
                     .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected ? Color.teamAccent.opacity(0.18)

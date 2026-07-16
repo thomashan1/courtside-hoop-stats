@@ -13,6 +13,14 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
+- [ ] **Add unit tests for the model logic.** Not urgent — do eventually.
+  Cover the derived, pure logic in `Models.swift`: `Game.stats(for:)`,
+  `periodBreakdown()`, `ourScore` / `opponentScore`, `result`, and
+  `currentPeriod` / `isFinalPeriod`. These have no UI dependencies and are the
+  app's real computation, so they're cheap, high-value tests (and a safety net
+  before the CloudKit sharing rework). Add a unit test target if one doesn't
+  exist yet.
+
 - [ ] **Multi-user sharing (Thomas + wife see games/stats near-live).**
   ⛔️ **Blocked / deferred** — do **not** start until the local single-device app
   is stable and device-tested. Native approach is CloudKit `CKShare` (the iCloud
