@@ -45,7 +45,7 @@ struct GameSummaryView: View {
 
     private func scoreColumn(name: String, score: Int, highlight: Bool) -> some View {
         VStack(spacing: 4) {
-            Text(name).font(.subheadline).bold().lineLimit(1)
+            Text(name).font(.subheadline).bold().lineLimit(1).minimumScaleFactor(0.6)
             Text("\(score)")
                 .font(.system(size: 36, weight: .heavy, design: .rounded))
                 .monospacedDigit()

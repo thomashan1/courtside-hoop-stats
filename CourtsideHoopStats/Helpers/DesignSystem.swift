@@ -81,6 +81,7 @@ struct ScoreboardView: View {
             Text(name)
                 .font(.subheadline).bold()
                 .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 .foregroundStyle(.white)
             Text("\(score)")
                 .font(.system(size: 40, weight: .heavy, design: .rounded))

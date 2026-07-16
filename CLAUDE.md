@@ -14,16 +14,21 @@ UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
-## Current status (2026-07-16)
+## Current status (2026-07-15)
 
-- **Pipeline validated ✅** — the app currently ships as a **minimal dummy**
-  (single welcome screen) that has been built and installed on-device
-  successfully. This confirmed Xcode + signing + device install work end-to-end.
-- The **full app scaffold** (models, store, all views) is preserved in
-  [`Staged/`](Staged/) — **not compiled** — waiting to be reintroduced with the
-  design pass below.
-- **Compiled target** right now is just `CourtsideHoopStats/CourtsideHoopStatsApp.swift`
-  + `ContentView.swift` + assets.
+- **Pipeline validated ✅** — earlier confirmed Xcode + signing + device install
+  work end-to-end (via a minimal dummy app).
+- **Full app reintroduced & compiling ✅** — the staged scaffold has been moved
+  into the compiled target (`Staged/` is gone) with the adaptive design pass
+  applied. All four screens are live: **Roster, Games list, Live Scoring
+  (core), Game Summary**. Builds clean (0 warnings) for the iPhone 17 Pro
+  simulator; verified in both light and dark mode via screenshots.
+- **Design pass done** — forced-dark palette replaced with adaptive system
+  colors; grass-green accent tuned per light/dark; Liquid Glass (`.glassEffect()`)
+  confined to the Live Scoring floating action bar; scoreboard banner is the one
+  intentional solid-dark element.
+- **Next up:** on-device testing, then multi-user sharing (see
+  [`docs/SHARING.md`](docs/SHARING.md), deferred until the local app is stable).
 
 ## Naming (settled)
 
@@ -64,8 +69,7 @@ tap targets, and error recovery are the top UX priorities.**
 
 1. **Minimum iOS target: iOS 26.** The only end user is on iOS 26, so this keeps
    the code simple and lets us use Liquid Glass directly (no `if #available`
-   fallbacks). → Project `IPHONEOS_DEPLOYMENT_TARGET` still needs to change from
-   17.0 to 26.0 — **pending, a terminal/project change.**
+   fallbacks). → `IPHONEOS_DEPLOYMENT_TARGET` is set to 26.0 (Debug + Release). ✅ done.
 2. **Visual direction: adaptive.** Follow the system light/dark appearance (NO
    forced dark mode) so it stays readable in a bright gym. Grass-green as the
    accent color. Liquid Glass only in the chrome (nav bar, tab bar, floating
@@ -74,10 +78,17 @@ tap targets, and error recovery are the top UX priorities.**
 
 ## Next steps
 
-1. **(Terminal/project)** Set `IPHONEOS_DEPLOYMENT_TARGET` to 26.0.
-2. Reintroduce `Staged/` code with the design pass applied (adaptive light/dark,
-   Liquid Glass in chrome only).
-3. Build screen by screen: Roster → Games list → Live Scoring (core) → Summary.
+1. **On-device testing** of the full app (Roster → new game → live scoring →
+   finish → summary) on the iPhone 17 Pro; fix any polish issues found.
+2. **Dynamic Type / accessibility pass** — verify player cards + tables hold up
+   at the largest text sizes.
+3. **Model unit tests** — cover the derived logic (`stats(for:)`,
+   `periodBreakdown()`, `result`, `currentPeriod`).
+4. **Multi-user sharing** — CloudKit `CKShare`; see [`docs/SHARING.md`](docs/SHARING.md).
+   Deferred until the local app is stable and device-tested.
+
+**Done:** iOS 26 deployment target; reintroduced `Staged/` with the adaptive
+design pass; all four screens built (Roster → Games → Live Scoring → Summary).
 
 ## MVP defaults chosen for the spec's open questions
 
@@ -92,6 +103,9 @@ tap targets, and error recovery are the top UX priorities.**
 ## Workflow & git
 
 - **Git is the source of truth** between Thomas's Mac and any cloud Claude session.
+- **Change flow:** from the Phase 2 baseline onward, feature work lands via
+  **PRs (auto-merge)**, not direct commits to `main`. Thomas device-tests builds
+  before they're considered shippable.
 - **Role split (current):** the cloud session is for **design discussion** and may
   edit/push **Markdown docs only** (e.g. this file, `docs/*.md`). All **code**
   (Swift, the Xcode project) is generated and pushed **only from the local

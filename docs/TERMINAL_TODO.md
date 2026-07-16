@@ -13,7 +13,13 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
-_(nothing yet)_
+- [ ] **Multi-user sharing (Thomas + wife see games/stats near-live).**
+  ⛔️ **Blocked / deferred** — do **not** start until the local single-device app
+  is stable and device-tested. Native approach is CloudKit `CKShare` (the iCloud
+  Shared-Album mechanism); this is a large persistence-layer change off
+  `UserDefaults`/JSON. Full design, tradeoffs, the gym-connectivity caveat, and
+  open decisions are in [`SHARING.md`](SHARING.md). When unblocked, resolve the
+  open questions there first, then implement.
 
 ---
 

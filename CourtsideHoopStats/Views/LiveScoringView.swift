@@ -2,6 +2,11 @@ import SwiftUI
 
 /// The core courtside screen. Two-tap interaction: tap a player card to select,
 /// then tap an action to record an event. Score is auto-calculated from events.
+///
+/// Design pass: content (player grid, event log) uses adaptive system surfaces
+/// so it stays legible in a bright gym; the scoreboard banner is the one
+/// intentionally-dark element, and Liquid Glass is confined to the floating
+/// action bar (chrome).
 struct LiveScoringView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
@@ -40,7 +45,7 @@ struct LiveScoringView: View {
                     .padding(.bottom, 8)
             }
         }
-        .background(Color.courtGreen.opacity(0.25))
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { actionBar }
@@ -89,12 +94,12 @@ struct LiveScoringView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Event Log")
                 .font(.headline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             if game.events.isEmpty {
                 Text("No events yet. Select a player, then tap an action.")
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.secondary)
             } else {
                 ForEach(Array(game.events.reversed())) { event in
                     EventLogRow(event: event, player: player(for: event.playerID), format: game.periodFormat)
@@ -104,7 +109,7 @@ struct LiveScoringView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Action bar (pinned to bottom)
+    // MARK: - Action bar (floating Liquid Glass chrome, pinned to bottom)
 
     private var actionBar: some View {
         VStack(spacing: 10) {
@@ -114,11 +119,11 @@ struct LiveScoringView: View {
                         JerseyBadge(number: player.number, size: 26)
                         Text(player.name).font(.subheadline).bold()
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 } else {
                     Text("Select a player")
                         .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -130,7 +135,7 @@ struct LiveScoringView: View {
                         .font(.subheadline)
                 }
                 .disabled(game.events.isEmpty)
-                .tint(.white)
+                .tint(.grassGreen)
             }
 
             HStack(spacing: 8) {
@@ -150,16 +155,19 @@ struct LiveScoringView: View {
                     .font(.subheadline).bold()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.grassGreen.opacity(0.25)))
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.grassGreen.opacity(0.20)))
                     .foregroundStyle(Color.grassGreen)
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
+        .glassEffect(.regular, in: .rect(cornerRadius: 28))
+        .padding(.horizontal)
+        .padding(.bottom, 4)
     }
 
     private func actionButton(_ type: EventType) -> some View {
-        Button {
+        let enabled = selectedPlayerID != nil
+        return Button {
             record(type)
         } label: {
             Text(type.buttonLabel)
@@ -167,11 +175,11 @@ struct LiveScoringView: View {
                 .frame(maxWidth: .infinity, minHeight: 48)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(selectedPlayerID == nil ? Color.gray.opacity(0.3) : Color.grassGreen)
+                        .fill(enabled ? Color.grassGreen : Color(.tertiarySystemFill))
                 )
-                .foregroundStyle(.white)
+                .foregroundStyle(enabled ? .white : Color.secondary)
         }
-        .disabled(selectedPlayerID == nil)
+        .disabled(!enabled)
     }
 
     // MARK: - Derived helpers
@@ -263,7 +271,7 @@ private struct PlayerCard: View {
                 Text(player.name)
                     .font(.caption).bold()
                     .lineLimit(1)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("\(points)")
                     .font(.title3).bold()
                     .monospacedDigit()
@@ -273,7 +281,8 @@ private struct PlayerCard: View {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.grassGreen.opacity(0.30) : Color.courtCard)
+                    .fill(isSelected ? Color.grassGreen.opacity(0.18)
+                                     : Color(.secondarySystemGroupedBackground))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(isSelected ? Color.grassGreen : .clear, lineWidth: 2.5)
@@ -295,20 +304,20 @@ private struct EventLogRow: View {
         HStack(spacing: 10) {
             Text(format.periodLabel(event.period))
                 .font(.caption2).bold()
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.secondary)
                 .frame(width: 30, alignment: .leading)
 
             JerseyBadge(number: player?.number ?? "?", size: 24)
 
             Text(player?.name ?? "Unknown")
                 .font(.subheadline)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Spacer()
 
             Text(event.type.logLabel)
                 .font(.caption).bold()
-                .foregroundStyle(.white.opacity(0.85))
+                .foregroundStyle(.secondary)
 
             if event.type.points > 0 {
                 Text("+\(event.type.points)")
@@ -318,7 +327,7 @@ private struct EventLogRow: View {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.courtCard.opacity(0.6)))
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
     }
 }
 
