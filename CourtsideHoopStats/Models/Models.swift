@@ -13,6 +13,15 @@ struct Player: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var name: String
     var number: String          // jersey number, stored as String (handles "0", "00")
+
+    /// Up to two uppercased initials from the name, e.g. "Ava M." -> "AM".
+    var initials: String {
+        name.split(separator: " ")
+            .compactMap(\.first)
+            .prefix(2)
+            .map { String($0).uppercased() }
+            .joined()
+    }
 }
 
 // MARK: - Events

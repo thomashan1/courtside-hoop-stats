@@ -258,21 +258,27 @@ private struct PlayerCard: View {
     let isSelected: Bool
     let onTap: () -> Void
 
+    /// Compact identity: initials + jersey number, e.g. "AM #4".
+    private var idLabel: String {
+        let number = player.number.isEmpty ? "" : "#\(player.number)"
+        return [player.initials, number].filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 4) {
-                JerseyBadge(number: player.number, size: 34)
-                Text(player.name)
-                    .font(.caption).bold()
+            VStack(spacing: 2) {
+                Text(idLabel)
+                    .font(.subheadline).bold()
                     .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                     .foregroundStyle(.primary)
-                Text("\(points)")
-                    .font(.headline).bold()
+                Text("\(points) pts")
+                    .font(.caption).bold()
                     .monospacedDigit()
                     .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, 10)
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected ? Color.teamAccent.opacity(0.18)
