@@ -13,15 +13,15 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
-- [ ] **Raise minimum iOS version to 26.**
-  Change `IPHONEOS_DEPLOYMENT_TARGET` from `17.0` to `26.0` in **both** the Debug
-  and Release build configurations in
-  `CourtsideHoopStats.xcodeproj/project.pbxproj`.
-  Rationale: see `CLAUDE.md` → "Settled decisions." Build once to confirm it still
-  compiles and installs, then commit + push to `main`.
+_(nothing yet)_
 
 ---
 
 ## Done
 
-_(nothing yet)_
+- [x] **Raise minimum iOS version to 26.**
+  Changed `IPHONEOS_DEPLOYMENT_TARGET` from `17.0` to `26.0` in **both** the Debug
+  and Release build configurations in
+  `CourtsideHoopStats.xcodeproj/project.pbxproj`.
+  Verified with a clean `xcodebuild` for `generic/platform=iOS` (Debug):
+  **BUILD SUCCEEDED**.
