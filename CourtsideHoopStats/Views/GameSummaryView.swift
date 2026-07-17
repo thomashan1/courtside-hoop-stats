@@ -121,36 +121,39 @@ struct GameSummaryView: View {
 
     private var statsSection: some View {
         Section("Player Stats") {
-            HStack {
-                Text("Player").font(.caption).bold().frame(maxWidth: .infinity, alignment: .leading)
-                Group {
-                    Text("PTS")
-                    Text("2P")
-                    Text("3P")
-                    Text("FT")
-                }
-                .font(.caption).bold()
-                .frame(width: 42)
-            }
-            .foregroundStyle(.secondary)
+            // Horizontally scrollable table (issue #12): at large Dynamic Type
+            // the columns grow and the table scrolls sideways instead of
+            // clipping the numbers or squeezing the player name. `Grid` keeps
+            // the header and rows column-aligned.
+            ScrollView(.horizontal, showsIndicators: false) {
+                Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 10) {
+                    GridRow {
+                        Text("Player").frame(minWidth: 120, alignment: .leading)
+                        Text("PTS")
+                        Text("2P")
+                        Text("3P")
+                        Text("FT")
+                    }
+                    .font(.caption).bold()
+                    .foregroundStyle(.secondary)
 
-            ForEach(game.stats(for: store.team.players)) { stat in
-                HStack {
-                    HStack(spacing: 8) {
-                        JerseyBadge(number: stat.player.number, size: 26)
-                        Text(stat.player.name).font(.subheadline).lineLimit(1)
+                    ForEach(game.stats(for: store.team.players)) { stat in
+                        GridRow {
+                            HStack(spacing: 8) {
+                                JerseyBadge(number: stat.player.number, size: 26)
+                                Text(stat.player.name).lineLimit(1)
+                            }
+                            .frame(minWidth: 120, alignment: .leading)
+                            Text("\(stat.points)").bold()
+                            Text("\(stat.twoPointers)")
+                            Text("\(stat.threePointers)")
+                            Text(stat.freeThrowDisplay)
+                        }
+                        .font(.subheadline)
+                        .monospacedDigit()
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Group {
-                        Text("\(stat.points)").bold()
-                        Text("\(stat.twoPointers)")
-                        Text("\(stat.threePointers)")
-                        Text(stat.freeThrowDisplay)
-                    }
-                    .font(.caption)
-                    .monospacedDigit()
-                    .frame(width: 42)
                 }
+                .padding(.vertical, 2)
             }
         }
     }
