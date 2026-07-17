@@ -13,6 +13,22 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
+- [ ] **Accessibility / larger text pass.** Feedback from **Jean** (the end user):
+  "make it bigger, I can't see." Audit the app under large **Dynamic Type** sizes
+  and ensure everything scales and stays legible — player cards, scoreboard,
+  stat tables, event log, buttons. Prefer semantic text styles over fixed sizes;
+  add `minimumScaleFactor`/wrapping where needed; verify tap targets stay ≥44pt.
+  Consider a larger baseline font option if system Dynamic Type isn't enough.
+
+- [ ] **Location field: address autocomplete via Maps.**
+  Augment the Location/Gym field (which already suggests prior values) with real
+  address/place search using **MapKit `MKLocalSearchCompleter`**. Needs: an
+  ObservableObject wrapping the completer with debounced queries + delegate
+  results, a suggestions UI, and selection that fills the field with the place
+  name/address. To bias results locally, add `CLLocationManager` +
+  `NSLocationWhenInUseUsageDescription` in Info.plist (optional first pass can
+  skip location and just do text search). Its own PR. From Thomas's feedback.
+
 - [ ] **Add Redo to live scoring (reverse an accidental Undo).**
   Today `undo()` just removes the last event; there's no way to undo the undo.
   Keep a transient "undone events" stack in `LiveScoringView` (cleared whenever a
