@@ -3,8 +3,11 @@
 Project context for any Claude Code session (local or cloud). Read this first,
 then `docs/REQUIREMENTS.md` for the full product spec.
 
-> **Local terminal session:** check **`docs/TERMINAL_TODO.md`** for tasks queued
-> from design sessions, and do them (that file is the cloud→terminal work queue).
+> **Backlog lives in GitHub Issues.** Local terminal session: work from
+> `gh issue list` — pick an issue, implement it, and close it with "Closes #N"
+> in the PR. Cloud/design sessions log new ideas & feedback as issues.
+> (`docs/TERMINAL_TODO.md` is retired — it's now just a pointer + a log of
+> already-completed work.)
 
 ## What this is
 
@@ -78,17 +81,10 @@ tap targets, and error recovery are the top UX priorities.**
 
 ## Next steps
 
-1. **On-device testing** of the full app (Roster → new game → live scoring →
-   finish → summary) on the iPhone 17 Pro; fix any polish issues found.
-2. **Dynamic Type / accessibility pass** — verify player cards + tables hold up
-   at the largest text sizes.
-3. **Model unit tests** — cover the derived logic (`stats(for:)`,
-   `periodBreakdown()`, `result`, `currentPeriod`).
-4. **Multi-user sharing** — CloudKit `CKShare`; see [`docs/SHARING.md`](docs/SHARING.md).
-   Deferred until the local app is stable and device-tested.
-
-**Done:** iOS 26 deployment target; reintroduced `Staged/` with the adaptive
-design pass; all four screens built (Roster → Games → Live Scoring → Summary).
+The backlog now lives in **GitHub Issues** — see `gh issue list` (or the repo's
+Issues tab). Currently open highlights: model unit tests (⭐ prioritized),
+edit-a-finished-game in the scoring view, score-log reorder/running-total,
+accessibility pass, location autocomplete, and (deferred) CloudKit sharing.
 
 ## MVP defaults chosen for the spec's open questions
 
@@ -103,9 +99,12 @@ design pass; all four screens built (Roster → Games → Live Scoring → Summa
 ## Workflow & git
 
 - **Git is the source of truth** between Thomas's Mac and any cloud Claude session.
-- **Change flow:** from the Phase 2 baseline onward, feature work lands via
-  **PRs (auto-merge)**, not direct commits to `main`. Thomas device-tests builds
-  before they're considered shippable.
+- **Backlog = GitHub Issues.** Every feature/bug/idea is tracked as an issue. The
+  terminal works from `gh issue list`, implements one, and closes it with
+  "Closes #N" in the PR. Cloud sessions create issues from design discussion and
+  Thomas's feedback. (Requires `gh auth login` once on the Mac.)
+- **Change flow:** feature work lands via **PRs (auto-merge)**, not direct commits
+  to `main`. Thomas device-tests builds before they're considered shippable.
 - **Role split (current):** the cloud session is for **design discussion** and may
   edit/push **Markdown docs only** (e.g. this file, `docs/*.md`). All **code**
   (Swift, the Xcode project) is generated and pushed **only from the local
