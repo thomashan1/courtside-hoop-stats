@@ -166,48 +166,59 @@ private struct SwipeToDelete<Content: View>: View {
 
     @State private var offset: CGFloat = 0
     @State private var base: CGFloat = 0
+
+    /// Resting position when the delete button is revealed.
     private let revealWidth: CGFloat = 76
+    /// Swiping past this (a "full" swipe) deletes immediately on release.
+    private let commitThreshold: CGFloat = 200
+    /// How far the row can be dragged.
+    private let maxDrag: CGFloat = 360
 
     var body: some View {
         ZStack(alignment: .trailing) {
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.red)
                 .overlay(alignment: .trailing) {
-                    Button {
-                        close()
-                        onDelete()
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.subheadline)
-                            .foregroundStyle(.white)
-                            .frame(width: revealWidth)
-                            .frame(maxHeight: .infinity)
-                            .contentShape(Rectangle())
-                    }
+                    Image(systemName: "trash")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .frame(width: revealWidth)
+                        .frame(maxHeight: .infinity)
                 }
                 .opacity(offset < 0 ? 1 : 0)
+                .contentShape(Rectangle())
+                // Tap the revealed button to delete (partial-swipe path).
+                .onTapGesture { if offset < 0 { commitDelete() } }
 
             content
                 .offset(x: offset)
                 .highPriorityGesture(
                     DragGesture(minimumDistance: 12)
                         .onChanged { value in
-                            offset = min(0, max(-revealWidth, base + value.translation.width))
+                            offset = min(0, max(-maxDrag, base + value.translation.width))
                         }
                         .onEnded { value in
                             let projected = base + value.translation.width
-                            withAnimation(.snappy(duration: 0.2)) {
-                                offset = projected < -revealWidth / 2 ? -revealWidth : 0
+                            if projected <= -commitThreshold {
+                                commitDelete()                 // full swipe → delete
+                            } else if projected < -revealWidth / 2 {
+                                snap(to: -revealWidth)         // reveal the button
+                            } else {
+                                snap(to: 0)                    // close
                             }
-                            base = offset
                         }
                 )
         }
     }
 
-    private func close() {
-        withAnimation(.snappy(duration: 0.2)) { offset = 0 }
-        base = 0
+    private func snap(to value: CGFloat) {
+        withAnimation(.snappy(duration: 0.2)) { offset = value }
+        base = value
+    }
+
+    private func commitDelete() {
+        withAnimation(.snappy(duration: 0.2)) { offset = -maxDrag }
+        onDelete()
     }
 }
 
