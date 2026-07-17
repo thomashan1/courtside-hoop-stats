@@ -17,12 +17,16 @@ struct RosterView: View {
                 }
 
                 Section {
-                    jerseyPicker("Home jersey", isHome: true)
-                    jerseyPicker("Away jersey", isHome: false)
+                    Picker("Home jersey", selection: homeJerseyBinding) {
+                        ForEach(JerseyColor.allCases) { color in
+                            Text(color.label).tag(color)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 } header: {
-                    Text("Jerseys")
+                    Text("Home Jersey")
                 } footer: {
-                    Text("Which jersey to wear, shown when you set up a game.")
+                    Text("Away games use the other jersey — \(homeJerseyBinding.wrappedValue.opposite.label).")
                 }
 
                 Section("Players") {
@@ -72,25 +76,11 @@ struct RosterView: View {
         }
     }
 
-    private func jerseyPicker(_ title: String, isHome: Bool) -> some View {
-        Picker(title, selection: Binding(
-            get: { store.team.jersey(isHome: isHome) },
-            set: { newValue in
-                if isHome { store.team.homeJersey = newValue }
-                else { store.team.awayJersey = newValue }
-            }
-        )) {
-            ForEach(JerseyColor.allCases) { color in
-                Label {
-                    Text(color.label)
-                } icon: {
-                    Circle()
-                        .fill(color.swatch)
-                        .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 1))
-                }
-                .tag(color)
-            }
-        }
+    private var homeJerseyBinding: Binding<JerseyColor> {
+        Binding(
+            get: { store.team.homeJersey ?? .white },
+            set: { store.team.homeJersey = $0 }
+        )
     }
 }
 
