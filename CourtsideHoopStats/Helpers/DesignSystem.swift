@@ -119,16 +119,25 @@ struct SuggestingTextField: View {
 // MARK: - Jersey badge
 
 /// A circular jersey number badge. Used across the roster and scoring screens.
+///
+/// The badge scales with Dynamic Type (issue #12) so the number stays legible
+/// at large accessibility text sizes — the caller's `size` is the baseline and
+/// grows with the body text scale, capped at 2× so it can't dominate a row.
 struct JerseyBadge: View {
     let number: String
     var size: CGFloat = 40
 
+    /// Multiplier tracking the body text scale (1 at the default size).
+    @ScaledMetric(relativeTo: .body) private var typeScale: CGFloat = 1
+
+    private var dimension: CGFloat { min(size * typeScale, size * 2) }
+
     var body: some View {
         Text(number.isEmpty ? "–" : number)
-            .font(.system(size: size * 0.42, weight: .bold, design: .rounded))
+            .font(.system(size: dimension * 0.42, weight: .bold, design: .rounded))
             .monospacedDigit()
             .foregroundStyle(.white)
-            .frame(width: size, height: size)
+            .frame(width: dimension, height: dimension)
             .background(Circle().fill(Color.teamAccent))
     }
 }
