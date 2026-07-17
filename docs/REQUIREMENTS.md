@@ -67,16 +67,16 @@ still decodes (a `try?` decode failure would wipe the user's games).
 
 - **Player cards:** compact — first name + jersey number (e.g. `Ava #4`) over `N pts`. Grid widens with Dynamic Type.
 - **Scoreboard:** solid navy banner (both appearances); our score auto-calculated (blue), opponent score in white; period label. Score scales with Dynamic Type (capped).
-- **Actions:** 2 PT, 3 PT, FT ✓, FT ✗, Foul — in a wrapping grid (reflows at large text). Liquid Glass floating bar.
-- **Undo:** single-level (removes the last event). *(Redo is queued.)*
-- **End Period:** sheet showing our auto score; enter opponent's cumulative total; advances / finishes.
-- **Event log:** grouped by period with quarter/half separators + per-period points; **tap any event to edit (player/action) or delete**.
+- **Actions:** 2 PT, 3 PT, FT ✓, FT ✗ — in a wrapping grid (reflows at large text). Liquid Glass floating bar.
+- **Undo / Redo:** single-level Undo (removes last event) + Redo (re-applies it); a new event clears the redo history.
+- **End Period:** a tappable **quarter/half boundary at the top of the Score Log** opens a sheet to enter the opponent's cumulative total, then advances / finishes.
+- **Score Log:** grouped by period with quarter/half separators + per-period points; each row shows a concise action label + running team total; **tap to edit** (player/action) or **swipe to delete**.
 
-**Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), Foul (0).
+**Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt). *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T; period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
-- Player stats table (sorted by points): PTS, 2P, 3P, FT (made/att), Fouls.
+- Player stats table (sorted by points): PTS, 2P, 3P, FT (made/att).
 - **Editable event log** (same component as Live Scoring). Notes field. Metadata (date, home/away, league, location, format).
 
 ### 3.8 Design / accessibility

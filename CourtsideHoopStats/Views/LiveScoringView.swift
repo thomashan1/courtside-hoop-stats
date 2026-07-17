@@ -18,11 +18,14 @@ struct LiveScoringView: View {
     @State private var game: Game
     @State private var selectedPlayerID: UUID?
     @State private var showEndPeriod = false
+    /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
+    /// new event is recorded.
+    @State private var redoStack: [GameEvent] = []
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
     @ScaledMetric private var cardMinWidth: CGFloat = 96
-    @ScaledMetric private var actionMinWidth: CGFloat = 60
+    @ScaledMetric private var actionMinWidth: CGFloat = 72
     @ScaledMetric private var actionMinHeight: CGFloat = 48
 
     init(gameID: UUID) {
@@ -100,15 +103,43 @@ struct LiveScoringView: View {
 
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Event Log")
+            Text("Score Log")
                 .font(.headline)
                 .foregroundStyle(.primary)
+
+            endPeriodDivider
 
             EventLogView(game: $game, players: store.team.players) {
                 store.updateGame(game)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The current quarter/half boundary, shown at the top of the Score Log.
+    /// Tapping it records the opponent's total and advances (or finishes).
+    private var endPeriodDivider: some View {
+        let label = game.periodFormat.periodLabel(game.currentPeriod)
+        return Button {
+            showEndPeriod = true
+        } label: {
+            HStack(spacing: 10) {
+                dividerLine
+                Label(game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)",
+                      systemImage: "flag.checkered")
+                    .font(.subheadline).bold()
+                    .foregroundStyle(Color.teamAccent)
+                    .fixedSize()
+                dividerLine
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var dividerLine: some View {
+        Rectangle()
+            .fill(Color.teamAccent.opacity(0.35))
+            .frame(height: 1)
     }
 
     // MARK: - Action bar (floating Liquid Glass chrome, pinned to bottom)
@@ -138,6 +169,15 @@ struct LiveScoringView: View {
                 }
                 .disabled(game.events.isEmpty)
                 .tint(.teamAccent)
+
+                Button {
+                    redo()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.forward")
+                        .font(.subheadline)
+                }
+                .disabled(redoStack.isEmpty)
+                .tint(.teamAccent)
             }
 
             // Wrapping grid so the actions reflow (rather than cram/clip) at
@@ -147,20 +187,6 @@ struct LiveScoringView: View {
                 actionButton(.threePoint)
                 actionButton(.ftMade)
                 actionButton(.ftMissed)
-                actionButton(.foul)
-            }
-
-            Button {
-                showEndPeriod = true
-            } label: {
-                Text(game.isFinalPeriod
-                     ? "End \(game.periodFormat.periodLabel(game.currentPeriod)) & Finish Game"
-                     : "End \(game.periodFormat.periodLabel(game.currentPeriod))")
-                    .font(.subheadline).bold()
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.teamAccent.opacity(0.20)))
-                    .foregroundStyle(Color.teamAccent)
             }
         }
         .padding()
@@ -231,6 +257,7 @@ struct LiveScoringView: View {
         guard let playerID = selectedPlayerID else { return }
         let event = GameEvent(playerID: playerID, type: type, period: game.currentPeriod)
         game.events.append(event)
+        redoStack.removeAll()   // a new event invalidates the redo history
         store.updateGame(game)
         // Clear selection after each event so a new event requires an explicit
         // player tap — reduces mis-attributed entries courtside.
@@ -238,8 +265,15 @@ struct LiveScoringView: View {
     }
 
     private func undo() {
-        guard !game.events.isEmpty else { return }
+        guard let last = game.events.last else { return }
+        redoStack.append(last)
         game.events.removeLast()
+        store.updateGame(game)
+    }
+
+    private func redo() {
+        guard let event = redoStack.popLast() else { return }
+        game.events.append(event)
         store.updateGame(game)
     }
 

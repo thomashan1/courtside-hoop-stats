@@ -128,7 +128,6 @@ struct GameSummaryView: View {
                     Text("2P")
                     Text("3P")
                     Text("FT")
-                    Text("F")
                 }
                 .font(.caption).bold()
                 .frame(width: 42)
@@ -147,7 +146,6 @@ struct GameSummaryView: View {
                         Text("\(stat.twoPointers)")
                         Text("\(stat.threePointers)")
                         Text(stat.freeThrowDisplay)
-                        Text("\(stat.fouls)")
                     }
                     .font(.caption)
                     .monospacedDigit()
@@ -160,7 +158,7 @@ struct GameSummaryView: View {
     // MARK: - Event log (editable)
 
     private var eventLogSection: some View {
-        Section("Event Log") {
+        Section("Score Log") {
             EventLogView(game: $game, players: store.team.players) {
                 store.updateGame(game)
             }

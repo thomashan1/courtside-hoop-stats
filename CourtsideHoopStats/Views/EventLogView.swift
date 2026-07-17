@@ -57,14 +57,17 @@ struct EventLogView: View {
             }
 
             ForEach(eventsNewestFirst(in: period)) { event in
-                Button {
-                    editingEvent = event
-                } label: {
-                    EventLogRow(event: event,
-                                player: player(for: event.playerID),
-                                format: game.periodFormat)
+                SwipeToDelete(onDelete: { delete(event) }) {
+                    Button {
+                        editingEvent = event
+                    } label: {
+                        EventLogRow(event: event,
+                                    player: player(for: event.playerID),
+                                    format: game.periodFormat,
+                                    runningTotal: cumulativeTotals[event.id] ?? 0)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -79,6 +82,18 @@ struct EventLogView: View {
 
     private func ourPoints(in period: Int) -> Int {
         game.events.filter { $0.period == period }.reduce(0) { $0 + $1.type.points }
+    }
+
+    /// Cumulative team points after each event, in chronological order,
+    /// keyed by event id — the running score "so far".
+    private var cumulativeTotals: [UUID: Int] {
+        var total = 0
+        var map: [UUID: Int] = [:]
+        for event in game.events {
+            total += event.type.points
+            map[event.id] = total
+        }
+        return map
     }
 
     private func player(for id: UUID) -> Player? {
@@ -105,6 +120,8 @@ struct EventLogRow: View {
     let event: GameEvent
     let player: Player?
     let format: PeriodFormat
+    /// Cumulative team points through this event.
+    let runningTotal: Int
 
     var body: some View {
         HStack(spacing: 10) {
@@ -116,16 +133,17 @@ struct EventLogRow: View {
 
             Spacer()
 
-            Text(event.type.logLabel)
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-
-            if event.type.points > 0 {
-                Text("+\(event.type.points)")
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(event.type.scoreLogLabel)
                     .font(.caption).bold()
-                    .foregroundStyle(Color.teamAccent)
-                    .monospacedDigit()
+                    .foregroundStyle(event.type.points > 0 ? Color.teamAccent : Color.secondary)
+                if event.type.points > 0 {
+                    Text("\(runningTotal) pts")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
+            .monospacedDigit()
 
             Image(systemName: "chevron.right")
                 .font(.caption2)
@@ -135,6 +153,72 @@ struct EventLogRow: View {
         .padding(.horizontal, 10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Swipe to delete
+
+/// Wraps an (opaque) row so a left-swipe reveals a red Delete button. Used
+/// because the Score Log is a `VStack`, not a `List` (no native `.swipeActions`).
+private struct SwipeToDelete<Content: View>: View {
+    let onDelete: () -> Void
+    @ViewBuilder var content: Content
+
+    @State private var offset: CGFloat = 0
+    @State private var base: CGFloat = 0
+
+    /// Resting position when the delete button is revealed.
+    private let revealWidth: CGFloat = 76
+    /// Swiping past this (a "full" swipe) deletes immediately on release.
+    private let commitThreshold: CGFloat = 200
+    /// How far the row can be dragged.
+    private let maxDrag: CGFloat = 360
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.red)
+                .overlay(alignment: .trailing) {
+                    Image(systemName: "trash")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                        .frame(width: revealWidth)
+                        .frame(maxHeight: .infinity)
+                }
+                .opacity(offset < 0 ? 1 : 0)
+                .contentShape(Rectangle())
+                // Tap the revealed button to delete (partial-swipe path).
+                .onTapGesture { if offset < 0 { commitDelete() } }
+
+            content
+                .offset(x: offset)
+                .highPriorityGesture(
+                    DragGesture(minimumDistance: 12)
+                        .onChanged { value in
+                            offset = min(0, max(-maxDrag, base + value.translation.width))
+                        }
+                        .onEnded { value in
+                            let projected = base + value.translation.width
+                            if projected <= -commitThreshold {
+                                commitDelete()                 // full swipe → delete
+                            } else if projected < -revealWidth / 2 {
+                                snap(to: -revealWidth)         // reveal the button
+                            } else {
+                                snap(to: 0)                    // close
+                            }
+                        }
+                )
+        }
+    }
+
+    private func snap(to value: CGFloat) {
+        withAnimation(.snappy(duration: 0.2)) { offset = value }
+        base = value
+    }
+
+    private func commitDelete() {
+        withAnimation(.snappy(duration: 0.2)) { offset = -maxDrag }
+        onDelete()
     }
 }
 
@@ -151,6 +235,12 @@ struct EventEditSheet: View {
 
     @State private var playerID: UUID
     @State private var type: EventType
+
+    /// Selectable actions, plus the event's own type if it's a legacy `foul`
+    /// (so an old foul event can still be re-classified rather than stranded).
+    private var actionOptions: [EventType] {
+        EventType.selectable.contains(type) ? EventType.selectable : EventType.selectable + [type]
+    }
 
     init(event: GameEvent, players: [Player],
          onSave: @escaping (GameEvent) -> Void, onDelete: @escaping () -> Void) {
@@ -177,8 +267,8 @@ struct EventEditSheet: View {
 
                 Section("Action") {
                     Picker("Action", selection: $type) {
-                        ForEach(EventType.allCases, id: \.self) { type in
-                            Text(type.logLabel).tag(type)
+                        ForEach(actionOptions, id: \.self) { option in
+                            Text(option.logLabel).tag(option)
                         }
                     }
                 }
