@@ -28,6 +28,16 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "FA02FA02FA02FA02FA02FA02"
+               BuildableName = "CourtsideHoopStatsTests.xctest"
+               BlueprintName = "CourtsideHoopStatsTests"
+               ReferencedContainer = "container:CourtsideHoopStats.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

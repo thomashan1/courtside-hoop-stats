@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CourtsideHoopStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CourtsideHoopStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC02DC02DC02DC02DC02DC02 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		DC03DC03DC03DC03DC03DC03 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -15,10 +16,18 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStats; sourceTree = "<group>"; };
 		DC01DC01DC01DC01DC01DC01 /* docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = docs; sourceTree = "<group>"; };
+		FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStatsTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AB05AB05AB05AB05AB05AB05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA05FA05FA05FA05FA05FA05 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -35,6 +44,7 @@
 				DC03DC03DC03DC03DC03DC03 /* README.md */,
 				DC01DC01DC01DC01DC01DC01 /* docs */,
 				AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */,
+				FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */,
 				AB08AB08AB08AB08AB08AB08 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +53,7 @@
 			isa = PBXGroup;
 			children = (
 				AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */,
+				FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -72,6 +83,29 @@
 			productReference = AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */;
 			productType = "com.apple.product-type.application";
 		};
+		FA02FA02FA02FA02FA02FA02 /* CourtsideHoopStatsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA0BFA0BFA0BFA0BFA0BFA0B /* Build configuration list for PBXNativeTarget "CourtsideHoopStatsTests" */;
+			buildPhases = (
+				FA04FA04FA04FA04FA04FA04 /* Sources */,
+				FA05FA05FA05FA05FA05FA05 /* Frameworks */,
+				FA06FA06FA06FA06FA06FA06 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FA10FA10FA10FA10FA10FA10 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */,
+			);
+			name = CourtsideHoopStatsTests;
+			packageProductDependencies = (
+			);
+			productName = CourtsideHoopStatsTests;
+			productReference = FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -84,6 +118,10 @@
 				TargetAttributes = {
 					AB02AB02AB02AB02AB02AB02 = {
 						CreatedOnToolsVersion = 16.0;
+					};
+					FA02FA02FA02FA02FA02FA02 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AB02AB02AB02AB02AB02AB02;
 					};
 				};
 			};
@@ -102,12 +140,20 @@
 			projectRoot = "";
 			targets = (
 				AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */,
+				FA02FA02FA02FA02FA02FA02 /* CourtsideHoopStatsTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AB06AB06AB06AB06AB06AB06 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA06FA06FA06FA06FA06FA06 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -124,7 +170,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA04FA04FA04FA04FA04FA04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FA10FA10FA10FA10FA10FA10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */;
+			targetProxy = FA11FA11FA11FA11FA11FA11 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		FA11FA11FA11FA11FA11FA11 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB02AB02AB02AB02AB02AB02;
+			remoteInfo = CourtsideHoopStats;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin XCBuildConfiguration section */
 		AB0CAB0CAB0CAB0CAB0CAB0C /* Debug */ = {
@@ -308,6 +379,44 @@
 			};
 			name = Release;
 		};
+		FA0EFA0EFA0EFA0EFA0EFA0E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStatsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CourtsideHoopStats.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CourtsideHoopStats";
+			};
+			name = Debug;
+		};
+		FA0FFA0FFA0FFA0FFA0FFA0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStatsTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CourtsideHoopStats.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CourtsideHoopStats";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -325,6 +434,15 @@
 			buildConfigurations = (
 				AB0EAB0EAB0EAB0EAB0EAB0E /* Debug */,
 				AB0FAB0FAB0FAB0FAB0FAB0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FA0BFA0BFA0BFA0BFA0BFA0B /* Build configuration list for PBXNativeTarget "CourtsideHoopStatsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA0EFA0EFA0EFA0EFA0EFA0E /* Debug */,
+				FA0FFA0FFA0FFA0FFA0FFA0F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
