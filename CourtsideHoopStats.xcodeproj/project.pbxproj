@@ -8,10 +8,13 @@
 
 /* Begin PBXFileReference section */
 		AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CourtsideHoopStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC02DC02DC02DC02DC02DC02 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
+		DC03DC03DC03DC03DC03DC03 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStats; sourceTree = "<group>"; };
+		DC01DC01DC01DC01DC01DC01 /* docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = docs; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,6 +31,9 @@
 		AB07AB07AB07AB07AB07AB07 = {
 			isa = PBXGroup;
 			children = (
+				DC02DC02DC02DC02DC02DC02 /* CLAUDE.md */,
+				DC03DC03DC03DC03DC03DC03 /* README.md */,
+				DC01DC01DC01DC01DC01DC01 /* docs */,
 				AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */,
 				AB08AB08AB08AB08AB08AB08 /* Products */,
 			);
