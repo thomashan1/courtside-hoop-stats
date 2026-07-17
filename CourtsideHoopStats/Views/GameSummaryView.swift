@@ -8,6 +8,10 @@ struct GameSummaryView: View {
     let gameID: UUID
     @State private var game: Game
 
+    /// Final-score digits scale with Dynamic Type (capped so they can't overflow
+    /// the row), matching the live scoreboard's behavior (issue #12).
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 36
+
     init(gameID: UUID) {
         self.gameID = gameID
         _game = State(initialValue: Game(opponent: ""))
@@ -48,8 +52,9 @@ struct GameSummaryView: View {
         VStack(spacing: 4) {
             Text(name).font(.subheadline).bold().lineLimit(1).minimumScaleFactor(0.6)
             Text("\(score)")
-                .font(.system(size: 36, weight: .heavy, design: .rounded))
+                .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
                 .monospacedDigit()
+                .lineLimit(1)
                 .foregroundStyle(highlight ? Color.teamAccent : .primary)
         }
         .frame(maxWidth: .infinity)
