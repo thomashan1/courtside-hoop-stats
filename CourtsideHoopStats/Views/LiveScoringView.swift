@@ -19,13 +19,21 @@ struct LiveScoringView: View {
     @State private var selectedPlayerID: UUID?
     @State private var showEndPeriod = false
 
+    // Sizes that scale with Dynamic Type so the screen stays usable at large
+    // accessibility text sizes (player cards widen, action buttons wrap/grow).
+    @ScaledMetric private var cardMinWidth: CGFloat = 96
+    @ScaledMetric private var actionMinWidth: CGFloat = 60
+    @ScaledMetric private var actionMinHeight: CGFloat = 48
+
     init(gameID: UUID) {
         self.gameID = gameID
         // Placeholder; the real game is loaded from the store in `.onAppear`.
         _game = State(initialValue: Game(opponent: ""))
     }
 
-    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 12)]
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: cardMinWidth), spacing: 12)]
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -132,7 +140,9 @@ struct LiveScoringView: View {
                 .tint(.teamAccent)
             }
 
-            HStack(spacing: 8) {
+            // Wrapping grid so the actions reflow (rather than cram/clip) at
+            // large accessibility text sizes.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: actionMinWidth), spacing: 8)], spacing: 8) {
                 actionButton(.twoPoint)
                 actionButton(.threePoint)
                 actionButton(.ftMade)
@@ -166,7 +176,9 @@ struct LiveScoringView: View {
         } label: {
             Text(type.buttonLabel)
                 .font(.subheadline).bold()
-                .frame(maxWidth: .infinity, minHeight: 48)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity, minHeight: actionMinHeight)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
                         .fill(enabled ? Color.teamAccent : Color(.tertiarySystemFill))

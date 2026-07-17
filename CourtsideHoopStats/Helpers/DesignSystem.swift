@@ -126,6 +126,10 @@ struct ScoreboardView: View {
     let opponentScore: Int
     let periodLabel: String
 
+    /// The big score scales with Dynamic Type (capped so it can't overflow the
+    /// banner) so it grows for larger accessibility text sizes.
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 40
+
     var body: some View {
         HStack(alignment: .center) {
             teamColumn(name: ourName, score: ourScore, highlight: true)
@@ -155,8 +159,9 @@ struct ScoreboardView: View {
                 .minimumScaleFactor(0.6)
                 .foregroundStyle(.white)
             Text("\(score)")
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
                 .monospacedDigit()
+                .lineLimit(1)
                 .foregroundStyle(highlight ? Color.scoreboardAccent : .white)
         }
         .frame(maxWidth: .infinity)
