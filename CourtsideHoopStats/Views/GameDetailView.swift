@@ -22,6 +22,12 @@ struct GameDetailView: View {
 
     var body: some View {
         Form {
+            Section("Details") {
+                if !game.league.isEmpty { LabeledContent("League", value: game.league) }
+                if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+                LabeledContent("Format", value: game.periodFormat.displayName)
+            }
+
             Section("Matchup") {
                 LabeledContent("Opponent", value: game.opponent)
                 LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
@@ -29,17 +35,6 @@ struct GameDetailView: View {
                     JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
                 }
                 LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
-            }
-
-            if !game.league.isEmpty || !game.location.isEmpty {
-                Section("Details") {
-                    if !game.league.isEmpty { LabeledContent("League", value: game.league) }
-                    if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
-                }
-            }
-
-            Section("Format") {
-                LabeledContent("Periods", value: game.periodFormat.displayName)
             }
 
             Section {
@@ -129,6 +124,18 @@ struct EditGameSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Details") {
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    SuggestingTextField(title: "Location / Gym",
+                                        text: $location, suggestions: store.knownLocations)
+                    Picker("Format", selection: $periodFormat) {
+                        ForEach(PeriodFormat.allCases, id: \.self) { format in
+                            Text(format.displayName).tag(format)
+                        }
+                    }
+                }
+
                 Section("Matchup") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
@@ -138,22 +145,6 @@ struct EditGameSheet: View {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
-
-                Section("Details (optional)") {
-                    SuggestingTextField(title: "League / Tournament",
-                                        text: $league, suggestions: store.knownLeagues)
-                    SuggestingTextField(title: "Location / Gym",
-                                        text: $location, suggestions: store.knownLocations)
-                }
-
-                Section("Format") {
-                    Picker("Periods", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
-                        }
-                    }
-                    .pickerStyle(.segmented)
                 }
             }
             .navigationTitle("Edit Game")
