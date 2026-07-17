@@ -17,6 +17,34 @@ struct RosterView: View {
                 }
 
                 Section {
+                    HStack(spacing: 16) {
+                        Button {
+                            store.textSizeIndex = max(0, store.textSizeIndex - 1)
+                        } label: {
+                            Image(systemName: "textformat.size.smaller")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(store.textSizeIndex == 0)
+
+                        Text("Aa")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+
+                        Button {
+                            store.textSizeIndex = min(AppTextSize.maxIndex, store.textSizeIndex + 1)
+                        } label: {
+                            Image(systemName: "textformat.size.larger")
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(store.textSizeIndex == AppTextSize.maxIndex)
+                    }
+                } header: {
+                    Text("Text Size")
+                } footer: {
+                    Text("Makes text throughout the app larger. Also follows your device's text size if that's set higher.")
+                }
+
+                Section {
                     Picker("Home jersey", selection: homeJerseyBinding) {
                         ForEach(JerseyColor.allCases) { color in
                             Text(color.label).tag(color)

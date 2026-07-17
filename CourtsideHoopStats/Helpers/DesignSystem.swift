@@ -28,6 +28,24 @@ extension Color {
     static let scoreboardAccent = Color(red: 0.357, green: 0.612, blue: 0.961)
 }
 
+// MARK: - In-app text size
+
+/// The in-app "Text Size" steps. Applied app-wide as a Dynamic Type *floor*
+/// (`.dynamicTypeSize(step...)`), so the app is never smaller than the chosen
+/// step but still grows if the device's own text size is set even larger.
+enum AppTextSize {
+    static let steps: [DynamicTypeSize] = [
+        .large, .xLarge, .xxLarge, .xxxLarge,
+        .accessibility1, .accessibility2, .accessibility3,
+    ]
+
+    static var maxIndex: Int { steps.count - 1 }
+
+    static func floor(for index: Int) -> DynamicTypeSize {
+        steps[min(max(index, 0), maxIndex)]
+    }
+}
+
 // MARK: - Jersey color
 
 extension JerseyColor {

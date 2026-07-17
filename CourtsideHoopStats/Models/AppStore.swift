@@ -6,9 +6,13 @@ import Combine
 final class AppStore: ObservableObject {
     @Published var team: Team { didSet { save() } }
     @Published var games: [Game] { didSet { save() } }
+    /// In-app text-size step (index into `AppTextSize.steps`); applied app-wide
+    /// as a Dynamic Type floor. 0 = default.
+    @Published var textSizeIndex: Int { didSet { save() } }
 
     private let teamKey = "chs.team.v1"
     private let gamesKey = "chs.games.v1"
+    private let textSizeKey = "chs.textSizeIndex.v1"
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -29,6 +33,9 @@ final class AppStore: ObservableObject {
         } else {
             games = []
         }
+
+        // Returns 0 (the default step) when unset.
+        textSizeIndex = UserDefaults.standard.integer(forKey: textSizeKey)
     }
 
     private func save() {
@@ -38,6 +45,7 @@ final class AppStore: ObservableObject {
         if let data = try? encoder.encode(games) {
             UserDefaults.standard.set(data, forKey: gamesKey)
         }
+        UserDefaults.standard.set(textSizeIndex, forKey: textSizeKey)
     }
 
     // MARK: - Roster
