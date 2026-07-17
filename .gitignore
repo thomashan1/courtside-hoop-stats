@@ -40,3 +40,6 @@ Carthage/Build/
 # fastlane
 fastlane/report.xml
 fastlane/screenshots/**/*.png
+
+# Claude
+.claude/
