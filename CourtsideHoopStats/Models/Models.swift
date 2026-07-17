@@ -122,8 +122,24 @@ struct Game: Identifiable, Codable {
     var periodEndScores: [Int: PeriodEndScore] = [:]   // key = period number
     var notes: String = ""
     var isComplete: Bool = false
+    /// Whether scoring has begun. Optional for backward compatibility: games
+    /// saved before scheduling existed decode as `nil` and are treated as
+    /// started (see `isStarted`). New games set this explicitly (Save = false,
+    /// Start = true).
+    var hasStarted: Bool? = false
 
     // MARK: Derived (never stored)
+
+    /// A game predating the scheduling feature (nil) counts as already started.
+    var isStarted: Bool { hasStarted ?? true }
+
+    enum Lifecycle { case scheduled, inProgress, complete }
+
+    /// Which stage the game is in, driving list routing and badges.
+    var lifecycle: Lifecycle {
+        if isComplete { return .complete }
+        return isStarted ? .inProgress : .scheduled
+    }
 
     /// Our score, always auto-calculated from events.
     var ourScore: Int {

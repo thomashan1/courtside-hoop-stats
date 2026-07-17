@@ -79,6 +79,10 @@ final class AppStore: ObservableObject {
         games.remove(atOffsets: offsets)
     }
 
+    func deleteGame(id: UUID) {
+        games.removeAll { $0.id == id }
+    }
+
     func game(id: UUID) -> Game? {
         games.first { $0.id == id }
     }
