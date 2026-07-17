@@ -1,20 +1,23 @@
-# HoopsTracker — Requirements & Architecture Reference
+# Courtside Hoop Stats — Requirements & Architecture Reference
 
-> Use this file to onboard Claude Code or any new session.
-> Last updated: based on initial design + Swift implementation session.
+> Onboarding reference for any Claude Code session. Kept in sync with the
+> implemented app — update this file as features change.
+> Reflects the app as of the accessibility / settings work (PR #5).
 
 ---
 
 ## 1. Project Overview
 
-A native iOS app for tracking youth basketball game statistics courtside.
-Replacing a manual Excel spreadsheet workflow used by a parent during games.
+A native iOS app for tracking youth basketball game statistics courtside,
+replacing a manual Excel spreadsheet.
 
-**Primary user:** One person (the tracker) operating the phone alone during live games.
-Speed and error recovery are the top UX priorities.
+**Primary user:** the tracker (Thomas's wife, Jean) operating the phone alone
+during live games. **Speed, big tap targets, legibility, and error recovery** are
+the top UX priorities.
 
-**Team context:** Swish Warriors, B10U/B12U youth league (SVNJB, Choops).
-Longer-term goal: publish to App Store post-retirement.
+**Team context:** Swish Warriors, youth league. Longer-term goal: App Store
+release. Second goal (designed, deferred): let two people (Thomas + Jean) see the
+same games/stats — see [`SHARING.md`](SHARING.md).
 
 ---
 
@@ -22,259 +25,140 @@ Longer-term goal: publish to App Store post-retirement.
 
 | Concern | Decision |
 |---|---|
-| Platform | iOS 17+ |
-| Language | Swift |
-| UI framework | SwiftUI |
+| Platform / min target | **iOS 26** (Liquid Glass; no `if #available` fallbacks) |
+| Language / UI | Swift / SwiftUI |
 | Persistence | UserDefaults + JSON (Codable) |
 | Dependencies | None (zero third-party) |
-| Sync | None in MVP; iCloud/CloudKit later |
-| Minimum target | iOS 17 |
+| Sync | None yet; CloudKit `CKShare` planned (see `SHARING.md`) |
+| Dev env | Xcode 27 beta (iOS 27 SDK); test device iPhone 17 Pro |
+
+New stored `Codable` fields are added as **optionals** so existing saved data
+still decodes (a `try?` decode failure would wipe the user's games).
 
 ---
 
-## 3. Features (MVP scope)
+## 3. Features (current)
 
-### 3.1 Roster Management
-- Enter each player's **name** and **jersey number** once per season
-- Add, edit, delete, reorder players
-- One team/roster per app install (no multi-team in MVP)
-- Jersey number stored as String (handles "0", "00", etc.)
+### 3.1 Roster (Roster tab)
+- Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
+- Add / edit (Cancel-Save sheet) / delete / reorder players.
+- **Jerseys:** a single **Home jersey** choice (Blue/White); away is the opposite.
+- One team per install.
 
-### 3.2 New Game Setup
-Fields captured per game:
-- Opponent name (required)
-- League / Tournament name (optional)
-- Location / Gym (optional)
-- Home or Away toggle
-- Period format: **4 Quarters** or **2 Halves** (league-dependent)
-- Date (auto-set to now)
+### 3.2 Settings (Settings tab)
+- **Text Size:** in-app `A− / A+` control (with live "Aa" preview) + **Reset to Default**. Applied app-wide as a Dynamic Type *floor* (`.dynamicTypeSize(step...)`), persisted, and still honors a larger device text size.
 
-### 3.3 Live Scoring — Core Screen
-**Interaction model: two-tap**
-1. Tap a player card (highlights it as selected)
-2. Tap an action button → event recorded immediately
+### 3.3 Games list (Games tab)
+- Two sections: **Upcoming** (scheduled, soonest first) and **Games** (in-progress + completed, newest first).
+- Row shows opponent, date, location, and a state indicator: **Scheduled** badge / **In Progress** badge / final score + **W/L/T** badge.
+- Routing by lifecycle: scheduled → **Game Detail**; in-progress → **Live Scoring**; complete → **Game Summary**.
+- Swipe-to-delete.
 
-**Trackable events per player:**
-| Event | Points | Notes |
-|---|---|---|
-| 2-point field goal | +2 | |
-| 3-point field goal | +3 | |
-| Free throw made | +1 | Tracked individually for FT% |
-| Free throw missed | 0 | Counted as attempt |
-| Foul | 0 | Count per player |
+### 3.4 New Game
+- **Details:** League/Tournament and Location/Gym (each with **autocomplete** from prior entries), Period format (**4 Quarters** / **2 Halves**).
+- **Matchup:** Opponent (required), Home/Away toggle, **Jersey indicator** (updates with the toggle), Date (picker — supports pre-scheduling).
+- Two actions: **Save** (creates a *scheduled* game) and **Start Now** (creates it in-progress and jumps into scoring).
 
-**Scoreboard:**
-- Our score: auto-calculated from all events
-- Opponent score: NOT tracked live; entered as a running total at end of each period
+### 3.5 Game Detail (scheduled games)
+- Read-only summary of the matchup, with **Edit** (Cancel-Save sheet), **Start Game** (→ Live Scoring), and **Delete Game**.
 
-**Period management:**
-- "End Period" action opens a sheet showing our auto-calculated score
-- User enters opponent's running total for that period
-- Advances to next period automatically
+### 3.6 Live Scoring — core screen
+**Two-tap:** tap a player card → tap an action → event recorded immediately, then selection clears.
 
-**Undo:**
-- Single "Undo last event" button removes the most recently added event
-- No multi-level undo in MVP
+- **Player cards:** compact — first name + jersey number (e.g. `Ava #4`) over `N pts`. Grid widens with Dynamic Type.
+- **Scoreboard:** solid navy banner (both appearances); our score auto-calculated (blue), opponent score in white; period label. Score scales with Dynamic Type (capped).
+- **Actions:** 2 PT, 3 PT, FT ✓, FT ✗, Foul — in a wrapping grid (reflows at large text). Liquid Glass floating bar.
+- **Undo:** single-level (removes the last event). *(Redo is queued.)*
+- **End Period:** sheet showing our auto score; enter opponent's cumulative total; advances / finishes.
+- **Event log:** grouped by period with quarter/half separators + per-period points; **tap any event to edit (player/action) or delete**.
 
-**Event log:**
-- Scrollable list of all events, most recent first
-- Shows: period label, jersey badge, player name, event type, point value
+**Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), Foul (0).
 
-### 3.4 Game Summary (post-game)
-- Period-by-period score grid (e.g. Q1: 4–5, Q2: 12–9 …)
-- Final score and W/L result
-- Player stats table (sorted by points, descending):
-  - Points, 2pt made, 3pt made, FT (made/attempts), Fouls
-- Editable notes field (free text; used for scouting observations)
-- Game metadata: date, opponent, location, league
+### 3.7 Game Summary (completed games)
+- Final score + W/L/T; period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
+- Player stats table (sorted by points): PTS, 2P, 3P, FT (made/att), Fouls.
+- **Editable event log** (same component as Live Scoring). Notes field. Metadata (date, home/away, league, location, format).
 
-### 3.5 Games List
-- Reverse-chronological list of all games
-- Shows: opponent, date, location, final score, W/L badge
-- In-progress games navigate to Live Scoring; completed games navigate to Summary
-- Swipe-to-delete
+### 3.8 Design / accessibility
+- **Adaptive** light/dark (no forced dark mode). **Swish Warriors blue** accent (`#1E5FCF` light / `#5B9CF5` dark); navy scoreboard. Liquid Glass confined to chrome.
+- Dynamic Type respected; live scoring scales; in-app Text Size control.
 
 ---
 
-## 4. Data Model
+## 4. Data Model (`Models.swift`)
 
-```swift
-struct Team: Codable {
-    var name: String
-    var players: [Player]
-}
+Key types (see source for full detail):
 
-struct Player: Identifiable, Codable, Hashable {
-    var id: UUID
-    var name: String
-    var number: String          // jersey number, stored as String
-}
-
-enum EventType: String, Codable, CaseIterable {
-    case twoPoint               // +2
-    case threePoint             // +3
-    case ftMade                 // +1
-    case ftMissed               // +0, counts as FT attempt
-    case foul                   // +0
-}
-
-struct GameEvent: Identifiable, Codable {
-    var id: UUID
-    var playerID: UUID
-    var type: EventType
-    var period: Int             // 1-based
-    var timestamp: Date
-}
-
-struct Game: Identifiable, Codable {
-    var id: UUID
-    var date: Date
-    var opponent: String
-    var league: String
-    var location: String
-    var isHome: Bool
-    var periodFormat: PeriodFormat  // .quarters (4) or .halves (2)
-    var events: [GameEvent]
-    var periodEndScores: [Int: PeriodEndScore]   // key = period number
-    var notes: String
-    var isComplete: Bool
-}
-
-struct PeriodEndScore: Codable {
-    var ourRunningTotal: Int        // cumulative (not delta)
-    var opponentRunningTotal: Int   // cumulative (not delta)
-}
-
-// Derived — never stored
-struct PlayerStats {
-    let player: Player
-    var points: Int
-    var twoPointers: Int
-    var threePointers: Int
-    var ftMade: Int
-    var ftAttempts: Int
-    var fouls: Int
-}
-
-enum PeriodFormat: String, Codable, CaseIterable {
-    case quarters   // 4 periods, label "Q"
-    case halves     // 2 periods, label "H"
-}
-```
+- `Team { name, players, homeJersey: JerseyColor? }` + `jersey(isHome:)` (away = opposite).
+- `Player { id, name, number }` + `firstName`.
+- `JerseyColor { white, blue }` + `opposite`.
+- `EventType { twoPoint, threePoint, ftMade, ftMissed, foul }` (+ points, labels).
+- `GameEvent { id, playerID, type, period, timestamp }`.
+- `PeriodFormat { quarters, halves }`.
+- `PeriodEndScore { ourRunningTotal, opponentRunningTotal }` (opponent side authoritative; our side derived from events).
+- `Game { id, date, opponent, league, location, isHome, periodFormat, events, periodEndScores, notes, isComplete, hasStarted: Bool? }`
+  - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, and **`lifecycle` { scheduled, inProgress, complete }**.
+- `PlayerStats` (derived, never stored).
 
 ---
 
 ## 5. Architecture
 
 ```
-AppStore (ObservableObject, singleton)
-  ├── team: Team               — roster
-  ├── games: [Game]            — all games, newest first
-  └── CRUD methods             — addPlayer, updateGame, deleteGame, etc.
-       └── didSet → save()     — auto-persist to UserDefaults on every change
+AppStore (ObservableObject, injected as @EnvironmentObject)
+  ├── team, games, textSizeIndex   — @Published, didSet → save() (UserDefaults JSON)
+  ├── roster/game CRUD             — addPlayer, updateGame, deleteGame(id:), …
+  └── knownLeagues / knownLocations — autocomplete sources
 
-Views (SwiftUI)
-  ContentView              — TabView root
-  ├── GamesListView        — game history + NavigationLink routing
-  │   ├── GameRowView      — single row
-  │   ├── NewGameSheet     — modal setup form
-  │   ├── LiveScoringView  — active game tracking
-  │   └── GameSummaryView  — completed game read/edit
-  └── RosterView           — player CRUD
-      └── PlayerEditSheet  — add/edit modal
+Views
+  ContentView                 — TabView (Games / Roster / Settings) + app-wide Dynamic Type floor
+  ├── GamesListView           — sectioned list + value-based navigation
+  │   ├── GameRowView, NewGameSheet
+  │   ├── GameDetailView (+ EditGameSheet)   — scheduled game
+  │   ├── LiveScoringView (+ EndPeriodSheet)
+  │   └── GameSummaryView
+  ├── RosterView (+ PlayerEditSheet)
+  └── SettingsView            — text size
+  EventLogView (+ EventLogRow, EventEditSheet)  — shared editable log
 
-Helpers
-  DesignSystem.swift       — Color.courtGreen, JerseyBadge, ScoreboardView
+Helpers/DesignSystem.swift
+  Color.teamAccent (blue, adaptive), scoreboardBackground (navy),
+  JerseyBadge, ScoreboardView, JerseyColor.swatch, JerseyIndicator,
+  SuggestingTextField (autocomplete), AppTextSize (Dynamic Type steps)
 ```
 
-**State flow:**
-- `AppStore` injected as `@EnvironmentObject` at root
-- `LiveScoringView` and `GameSummaryView` hold a local `@State` copy of `Game`
-- On every mutation, they call `store.updateGame(game)` to persist
-- No ViewModel layer — views are thin enough that one will be added only when complexity demands it
+`LiveScoringView` / `GameSummaryView` / `GameDetailView` hold a local `@State`
+copy of the `Game` and call `store.updateGame(game)` on each mutation. No
+ViewModel layer yet.
 
 ---
 
-## 6. UI / UX Decisions
+## 6. Key UI/UX decisions
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Interaction model | Two-tap (player → action) | Fastest single-hand courtside input |
-| FT tracking | Made and missed tracked separately | Enables accurate FT% calculation |
-| Opponent score | Entered as running total per period | Tracker can't follow opponent events live |
-| Undo | Single-level, last event only | Handles the common fat-finger case |
-| Score calculation | Auto from events, never manual | Eliminates arithmetic errors |
-| Period end flow | Sheet modal, required before advancing | Forces capturing opponent score at natural break |
-| Color scheme | Dark forest green + bright grass green accent | Basketball / court aesthetic |
-| Navigation | Tab bar: Games / Roster | Two clear concerns, no deep nav needed |
-| Live game routing | GamesListView detects `isComplete` flag | Seamless tap-to-resume for in-progress games |
-| Data persistence | UserDefaults JSON | Zero setup, sufficient for single-device MVP |
+| Interaction | Two-tap (player → action); selection clears after | Fast, reduces mis-attribution |
+| FT tracking | Made/missed separate | Accurate FT% |
+| Opponent score | Cumulative total per period (editable after) | Tracker can't follow opponent live |
+| Our score | Always derived from events | No arithmetic errors; survives event edits |
+| Error recovery | Undo last + tap-to-edit/delete any event | Fat-finger + after-the-fact fixes |
+| Game lifecycle | scheduled → inProgress → complete | Pre-enter the season, then start |
+| Color | Swish Warriors blue accent, navy scoreboard | Team identity; high courtside contrast |
+| Navigation | Tabs: Games / Roster / Settings | Clear concerns |
+| Accessibility | Dynamic Type + in-app Text Size floor | End user needs larger text |
+| Persistence | UserDefaults JSON, optional new fields | Zero setup, migration-safe |
 
 ---
 
-## 7. File Structure
+## 7. Out of scope / deferred
 
-```
-HoopsTracker/
-├── HoopsTrackerApp.swift           @main, injects AppStore
-├── Models/
-│   ├── Models.swift                All Codable data types
-│   └── AppStore.swift              ObservableObject + UserDefaults persistence
-├── Views/
-│   ├── ContentView.swift           Root TabView
-│   ├── RosterView.swift            Player list + PlayerEditSheet
-│   ├── GamesListView.swift         Game history + NewGameSheet
-│   ├── LiveScoringView.swift       Live scoring (player grid, action strip, event log)
-│   └── GameSummaryView.swift       Stats table, period scores, notes
-└── Helpers/
-    └── DesignSystem.swift          Shared colors, JerseyBadge, ScoreboardView
-```
+Game timer/shot clock · multi-team · opponent player tracking · CSV/PDF export ·
+season summary/archiving · push · watchOS. **CloudKit sharing** is designed but
+deferred (`SHARING.md`). **App Store**: needs release Xcode, privacy policy, and
+confirmed icon-art rights.
 
----
+## 8. Queued work
 
-## 8. Out of Scope for MVP
-
-These were discussed and intentionally deferred:
-
-- **Game timer / shot clock** — overkill for youth games; tracker doesn't need it
-- **Multi-team support** — one team per install is sufficient
-- **Opponent player tracking** — not needed; only opponent running score matters
-- **iCloud / CloudKit sync** — post-MVP; UserDefaults is fine for one device
-- **CSV / PDF export** — post-MVP; high value for App Store but not day-one
-- **Season summary view** — aggregated stats across all games; post-MVP
-- **Dark mode polish** — SwiftUI handles basics automatically; deep polish later
-- **Push notifications** — not applicable
-- **watchOS companion** — interesting idea, deferred
-
----
-
-## 9. Open Questions
-
-These were not fully resolved and need a decision before implementing:
-
-1. **FT sub-panel UX** — should tapping "FT" on the action strip open a sub-panel with "Made" / "Missed" buttons, or are two separate top-level buttons (FT ✓ / FT ✗) cleaner? Current impl uses two buttons in the strip.
-
-2. **Substitution / bench tracking** — the spreadsheet has players marked with "–" or "(sub)" notations. Should the app support a "benched" toggle per player per game so inactive players don't clutter the grid?
-
-3. **Opponent score editing** — if your wife enters the wrong opponent total at period end, can she go back and fix it? Currently not exposed in the UI.
-
-4. **Team name** — hardcoded default "My Team" in the Team model. Should there be a settings screen to rename it (especially for App Store release where other teams use it)?
-
-5. **Multiple seasons / season reset** — the spreadsheet has 2024 and 2025-2026 seasons. Should the app support archiving/resetting the roster between seasons while keeping game history?
-
-6. **App Store metadata** — name, icon, category, privacy policy all needed. App doesn't collect any data but Apple still requires a privacy policy URL.
-
----
-
-## 10. Source Spreadsheet Reference
-
-Original Excel file: `NH_Basketball_Games_Tracking.xlsx`
-
-Key observations used in design:
-- Team: **Swish Warriors**, B10U/B12U
-- Regular players: Lucas, Nicholas, Clayton, Adrian, Mason, Bradley + rotating subs (Jake, Austin, Kaleb, Brendan, Wesley, Max, Evan, Ethan)
-- Events tracked per game: shot (2pt/3pt), free throws (individual made/missed), fouls
-- Quarter scores captured as running totals at end of each period
-- Some games use 4 quarters (SVNJB), some use 2 halves (Choops league)
-- Rich per-game notes (scouting observations, play names, substitution notes)
-- Win/loss, date, opponent, location, coach name recorded per game
+See [`TERMINAL_TODO.md`](TERMINAL_TODO.md) — e.g. Redo in live scoring,
+cumulative points in the event log, swipe-to-delete, Maps address autocomplete,
+accessibility round 2 (summary stat table), and model unit tests.

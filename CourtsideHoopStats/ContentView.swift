@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Root tab container: the games log and the roster.
+/// Root tab container: games, roster, and app settings.
 struct ContentView: View {
+    @EnvironmentObject var store: AppStore
+
     var body: some View {
         TabView {
             GamesListView()
@@ -9,7 +11,12 @@ struct ContentView: View {
 
             RosterView()
                 .tabItem { Label("Roster", systemImage: "person.3.fill") }
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape") }
         }
+        // Apply the in-app Text Size as a Dynamic Type floor for the whole app.
+        .dynamicTypeSize(AppTextSize.floor(for: store.textSizeIndex)...)
     }
 }
 

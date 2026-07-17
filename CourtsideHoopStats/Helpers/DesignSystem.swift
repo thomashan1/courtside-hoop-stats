@@ -28,6 +28,24 @@ extension Color {
     static let scoreboardAccent = Color(red: 0.357, green: 0.612, blue: 0.961)
 }
 
+// MARK: - In-app text size
+
+/// The in-app "Text Size" steps. Applied app-wide as a Dynamic Type *floor*
+/// (`.dynamicTypeSize(step...)`), so the app is never smaller than the chosen
+/// step but still grows if the device's own text size is set even larger.
+enum AppTextSize {
+    static let steps: [DynamicTypeSize] = [
+        .large, .xLarge, .xxLarge, .xxxLarge,
+        .accessibility1, .accessibility2, .accessibility3,
+    ]
+
+    static var maxIndex: Int { steps.count - 1 }
+
+    static func floor(for index: Int) -> DynamicTypeSize {
+        steps[min(max(index, 0), maxIndex)]
+    }
+}
+
 // MARK: - Jersey color
 
 extension JerseyColor {
@@ -126,6 +144,10 @@ struct ScoreboardView: View {
     let opponentScore: Int
     let periodLabel: String
 
+    /// The big score scales with Dynamic Type (capped so it can't overflow the
+    /// banner) so it grows for larger accessibility text sizes.
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 40
+
     var body: some View {
         HStack(alignment: .center) {
             teamColumn(name: ourName, score: ourScore, highlight: true)
@@ -155,8 +177,9 @@ struct ScoreboardView: View {
                 .minimumScaleFactor(0.6)
                 .foregroundStyle(.white)
             Text("\(score)")
-                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
                 .monospacedDigit()
+                .lineLimit(1)
                 .foregroundStyle(highlight ? Color.scoreboardAccent : .white)
         }
         .frame(maxWidth: .infinity)

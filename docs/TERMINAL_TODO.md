@@ -13,12 +13,24 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
-- [ ] **Accessibility / larger text pass.** Feedback from **Jean** (the end user):
-  "make it bigger, I can't see." Audit the app under large **Dynamic Type** sizes
-  and ensure everything scales and stays legible — player cards, scoreboard,
-  stat tables, event log, buttons. Prefer semantic text styles over fixed sizes;
-  add `minimumScaleFactor`/wrapping where needed; verify tap targets stay ≥44pt.
-  Consider a larger baseline font option if system Dynamic Type isn't enough.
+- [ ] **Event log: show running team total per event.** Alongside each event's
+  points delta, show the cumulative team score at that point, e.g. "+3 / 15 pts
+  so far". Compute by summing event points in chronological order up to and
+  including each event. From Thomas's feedback.
+
+- [ ] **Event log: swipe-left-to-delete.** Complement tap-to-edit with a quick
+  swipe-to-delete on event rows. Note the live-scoring log is a custom `VStack`
+  (not a `List`), so this needs either restructuring the log into `List` rows
+  (then `.swipeActions`) or a custom swipe gesture; the summary log embeds the
+  same component. From Thomas's feedback.
+
+- [ ] **Accessibility / larger text — remaining screens.** First pass (live
+  scoring: scaling scoreboard score, widening player cards, wrapping action
+  buttons) shipped. Still to do for Jean's "make it bigger": the **Game Summary
+  stat table** uses fixed 42pt columns that clip at large Dynamic Type — needs a
+  horizontal-scroll or reflow. Also scale the jersey **badge** number, and do a
+  full sweep of the summary/roster/sheets at accessibility sizes. Consider a
+  larger baseline font option if system Dynamic Type still isn't enough for her.
 
 - [ ] **Location field: address autocomplete via Maps.**
   Augment the Location/Gym field (which already suggests prior values) with real
