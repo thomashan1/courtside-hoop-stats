@@ -57,15 +57,17 @@ struct EventLogView: View {
             }
 
             ForEach(eventsNewestFirst(in: period)) { event in
-                Button {
-                    editingEvent = event
-                } label: {
-                    EventLogRow(event: event,
-                                player: player(for: event.playerID),
-                                format: game.periodFormat,
-                                runningTotal: cumulativeTotals[event.id] ?? 0)
+                SwipeToDelete(onDelete: { delete(event) }) {
+                    Button {
+                        editingEvent = event
+                    } label: {
+                        EventLogRow(event: event,
+                                    player: player(for: event.playerID),
+                                    format: game.periodFormat,
+                                    runningTotal: cumulativeTotals[event.id] ?? 0)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -131,21 +133,17 @@ struct EventLogRow: View {
 
             Spacer()
 
-            Text(event.type.logLabel)
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-
-            if event.type.points > 0 {
-                VStack(alignment: .trailing, spacing: 0) {
-                    Text("+\(event.type.points)")
-                        .font(.caption).bold()
-                        .foregroundStyle(Color.teamAccent)
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(event.type.scoreLogLabel)
+                    .font(.caption).bold()
+                    .foregroundStyle(event.type.points > 0 ? Color.teamAccent : Color.secondary)
+                if event.type.points > 0 {
                     Text("\(runningTotal) pts")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-                .monospacedDigit()
             }
+            .monospacedDigit()
 
             Image(systemName: "chevron.right")
                 .font(.caption2)
@@ -155,6 +153,61 @@ struct EventLogRow: View {
         .padding(.horizontal, 10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Swipe to delete
+
+/// Wraps an (opaque) row so a left-swipe reveals a red Delete button. Used
+/// because the Score Log is a `VStack`, not a `List` (no native `.swipeActions`).
+private struct SwipeToDelete<Content: View>: View {
+    let onDelete: () -> Void
+    @ViewBuilder var content: Content
+
+    @State private var offset: CGFloat = 0
+    @State private var base: CGFloat = 0
+    private let revealWidth: CGFloat = 76
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.red)
+                .overlay(alignment: .trailing) {
+                    Button {
+                        close()
+                        onDelete()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.subheadline)
+                            .foregroundStyle(.white)
+                            .frame(width: revealWidth)
+                            .frame(maxHeight: .infinity)
+                            .contentShape(Rectangle())
+                    }
+                }
+                .opacity(offset < 0 ? 1 : 0)
+
+            content
+                .offset(x: offset)
+                .highPriorityGesture(
+                    DragGesture(minimumDistance: 12)
+                        .onChanged { value in
+                            offset = min(0, max(-revealWidth, base + value.translation.width))
+                        }
+                        .onEnded { value in
+                            let projected = base + value.translation.width
+                            withAnimation(.snappy(duration: 0.2)) {
+                                offset = projected < -revealWidth / 2 ? -revealWidth : 0
+                            }
+                            base = offset
+                        }
+                )
+        }
+    }
+
+    private func close() {
+        withAnimation(.snappy(duration: 0.2)) { offset = 0 }
+        base = 0
     }
 }
 

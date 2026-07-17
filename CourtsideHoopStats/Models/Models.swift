@@ -76,13 +76,24 @@ enum EventType: String, Codable, CaseIterable {
         }
     }
 
-    /// Descriptive label used in the event log.
+    /// Descriptive label used in the event editor.
     var logLabel: String {
         switch self {
         case .twoPoint:   return "2-Point"
         case .threePoint: return "3-Point"
         case .ftMade:     return "Free Throw"
         case .ftMissed:   return "FT Miss"
+        case .foul:       return "Foul"
+        }
+    }
+
+    /// Single concise label for a Score Log row (combines action + points).
+    var scoreLogLabel: String {
+        switch self {
+        case .twoPoint:   return "+2 points"
+        case .threePoint: return "+3 points"
+        case .ftMade:     return "FT +1 point"
+        case .ftMissed:   return "FT miss"
         case .foul:       return "Foul"
         }
     }
