@@ -160,7 +160,7 @@ struct GameSummaryView: View {
     // MARK: - Event log (editable)
 
     private var eventLogSection: some View {
-        Section("Event Log") {
+        Section("Score Log") {
             EventLogView(game: $game, players: store.team.players) {
                 store.updateGame(game)
             }

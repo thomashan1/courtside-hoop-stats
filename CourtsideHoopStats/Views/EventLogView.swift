@@ -62,7 +62,8 @@ struct EventLogView: View {
                 } label: {
                     EventLogRow(event: event,
                                 player: player(for: event.playerID),
-                                format: game.periodFormat)
+                                format: game.periodFormat,
+                                runningTotal: cumulativeTotals[event.id] ?? 0)
                 }
                 .buttonStyle(.plain)
             }
@@ -79,6 +80,18 @@ struct EventLogView: View {
 
     private func ourPoints(in period: Int) -> Int {
         game.events.filter { $0.period == period }.reduce(0) { $0 + $1.type.points }
+    }
+
+    /// Cumulative team points after each event, in chronological order,
+    /// keyed by event id — the running score "so far".
+    private var cumulativeTotals: [UUID: Int] {
+        var total = 0
+        var map: [UUID: Int] = [:]
+        for event in game.events {
+            total += event.type.points
+            map[event.id] = total
+        }
+        return map
     }
 
     private func player(for id: UUID) -> Player? {
@@ -105,6 +118,8 @@ struct EventLogRow: View {
     let event: GameEvent
     let player: Player?
     let format: PeriodFormat
+    /// Cumulative team points through this event.
+    let runningTotal: Int
 
     var body: some View {
         HStack(spacing: 10) {
@@ -121,10 +136,15 @@ struct EventLogRow: View {
                 .foregroundStyle(.secondary)
 
             if event.type.points > 0 {
-                Text("+\(event.type.points)")
-                    .font(.caption).bold()
-                    .foregroundStyle(Color.teamAccent)
-                    .monospacedDigit()
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text("+\(event.type.points)")
+                        .font(.caption).bold()
+                        .foregroundStyle(Color.teamAccent)
+                    Text("\(runningTotal) pts")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .monospacedDigit()
             }
 
             Image(systemName: "chevron.right")
