@@ -25,6 +25,9 @@ struct GameDetailView: View {
             Section("Matchup") {
                 LabeledContent("Opponent", value: game.opponent)
                 LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
+                LabeledContent("Jersey") {
+                    JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
+                }
                 LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
             }
 
@@ -95,6 +98,7 @@ struct GameDetailView: View {
 // MARK: - Edit sheet (Cancel / Save, mirroring the roster's player editor)
 
 struct EditGameSheet: View {
+    @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
 
     let game: Game
@@ -130,12 +134,17 @@ struct EditGameSheet: View {
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
                         .tint(.teamAccent)
+                    LabeledContent("Jersey") {
+                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
+                    }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
 
                 Section("Details (optional)") {
-                    TextField("League / Tournament", text: $league)
-                    TextField("Location / Gym", text: $location)
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    SuggestingTextField(title: "Location / Gym",
+                                        text: $location, suggestions: store.knownLocations)
                 }
 
                 Section("Format") {

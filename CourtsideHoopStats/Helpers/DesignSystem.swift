@@ -28,6 +28,76 @@ extension Color {
     static let scoreboardAccent = Color(red: 0.357, green: 0.612, blue: 0.961)
 }
 
+// MARK: - Jersey color
+
+extension JerseyColor {
+    /// The swatch fill for this jersey.
+    var swatch: Color {
+        switch self {
+        case .white: return Color(white: 0.96)
+        case .blue:  return .teamAccent
+        }
+    }
+}
+
+/// A small "wear this jersey" indicator: a colored swatch + label.
+struct JerseyIndicator: View {
+    let color: JerseyColor
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(color.swatch)
+                .frame(width: 14, height: 14)
+                .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 1))
+            Text(color.label)
+                .foregroundStyle(.primary)
+        }
+    }
+}
+
+// MARK: - Autocomplete field
+
+/// A text field that, while focused, offers previously-entered values matching
+/// what's typed. Tapping a suggestion fills the field. Renders as multiple form
+/// rows (the field plus suggestion rows), so place it directly inside a Section.
+struct SuggestingTextField: View {
+    let title: String
+    @Binding var text: String
+    let suggestions: [String]
+
+    @FocusState private var focused: Bool
+
+    private var matches: [String] {
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return suggestions.filter { value in
+            value.caseInsensitiveCompare(query) != .orderedSame
+                && (query.isEmpty || value.localizedCaseInsensitiveContains(query))
+        }
+        .prefix(4)
+        .map { $0 }
+    }
+
+    var body: some View {
+        Group {
+            TextField(title, text: $text)
+                .focused($focused)
+
+            if focused {
+                ForEach(matches, id: \.self) { value in
+                    Button {
+                        text = value
+                        focused = false
+                    } label: {
+                        Label(value, systemImage: "clock.arrow.circlepath")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Jersey badge
 
 /// A circular jersey number badge. Used across the roster and scoring screens.

@@ -13,6 +13,12 @@ session** — the terminal is the only session that writes code and pushes it.
 
 ## Pending
 
+- [ ] **Add Redo to live scoring (reverse an accidental Undo).**
+  Today `undo()` just removes the last event; there's no way to undo the undo.
+  Keep a transient "undone events" stack in `LiveScoringView` (cleared whenever a
+  new event is recorded), and add a Redo control next to Undo in the action bar
+  that re-appends the last undone event. From Thomas's device testing.
+
 - [ ] **Add unit tests for the model logic.** ⭐ Prioritized — Thomas wants this
   started next.
   Cover the derived, pure logic in `Models.swift`: `Game.stats(for:)`,

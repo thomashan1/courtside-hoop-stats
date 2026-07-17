@@ -209,12 +209,17 @@ struct NewGameSheet: View {
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
                         .tint(.teamAccent)
+                    LabeledContent("Jersey") {
+                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
+                    }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
 
                 Section("Details (optional)") {
-                    TextField("League / Tournament", text: $league)
-                    TextField("Location / Gym", text: $location)
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    SuggestingTextField(title: "Location / Gym",
+                                        text: $location, suggestions: store.knownLocations)
                 }
 
                 Section("Format") {

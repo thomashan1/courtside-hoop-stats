@@ -2,11 +2,34 @@ import Foundation
 
 // MARK: - Team & Player
 
+/// Which jersey the team wears. Optional on `Team` for backward compatibility;
+/// falls back to a home-white / away-blue convention.
+enum JerseyColor: String, Codable, CaseIterable, Identifiable {
+    case white, blue
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .white: return "White"
+        case .blue:  return "Blue"
+        }
+    }
+}
+
 struct Team: Codable {
     var name: String
     var players: [Player]
+    /// Jersey worn at home / away. nil = not set (see `jersey(isHome:)`).
+    var homeJersey: JerseyColor? = nil
+    var awayJersey: JerseyColor? = nil
 
     static let empty = Team(name: "My Team", players: [])
+
+    /// The jersey to wear for a game, defaulting to the standard home-white /
+    /// away-colored convention when not explicitly configured.
+    func jersey(isHome: Bool) -> JerseyColor {
+        isHome ? (homeJersey ?? .white) : (awayJersey ?? .blue)
+    }
 }
 
 struct Player: Identifiable, Codable, Hashable {

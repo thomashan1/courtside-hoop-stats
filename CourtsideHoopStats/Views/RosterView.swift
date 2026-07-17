@@ -16,6 +16,15 @@ struct RosterView: View {
                     .textInputAutocapitalization(.words)
                 }
 
+                Section {
+                    jerseyPicker("Home jersey", isHome: true)
+                    jerseyPicker("Away jersey", isHome: false)
+                } header: {
+                    Text("Jerseys")
+                } footer: {
+                    Text("Which jersey to wear, shown when you set up a game.")
+                }
+
                 Section("Players") {
                     if store.team.players.isEmpty {
                         Text("No players yet. Tap ✚ to add your roster.")
@@ -59,6 +68,27 @@ struct RosterView: View {
             }
             .sheet(item: $editingPlayer) { player in
                 PlayerEditSheet(player: player)
+            }
+        }
+    }
+
+    private func jerseyPicker(_ title: String, isHome: Bool) -> some View {
+        Picker(title, selection: Binding(
+            get: { store.team.jersey(isHome: isHome) },
+            set: { newValue in
+                if isHome { store.team.homeJersey = newValue }
+                else { store.team.awayJersey = newValue }
+            }
+        )) {
+            ForEach(JerseyColor.allCases) { color in
+                Label {
+                    Text(color.label)
+                } icon: {
+                    Circle()
+                        .fill(color.swatch)
+                        .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 1))
+                }
+                .tag(color)
             }
         }
     }

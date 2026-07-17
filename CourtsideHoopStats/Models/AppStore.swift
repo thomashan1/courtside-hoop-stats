@@ -86,4 +86,24 @@ final class AppStore: ObservableObject {
     func game(id: UUID) -> Game? {
         games.first { $0.id == id }
     }
+
+    // MARK: - Autocomplete sources
+
+    /// Distinct, non-empty prior values for a game text field, most-recent first.
+    private func knownValues(_ keyPath: KeyPath<Game, String>) -> [String] {
+        var seen = Set<String>()
+        var result: [String] = []
+        for game in games {
+            let value = game[keyPath: keyPath].trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = value.lowercased()
+            if !value.isEmpty, !seen.contains(key) {
+                seen.insert(key)
+                result.append(value)
+            }
+        }
+        return result
+    }
+
+    var knownLeagues: [String] { knownValues(\.league) }
+    var knownLocations: [String] { knownValues(\.location) }
 }
