@@ -128,7 +128,6 @@ struct GameSummaryView: View {
                     Text("2P")
                     Text("3P")
                     Text("FT")
-                    Text("F")
                 }
                 .font(.caption).bold()
                 .frame(width: 42)
@@ -147,7 +146,6 @@ struct GameSummaryView: View {
                         Text("\(stat.twoPointers)")
                         Text("\(stat.threePointers)")
                         Text(stat.freeThrowDisplay)
-                        Text("\(stat.fouls)")
                     }
                     .font(.caption)
                     .monospacedDigit()

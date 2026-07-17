@@ -236,6 +236,12 @@ struct EventEditSheet: View {
     @State private var playerID: UUID
     @State private var type: EventType
 
+    /// Selectable actions, plus the event's own type if it's a legacy `foul`
+    /// (so an old foul event can still be re-classified rather than stranded).
+    private var actionOptions: [EventType] {
+        EventType.selectable.contains(type) ? EventType.selectable : EventType.selectable + [type]
+    }
+
     init(event: GameEvent, players: [Player],
          onSave: @escaping (GameEvent) -> Void, onDelete: @escaping () -> Void) {
         self.event = event
@@ -261,8 +267,8 @@ struct EventEditSheet: View {
 
                 Section("Action") {
                     Picker("Action", selection: $type) {
-                        ForEach(EventType.allCases, id: \.self) { type in
-                            Text(type.logLabel).tag(type)
+                        ForEach(actionOptions, id: \.self) { option in
+                            Text(option.logLabel).tag(option)
                         }
                     }
                 }

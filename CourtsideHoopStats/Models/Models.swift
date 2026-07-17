@@ -53,7 +53,11 @@ enum EventType: String, Codable, CaseIterable {
     case threePoint             // +3
     case ftMade                 // +1
     case ftMissed               // +0, counts as FT attempt
-    case foul                   // +0
+    case foul                   // +0 — retained for decoding old games; not tracked in the UI
+
+    /// Event types users can record/choose. `foul` is intentionally excluded
+    /// (kept only so previously-saved foul events still decode).
+    static let selectable: [EventType] = [.twoPoint, .threePoint, .ftMade, .ftMissed]
 
     var points: Int {
         switch self {
