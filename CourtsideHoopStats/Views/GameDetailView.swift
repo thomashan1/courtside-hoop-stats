@@ -22,21 +22,19 @@ struct GameDetailView: View {
 
     var body: some View {
         Form {
+            Section("Details") {
+                if !game.league.isEmpty { LabeledContent("League", value: game.league) }
+                if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+                LabeledContent("Format", value: game.periodFormat.displayName)
+            }
+
             Section("Matchup") {
                 LabeledContent("Opponent", value: game.opponent)
                 LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
-                LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
-            }
-
-            if !game.league.isEmpty || !game.location.isEmpty {
-                Section("Details") {
-                    if !game.league.isEmpty { LabeledContent("League", value: game.league) }
-                    if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+                LabeledContent("Jersey") {
+                    JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
                 }
-            }
-
-            Section("Format") {
-                LabeledContent("Periods", value: game.periodFormat.displayName)
+                LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
             }
 
             Section {
@@ -95,6 +93,7 @@ struct GameDetailView: View {
 // MARK: - Edit sheet (Cancel / Save, mirroring the roster's player editor)
 
 struct EditGameSheet: View {
+    @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
 
     let game: Game
@@ -125,26 +124,27 @@ struct EditGameSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Details") {
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    SuggestingTextField(title: "Location / Gym",
+                                        text: $location, suggestions: store.knownLocations)
+                    Picker("Format", selection: $periodFormat) {
+                        ForEach(PeriodFormat.allCases, id: \.self) { format in
+                            Text(format.displayName).tag(format)
+                        }
+                    }
+                }
+
                 Section("Matchup") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
                         .tint(.teamAccent)
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
-
-                Section("Details (optional)") {
-                    TextField("League / Tournament", text: $league)
-                    TextField("Location / Gym", text: $location)
-                }
-
-                Section("Format") {
-                    Picker("Periods", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
-                        }
+                    LabeledContent("Jersey") {
+                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    .pickerStyle(.segmented)
+                    DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
             }
             .navigationTitle("Edit Game")

@@ -16,6 +16,19 @@ struct RosterView: View {
                     .textInputAutocapitalization(.words)
                 }
 
+                Section {
+                    Picker("Home jersey", selection: homeJerseyBinding) {
+                        ForEach(JerseyColor.allCases) { color in
+                            Text(color.label).tag(color)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Home Jersey")
+                } footer: {
+                    Text("Away games use the other jersey — \(homeJerseyBinding.wrappedValue.opposite.label).")
+                }
+
                 Section("Players") {
                     if store.team.players.isEmpty {
                         Text("No players yet. Tap ✚ to add your roster.")
@@ -61,6 +74,13 @@ struct RosterView: View {
                 PlayerEditSheet(player: player)
             }
         }
+    }
+
+    private var homeJerseyBinding: Binding<JerseyColor> {
+        Binding(
+            get: { store.team.homeJersey ?? .white },
+            set: { store.team.homeJersey = $0 }
+        )
     }
 }
 

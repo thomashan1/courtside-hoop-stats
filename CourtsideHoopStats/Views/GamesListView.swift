@@ -204,26 +204,27 @@ struct NewGameSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Details") {
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    SuggestingTextField(title: "Location / Gym",
+                                        text: $location, suggestions: store.knownLocations)
+                    Picker("Format", selection: $periodFormat) {
+                        ForEach(PeriodFormat.allCases, id: \.self) { format in
+                            Text(format.displayName).tag(format)
+                        }
+                    }
+                }
+
                 Section("Matchup") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
                         .tint(.teamAccent)
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                }
-
-                Section("Details (optional)") {
-                    TextField("League / Tournament", text: $league)
-                    TextField("Location / Gym", text: $location)
-                }
-
-                Section("Format") {
-                    Picker("Periods", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
-                        }
+                    LabeledContent("Jersey") {
+                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    .pickerStyle(.segmented)
+                    DatePicker("Date", selection: $date, displayedComponents: .date)
                 }
 
                 Section {
