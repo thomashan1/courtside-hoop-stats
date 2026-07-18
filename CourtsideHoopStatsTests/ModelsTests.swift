@@ -304,6 +304,18 @@ struct ModelsTests {
         #expect(result.periodEndScores[2]?.opponentRunningTotal == 15)
     }
 
+    // MARK: - Multi-team persistence (#20)
+
+    @Test func teamsStateRoundTrips() throws {
+        let team = Team(name: "Hawks", players: [player("Ava", "4")])
+        let state = TeamsState(teams: [team], activeTeamID: team.id)
+        let data = try JSONEncoder().encode(state)
+        let back = try JSONDecoder().decode(TeamsState.self, from: data)
+        #expect(back.teams.count == 1)
+        #expect(back.activeTeamID == team.id)
+        #expect(back.teams[0].name == "Hawks")
+    }
+
     @Test func reorderNeverInventsExtraPeriod() {
         let (game, _) = twoPeriodGame()
         var log = game.orderedLog()

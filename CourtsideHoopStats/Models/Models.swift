@@ -19,7 +19,11 @@ enum JerseyColor: String, Codable, CaseIterable, Identifiable {
     var opposite: JerseyColor { self == .white ? .blue : .white }
 }
 
-struct Team: Codable {
+struct Team: Identifiable, Codable {
+    /// Stable identity so games and the active-team selection can reference it.
+    /// Optional-decoded for backward compatibility: team JSON saved before
+    /// multi-team support has no id and gets a fresh one on load.
+    var id: UUID = UUID()
     var name: String
     var players: [Player]
     /// The jersey worn at home; away games use its opposite. Optional for
@@ -172,6 +176,10 @@ struct PeriodEndScore: Codable {
 
 struct Game: Identifiable, Codable {
     var id: UUID = UUID()
+    /// Which team played this game. Optional for backward compatibility: games
+    /// saved before multi-team support decode as `nil` and are stamped with the
+    /// migrated team's id on load (#20).
+    var teamID: UUID? = nil
     var date: Date = Date()
     var opponent: String
     var league: String = ""
