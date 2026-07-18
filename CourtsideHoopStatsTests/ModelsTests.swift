@@ -248,4 +248,71 @@ struct ModelsTests {
         legacy.hasStarted = nil
         #expect(legacy.isStarted == true)
     }
+
+    // MARK: - Reorderable score log (#9)
+
+    /// A complete 2-half game: two events in H1, one in H2, both period markers.
+    /// Uses `.halves` so the period cap (2) matches the two markers.
+    private func twoPeriodGame() -> (Game, [UUID]) {
+        let a = UUID(), b = UUID()
+        var game = Game(opponent: "Hawks", periodFormat: .halves)
+        game.events = [
+            GameEvent(playerID: a, type: .twoPoint, period: 1),
+            GameEvent(playerID: b, type: .threePoint, period: 1),
+            GameEvent(playerID: a, type: .twoPoint, period: 2),
+        ]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 5, opponentRunningTotal: 8),
+            2: PeriodEndScore(ourRunningTotal: 7, opponentRunningTotal: 15),
+        ]
+        return (game, [a, b])
+    }
+
+    @Test func orderedLogInterleavesEventsAndMarkers() {
+        let (game, _) = twoPeriodGame()
+        let log = game.orderedLog()
+        // Q1 event, Q1 event, END Q1, Q2 event, END Q2
+        #expect(log.count == 5)
+        if case .periodEnd(let p) = log[2] { #expect(p == 1) } else { Issue.record("expected marker") }
+        if case .periodEnd(let p) = log[4] { #expect(p == 2) } else { Issue.record("expected marker") }
+    }
+
+    @Test func reorderIdentityPreservesPeriods() {
+        let (game, _) = twoPeriodGame()
+        let same = game.applyingReorderedLog(game.orderedLog())
+        #expect(same.events.map(\.period) == [1, 1, 2])
+        #expect(same.periodEndScores[1]?.opponentRunningTotal == 8)
+        #expect(same.periodEndScores[2]?.opponentRunningTotal == 15)
+        // Our running totals recomputed: after Q1 = 2+3 = 5, after Q2 = +2 = 7.
+        #expect(same.periodEndScores[1]?.ourRunningTotal == 5)
+        #expect(same.periodEndScores[2]?.ourRunningTotal == 7)
+    }
+
+    @Test func draggingEventPastMarkerChangesItsPeriod() {
+        let (game, _) = twoPeriodGame()
+        var log = game.orderedLog()          // [e0, e1, END1, e2, END2]
+        // Move the END-Q1 marker (index 2) up above e1 (index 1): now only e0 is Q1.
+        let marker = log.remove(at: 2)
+        log.insert(marker, at: 1)            // [e0, END1, e1, e2, END2]
+        let result = game.applyingReorderedLog(log)
+        // e0 → Q1; e1, e2 → Q2.
+        #expect(result.events.map(\.period) == [1, 2, 2])
+        // Our Q1 running total is now just e0's 2 points.
+        #expect(result.periodEndScores[1]?.ourRunningTotal == 2)
+        // Opponent totals ride with their markers unchanged.
+        #expect(result.periodEndScores[1]?.opponentRunningTotal == 8)
+        #expect(result.periodEndScores[2]?.opponentRunningTotal == 15)
+    }
+
+    @Test func reorderNeverInventsExtraPeriod() {
+        let (game, _) = twoPeriodGame()
+        var log = game.orderedLog()
+        // Move an event below the final marker — it must clamp to the last period,
+        // not become a phantom period 3.
+        let last = log.remove(at: 3)         // the Q2 event
+        log.append(last)                     // now after END Q2
+        let result = game.applyingReorderedLog(log)
+        #expect(result.events.map(\.period).allSatisfy { $0 <= 2 })
+        #expect(result.periodEndScores.keys.allSatisfy { $0 <= 2 })
+    }
 }

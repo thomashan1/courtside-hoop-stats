@@ -70,10 +70,11 @@ struct EventLogView: View {
                                       runningTotal: cumulativeTotals[event.id] ?? 0,
                                       showsChevron: isEditable)
                 if isEditable {
-                    SwipeToDelete(onDelete: { delete(event) }) {
-                        Button { editingEvent = event } label: { row }
-                            .buttonStyle(.plain)
-                    }
+                    // Tap opens the editor (which also deletes). No custom swipe
+                    // here — it fought the scroll view; delete + reorder live in
+                    // the List-based ScoreLogEditor now (#9).
+                    Button { editingEvent = event } label: { row }
+                        .buttonStyle(.plain)
                 } else {
                     row
                 }
@@ -166,72 +167,6 @@ struct EventLogRow: View {
         .padding(.horizontal, 10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
         .contentShape(Rectangle())
-    }
-}
-
-// MARK: - Swipe to delete
-
-/// Wraps an (opaque) row so a left-swipe reveals a red Delete button. Used
-/// because the Score Log is a `VStack`, not a `List` (no native `.swipeActions`).
-private struct SwipeToDelete<Content: View>: View {
-    let onDelete: () -> Void
-    @ViewBuilder var content: Content
-
-    @State private var offset: CGFloat = 0
-    @State private var base: CGFloat = 0
-
-    /// Resting position when the delete button is revealed.
-    private let revealWidth: CGFloat = 76
-    /// Swiping past this (a "full" swipe) deletes immediately on release.
-    private let commitThreshold: CGFloat = 200
-    /// How far the row can be dragged.
-    private let maxDrag: CGFloat = 360
-
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color.red)
-                .overlay(alignment: .trailing) {
-                    Image(systemName: "trash")
-                        .font(.subheadline)
-                        .foregroundStyle(.white)
-                        .frame(width: revealWidth)
-                        .frame(maxHeight: .infinity)
-                }
-                .opacity(offset < 0 ? 1 : 0)
-                .contentShape(Rectangle())
-                // Tap the revealed button to delete (partial-swipe path).
-                .onTapGesture { if offset < 0 { commitDelete() } }
-
-            content
-                .offset(x: offset)
-                .highPriorityGesture(
-                    DragGesture(minimumDistance: 12)
-                        .onChanged { value in
-                            offset = min(0, max(-maxDrag, base + value.translation.width))
-                        }
-                        .onEnded { value in
-                            let projected = base + value.translation.width
-                            if projected <= -commitThreshold {
-                                commitDelete()                 // full swipe → delete
-                            } else if projected < -revealWidth / 2 {
-                                snap(to: -revealWidth)         // reveal the button
-                            } else {
-                                snap(to: 0)                    // close
-                            }
-                        }
-                )
-        }
-    }
-
-    private func snap(to value: CGFloat) {
-        withAnimation(.snappy(duration: 0.2)) { offset = value }
-        base = value
-    }
-
-    private func commitDelete() {
-        withAnimation(.snappy(duration: 0.2)) { offset = -maxDrag }
-        onDelete()
     }
 }
 

@@ -21,6 +21,8 @@ struct LiveScoringView: View {
     /// Presented from the inert "Final" divider when re-editing a finished game,
     /// so opponent totals can still be corrected after the game ends (#23).
     @State private var showOpponentTotals = false
+    /// Presents the List-based score-log editor (reorder + delete, #9).
+    @State private var showLogEditor = false
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
@@ -82,6 +84,11 @@ struct LiveScoringView: View {
         .sheet(isPresented: $showOpponentTotals) {
             OpponentTotalsSheet(game: $game) { store.updateGame(game) }
         }
+        .sheet(isPresented: $showLogEditor) {
+            ScoreLogEditor(game: $game, players: store.team.players) {
+                store.updateGame(game)
+            }
+        }
     }
 
     // MARK: - Player grid
@@ -115,9 +122,21 @@ struct LiveScoringView: View {
 
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Score Log")
-                .font(.headline)
-                .foregroundStyle(.primary)
+            HStack {
+                Text("Score Log")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if !game.events.isEmpty {
+                    Button {
+                        showLogEditor = true
+                    } label: {
+                        Label("Edit / Reorder", systemImage: "arrow.up.arrow.down")
+                            .font(.subheadline)
+                    }
+                    .tint(.teamAccent)
+                }
+            }
 
             endPeriodDivider
 

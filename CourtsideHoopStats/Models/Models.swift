@@ -111,6 +111,25 @@ struct GameEvent: Identifiable, Codable {
     var timestamp: Date = Date()
 }
 
+/// One row in the reorderable score log (#9): a scoring event, or a period-end
+/// boundary marker that ends the given period. Both are draggable; an event's
+/// period is derived from how many markers precede it (see
+/// `Game.applyingReorderedLog(_:)`).
+enum ScoreLogItem: Identifiable, Hashable {
+    case event(GameEvent)
+    case periodEnd(period: Int)
+
+    var id: String {
+        switch self {
+        case .event(let event):   return "e-\(event.id.uuidString)"
+        case .periodEnd(let period): return "m-\(period)"
+        }
+    }
+
+    static func == (lhs: ScoreLogItem, rhs: ScoreLogItem) -> Bool { lhs.id == rhs.id }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
+}
+
 // MARK: - Period format
 
 enum PeriodFormat: String, Codable, CaseIterable {
@@ -227,6 +246,61 @@ struct Game: Identifiable, Codable {
             prevOpp = score.opponentRunningTotal
         }
         return rows
+    }
+
+    // MARK: - Reorderable score log (#9)
+
+    /// The score log as one ordered, chronological sequence (oldest first) of
+    /// scoring events and period-end boundary markers. Events keep their array
+    /// order; a marker for period `p` is placed right after that period's events
+    /// once the period has been ended (has a `periodEndScores` entry).
+    func orderedLog() -> [ScoreLogItem] {
+        let maxPeriod = max(periodEndScores.keys.max() ?? 0,
+                            events.map(\.period).max() ?? 0)
+        guard maxPeriod > 0 else { return events.map { .event($0) } }
+        var items: [ScoreLogItem] = []
+        for p in 1...maxPeriod {
+            for event in events where event.period == p { items.append(.event(event)) }
+            if periodEndScores[p] != nil { items.append(.periodEnd(period: p)) }
+        }
+        return items
+    }
+
+    /// Rebuild the game from a reordered score log (#9). Each event's period is
+    /// **derived** from how many period-end markers precede it, so dragging an
+    /// event or a period boundary reassigns periods across quarters/halves.
+    /// Opponent running totals ride with their marker; our running totals are
+    /// recomputed from the new event order. Periods are clamped to the format's
+    /// period count so a stray drag can't invent an extra period.
+    func applyingReorderedLog(_ items: [ScoreLogItem]) -> Game {
+        var copy = self
+        let cap = periodFormat.periodCount
+        var newEvents: [GameEvent] = []
+        var newScores: [Int: PeriodEndScore] = [:]
+        var currentPeriod = 1
+        var ourRunning = 0
+        var markerCount = 0
+
+        for item in items {
+            switch item {
+            case .event(let event):
+                var moved = event
+                moved.period = min(currentPeriod, cap)
+                ourRunning += moved.type.points
+                newEvents.append(moved)
+            case .periodEnd(let oldPeriod):
+                guard markerCount < cap else { break }   // can't exceed the format
+                markerCount += 1
+                let opponent = periodEndScores[oldPeriod]?.opponentRunningTotal
+                    ?? newScores[markerCount - 1]?.opponentRunningTotal ?? 0
+                newScores[markerCount] = PeriodEndScore(ourRunningTotal: ourRunning,
+                                                        opponentRunningTotal: opponent)
+                currentPeriod = min(currentPeriod + 1, cap)
+            }
+        }
+        copy.events = newEvents
+        copy.periodEndScores = newScores
+        return copy
     }
 
     /// Aggregated stats per player, sorted by points descending.

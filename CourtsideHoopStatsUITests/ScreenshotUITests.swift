@@ -47,6 +47,13 @@ final class ScreenshotUITests: XCTestCase {
         app.buttons["Edit Scores"].tap()
         XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10))
         snap(app, "05-edit-finished-game")
+
+        // 2c) Score-log editor (#9): reorder events + movable period dividers.
+        app.buttons["Edit / Reorder"].tap()
+        XCTAssertTrue(app.navigationBars["Edit Score Log"].waitForExistence(timeout: 10))
+        snap(app, "07-score-log-editor")
+        app.navigationBars["Edit Score Log"].buttons["Done"].tap()
+
         app.buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
