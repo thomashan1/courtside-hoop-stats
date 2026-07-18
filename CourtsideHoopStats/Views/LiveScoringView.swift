@@ -18,6 +18,9 @@ struct LiveScoringView: View {
     @State private var game: Game
     @State private var selectedPlayerID: UUID?
     @State private var showEndPeriod = false
+    /// Presented from the inert "Final" divider when re-editing a finished game,
+    /// so opponent totals can still be corrected after the game ends (#23).
+    @State private var showOpponentTotals = false
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
@@ -76,6 +79,9 @@ struct LiveScoringView: View {
                 onConfirm: endPeriod(opponentTotal:)
             )
         }
+        .sheet(isPresented: $showOpponentTotals) {
+            OpponentTotalsSheet(game: $game) { store.updateGame(game) }
+        }
     }
 
     // MARK: - Player grid
@@ -130,14 +136,21 @@ struct LiveScoringView: View {
     private var endPeriodDivider: some View {
         let label = game.periodFormat.periodLabel(game.currentPeriod)
         if game.isComplete {
-            HStack(spacing: 10) {
-                dividerLine
-                Label("Final", systemImage: "flag.checkered")
-                    .font(.subheadline).bold()
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-                dividerLine
+            // Inert as a period control (editing never re-finishes, #8), but
+            // tappable to correct opponent totals after the game ends (#23).
+            Button {
+                showOpponentTotals = true
+            } label: {
+                HStack(spacing: 10) {
+                    dividerLine
+                    Label("Final · Edit opponent totals", systemImage: "flag.checkered")
+                        .font(.subheadline).bold()
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                    dividerLine
+                }
             }
+            .buttonStyle(.plain)
         } else {
             Button {
                 showEndPeriod = true
@@ -381,6 +394,67 @@ private struct PlayerCard: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Opponent totals editor (post-game correction, #23)
+
+/// Edits the opponent's cumulative running total per recorded period. Reached
+/// from the "Final" divider when re-editing a finished game — the single place
+/// opponent scores are corrected now that the Summary is read-only.
+struct OpponentTotalsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var game: Game
+    var persist: () -> Void
+
+    private var recordedPeriods: [Int] {
+        game.periodEndScores.keys.sorted()
+    }
+
+    private func opponentBinding(for period: Int) -> Binding<Int> {
+        Binding(
+            get: { game.periodEndScores[period]?.opponentRunningTotal ?? 0 },
+            set: { newValue in
+                if var score = game.periodEndScores[period] {
+                    score.opponentRunningTotal = newValue
+                    game.periodEndScores[period] = score
+                    persist()
+                }
+            }
+        )
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    ForEach(recordedPeriods, id: \.self) { period in
+                        HStack {
+                            Text(game.periodFormat.periodLabel(period))
+                                .font(.subheadline).bold()
+                                .frame(width: 44, alignment: .leading)
+                            Text("Opponent running total")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            TextField("0", value: opponentBinding(for: period), format: .number)
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 70)
+                        }
+                    }
+                } footer: {
+                    Text("Cumulative opponent score at the end of each period (their scoreboard total, not just that period's points).")
+                }
+            }
+            .navigationTitle("Opponent Totals")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
     }
 }
 

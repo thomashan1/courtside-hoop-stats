@@ -1,11 +1,18 @@
 import SwiftUI
 
-/// A grouped, editable event log. Events are grouped under period (quarter/half)
-/// separators, newest period first. Tapping any event opens an editor to change
-/// the player/action or delete it. Used in both Live Scoring and Game Summary.
+/// A grouped event log. Events are grouped under period (quarter/half)
+/// separators, newest period first.
+///
+/// - In **editable** mode (Live Scoring and the Edit-Scores view) tapping an
+///   event opens an editor and a left-swipe deletes it.
+/// - In **read-only** mode (the Game Summary) rows are display-only — the
+///   Summary is a box score; all mutation happens behind its "Edit Scores"
+///   button (#23).
 struct EventLogView: View {
     @Binding var game: Game
     let players: [Player]
+    /// When false the log is display-only (no tap-to-edit, no swipe-to-delete).
+    var isEditable: Bool = true
     /// Called after any edit/delete so the caller can persist the game.
     var persist: () -> Void
 
@@ -57,16 +64,18 @@ struct EventLogView: View {
             }
 
             ForEach(eventsNewestFirst(in: period)) { event in
-                SwipeToDelete(onDelete: { delete(event) }) {
-                    Button {
-                        editingEvent = event
-                    } label: {
-                        EventLogRow(event: event,
-                                    player: player(for: event.playerID),
-                                    format: game.periodFormat,
-                                    runningTotal: cumulativeTotals[event.id] ?? 0)
+                let row = EventLogRow(event: event,
+                                      player: player(for: event.playerID),
+                                      format: game.periodFormat,
+                                      runningTotal: cumulativeTotals[event.id] ?? 0,
+                                      showsChevron: isEditable)
+                if isEditable {
+                    SwipeToDelete(onDelete: { delete(event) }) {
+                        Button { editingEvent = event } label: { row }
+                            .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                } else {
+                    row
                 }
             }
         }
@@ -122,6 +131,8 @@ struct EventLogRow: View {
     let format: PeriodFormat
     /// Cumulative team points through this event.
     let runningTotal: Int
+    /// Whether to show the trailing chevron (hidden in read-only mode).
+    var showsChevron: Bool = true
 
     var body: some View {
         HStack(spacing: 10) {
@@ -145,9 +156,11 @@ struct EventLogRow: View {
             }
             .monospacedDigit()
 
-            Image(systemName: "chevron.right")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)

@@ -100,31 +100,13 @@ struct GameSummaryView: View {
             .background(Capsule().fill(color))
     }
 
-    // MARK: - Period-by-period grid (opponent totals editable)
+    // MARK: - Period-by-period grid (read-only)
 
     private var periodSection: some View {
         Section("By Period") {
             // Shared read-only grid (#8) — same component used in Live Scoring.
+            // Editing opponent totals lives behind "Edit Scores" now (#23).
             PeriodBreakdownGrid(game: game, ourName: store.team.name)
-
-            // Editable opponent running totals (fat-finger recovery).
-            DisclosureGroup("Edit opponent totals") {
-                ForEach(recordedPeriods, id: \.self) { period in
-                    HStack {
-                        Text(game.periodFormat.periodLabel(period))
-                            .font(.subheadline)
-                            .frame(width: 44, alignment: .leading)
-                        Text("Opponent total")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        TextField("0", value: opponentBinding(for: period), format: .number)
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 70)
-                    }
-                }
-            }
         }
     }
 
@@ -138,11 +120,11 @@ struct GameSummaryView: View {
         }
     }
 
-    // MARK: - Event log (editable)
+    // MARK: - Event log (read-only — edit via "Edit Scores", #23)
 
     private var eventLogSection: some View {
         Section("Score Log") {
-            EventLogView(game: $game, players: store.team.players) {
+            EventLogView(game: $game, players: store.team.players, isEditable: false) {
                 store.updateGame(game)
             }
         }
@@ -174,23 +156,6 @@ struct GameSummaryView: View {
     }
 
     // MARK: - Helpers
-
-    private var recordedPeriods: [Int] {
-        game.periodEndScores.keys.sorted()
-    }
-
-    private func opponentBinding(for period: Int) -> Binding<Int> {
-        Binding(
-            get: { game.periodEndScores[period]?.opponentRunningTotal ?? 0 },
-            set: { newValue in
-                if var score = game.periodEndScores[period] {
-                    score.opponentRunningTotal = newValue
-                    game.periodEndScores[period] = score
-                    persist()
-                }
-            }
-        )
-    }
 
     private func loadGameIfNeeded() {
         if game.id != gameID, let loaded = store.game(id: gameID) {
