@@ -59,10 +59,25 @@ final class ScreenshotUITests: XCTestCase {
         // The live scoring screen always shows the Score Log header.
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         snap(app, "03-live-scoring")
+        // Pop back to the Games list so the stack is clean for later steps.
+        app.navigationBars["vs Northgate Falcons"].buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 10))
 
         // 4) Roster tab.
         app.tabBars.buttons["Roster"].tap()
         XCTAssertTrue(app.navigationBars["Roster"].waitForExistence(timeout: 10))
         snap(app, "04-roster")
+
+        // 5) New Game sheet → Location autocomplete (#13). Type a fragment of a
+        // previously-used gym; the prior-value suggestion is deterministic (live
+        // MapKit results may also appear but aren't asserted on).
+        app.tabBars.buttons["Games"].tap()
+        app.navigationBars["Games"].buttons.element(boundBy: 0).tap() // "+"
+        let location = app.textFields["Location / Gym"]
+        XCTAssertTrue(location.waitForExistence(timeout: 10))
+        location.tap()
+        location.typeText("Riverside")
+        XCTAssertTrue(app.buttons["Riverside Community Gym"].waitForExistence(timeout: 10))
+        snap(app, "06-location-autocomplete")
     }
 }

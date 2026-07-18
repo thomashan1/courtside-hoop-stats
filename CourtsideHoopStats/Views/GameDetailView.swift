@@ -127,8 +127,8 @@ struct EditGameSheet: View {
                 Section("Details") {
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
-                    SuggestingTextField(title: "Location / Gym",
-                                        text: $location, suggestions: store.knownLocations)
+                    LocationField(title: "Location / Gym",
+                                  text: $location, priorValues: store.knownLocations)
                     Picker("Format", selection: $periodFormat) {
                         ForEach(PeriodFormat.allCases, id: \.self) { format in
                             Text(format.displayName).tag(format)
