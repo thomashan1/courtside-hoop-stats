@@ -304,6 +304,26 @@ struct ModelsTests {
         #expect(result.periodEndScores[2]?.opponentRunningTotal == 15)
     }
 
+    // MARK: - Roster sorting (#27)
+
+    @Test func sortPlayersByNumberIsNumericNotLexical() {
+        let store = AppStore()
+        let team = Team(name: "T", players: [
+            player("Cara", "10"),
+            player("Ana", "2"),
+            player("Bea", "4"),
+            player("Zed", "GK"),   // non-numeric sorts last
+        ])
+        store.teams = [team]
+        store.activeTeamID = team.id
+
+        store.sortPlayers(by: .number)
+        #expect(store.team.players.map(\.number) == ["2", "4", "10", "GK"])
+
+        store.sortPlayers(by: .name)
+        #expect(store.team.players.map(\.name) == ["Ana", "Bea", "Cara", "Zed"])
+    }
+
     // MARK: - Multi-team persistence (#20)
 
     @Test func teamsStateRoundTrips() throws {

@@ -1,6 +1,11 @@
 import Foundation
 import Combine
 
+/// How the roster can be sorted (#27).
+enum PlayerSort {
+    case name, number
+}
+
 /// The persisted multi-team container (new-format blob, #20).
 struct TeamsState: Codable {
     var teams: [Team]
@@ -160,8 +165,28 @@ final class AppStore: ObservableObject {
         team.players.remove(atOffsets: offsets)
     }
 
-    func movePlayers(from source: IndexSet, to destination: Int) {
-        team.players.move(fromOffsets: source, toOffset: destination)
+    func deletePlayer(_ id: UUID) {
+        team.players.removeAll { $0.id == id }
+    }
+
+    /// Sort the active team's roster in place (persisted, so it applies to the
+    /// live-scoring grid too). Replaces manual drag-reorder (#27).
+    func sortPlayers(by sort: PlayerSort) {
+        switch sort {
+        case .name:
+            team.players.sort {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
+        case .number:
+            // Numeric where possible ("2" before "10"); non-numeric go last,
+            // ties broken by name.
+            team.players.sort { a, b in
+                let na = Int(a.number) ?? Int.max
+                let nb = Int(b.number) ?? Int.max
+                if na != nb { return na < nb }
+                return a.name.localizedCaseInsensitiveCompare(b.name) == .orderedAscending
+            }
+        }
     }
 
     // MARK: - Games
