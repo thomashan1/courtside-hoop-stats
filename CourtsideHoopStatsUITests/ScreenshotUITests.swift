@@ -42,6 +42,14 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
         snap(app, "02-game-summary")
 
+        // 2b) Edit a finished game in the scoring view (#8): the Summary's
+        // "Edit Scores" button opens the same two-tap Live Scoring UI.
+        app.buttons["Edit Scores"].tap()
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10))
+        snap(app, "05-edit-finished-game")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+
         // Back to the list.
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
