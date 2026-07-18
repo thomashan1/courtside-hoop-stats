@@ -9,6 +9,19 @@ struct RosterView: View {
         NavigationStack {
             List {
                 Section("Team") {
+                    // Only surfaces when there's more than one team, so the
+                    // common single-team case stays as simple as before (#20).
+                    if store.teams.count > 1 {
+                        Picker("Active team", selection: Binding(
+                            get: { store.activeTeamID },
+                            set: { store.setActiveTeam($0) }
+                        )) {
+                            ForEach(store.teams) { team in
+                                Text(team.name).tag(team.id)
+                            }
+                        }
+                    }
+
                     TextField("Team name", text: Binding(
                         get: { store.team.name },
                         set: { store.renameTeam($0) }

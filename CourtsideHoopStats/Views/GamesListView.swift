@@ -14,19 +14,19 @@ struct GamesListView: View {
     /// Set by the New Game sheet's "Start Now" so we can navigate once it dismisses.
     @State private var pendingStartID: UUID?
 
-    /// Pre-entered games not yet started, soonest first.
+    /// Pre-entered games not yet started, soonest first (active team only).
     private var scheduled: [Game] {
-        store.games.filter { $0.lifecycle == .scheduled }.sorted { $0.date < $1.date }
+        store.activeTeamGames.filter { $0.lifecycle == .scheduled }.sorted { $0.date < $1.date }
     }
-    /// In-progress and completed games, most recent first.
+    /// In-progress and completed games, most recent first (active team only).
     private var played: [Game] {
-        store.games.filter { $0.lifecycle != .scheduled }.sorted { $0.date > $1.date }
+        store.activeTeamGames.filter { $0.lifecycle != .scheduled }.sorted { $0.date > $1.date }
     }
 
     var body: some View {
         NavigationStack(path: $path) {
             List {
-                if store.games.isEmpty {
+                if store.activeTeamGames.isEmpty {
                     ContentUnavailableView {
                         Label("No Games Yet", systemImage: "basketball")
                     } description: {

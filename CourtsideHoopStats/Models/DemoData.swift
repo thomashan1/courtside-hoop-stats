@@ -24,6 +24,21 @@ enum DemoData {
         )
     }
 
+    /// A second team, so multi-team UI (Settings, the Roster switcher) has
+    /// something to show in screenshots (#20).
+    static func makeSecondTeam() -> Team {
+        Team(
+            name: "Eastside Eagles",
+            players: [
+                Player(name: "Nora Diaz", number: "3"),
+                Player(name: "Priya Shah", number: "8"),
+                Player(name: "Ruby Tan", number: "11"),
+                Player(name: "Isla Moore", number: "24"),
+            ],
+            homeJersey: .blue
+        )
+    }
+
     /// A fixed reference date so screenshots are reproducible.
     private static let refDate = Date(timeIntervalSince1970: 1_752_000_000) // 2025-07-08
 

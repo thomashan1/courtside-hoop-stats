@@ -75,6 +75,11 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Roster"].waitForExistence(timeout: 10))
         snap(app, "04-roster")
 
+        // 4b) Settings → team management (#20).
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["Teams"].waitForExistence(timeout: 10))
+        snap(app, "08-settings-teams")
+
         // 5) New Game sheet → Location autocomplete (#13). Type a fragment of a
         // previously-used gym; the prior-value suggestion is deterministic (live
         // MapKit results may also appear but aren't asserted on).
