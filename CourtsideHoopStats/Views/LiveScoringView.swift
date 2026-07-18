@@ -18,6 +18,9 @@ struct LiveScoringView: View {
     @State private var game: Game
     @State private var selectedPlayerID: UUID?
     @State private var showEndPeriod = false
+    /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
+    /// default so it never gets in the way of fast two-tap entry.
+    @State private var showStats = false
     /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
     /// new event is recorded.
     @State private var redoStack: [GameEvent] = []
@@ -52,6 +55,9 @@ struct LiveScoringView: View {
                 playerGrid
                     .padding()
                 eventLog
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                statsPanel
                     .padding(.horizontal)
                     .padding(.bottom, 8)
             }
@@ -118,28 +124,67 @@ struct LiveScoringView: View {
 
     /// The current quarter/half boundary, shown at the top of the Score Log.
     /// Tapping it records the opponent's total and advances (or finishes).
+    /// When re-editing a finished game the divider is inert ("Final") so editing
+    /// events never forces a re-finish and `isComplete` is preserved (#8).
+    @ViewBuilder
     private var endPeriodDivider: some View {
         let label = game.periodFormat.periodLabel(game.currentPeriod)
-        return Button {
-            showEndPeriod = true
-        } label: {
+        if game.isComplete {
             HStack(spacing: 10) {
                 dividerLine
-                Label(game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)",
-                      systemImage: "flag.checkered")
+                Label("Final", systemImage: "flag.checkered")
                     .font(.subheadline).bold()
-                    .foregroundStyle(Color.teamAccent)
+                    .foregroundStyle(.secondary)
                     .fixedSize()
                 dividerLine
             }
+        } else {
+            Button {
+                showEndPeriod = true
+            } label: {
+                HStack(spacing: 10) {
+                    dividerLine
+                    Label(game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)",
+                          systemImage: "flag.checkered")
+                        .font(.subheadline).bold()
+                        .foregroundStyle(Color.teamAccent)
+                        .fixedSize()
+                    dividerLine
+                }
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
     }
 
     private var dividerLine: some View {
         Rectangle()
             .fill(Color.teamAccent.opacity(0.35))
             .frame(height: 1)
+    }
+
+    // MARK: - Stats & periods panel (at-a-glance, collapsible — #8)
+
+    /// The player-stats table and by-period grid from the Summary, surfaced here
+    /// via shared components so you can review them while scoring or editing.
+    /// Collapsed by default to keep two-tap entry unobstructed.
+    private var statsPanel: some View {
+        DisclosureGroup(isExpanded: $showStats) {
+            VStack(alignment: .leading, spacing: 18) {
+                if !game.periodBreakdown().isEmpty {
+                    PeriodBreakdownGrid(game: game, ourName: store.team.name)
+                }
+                PlayerStatsTable(stats: game.stats(for: store.team.players))
+            }
+            .padding(.top, 12)
+        } label: {
+            Label("Player Stats & Periods", systemImage: "chart.bar.xaxis")
+                .font(.headline)
+                .foregroundStyle(.primary)
+        }
+        .tint(.teamAccent)
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color(.secondarySystemGroupedBackground)))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Action bar (floating Liquid Glass chrome, pinned to bottom)

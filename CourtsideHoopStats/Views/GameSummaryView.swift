@@ -7,6 +7,8 @@ struct GameSummaryView: View {
 
     let gameID: UUID
     @State private var game: Game
+    /// Presents the full scoring view to edit a finished game's events (#8).
+    @State private var isEditingScores = false
 
     /// Final-score digits scale with Dynamic Type (capped so they can't overflow
     /// the row), matching the live scoreboard's behavior (issue #12).
@@ -28,7 +30,29 @@ struct GameSummaryView: View {
         }
         .navigationTitle("vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isEditingScores = true
+                } label: {
+                    Label("Edit Scores", systemImage: "square.and.pencil")
+                }
+            }
+        }
         .onAppear(perform: loadGameIfNeeded)
+        // Re-open the same two-tap scoring screen so editing a finished game
+        // "looks the same" as entering it live (#8). Reload on dismiss so the
+        // summary reflects any edits.
+        .fullScreenCover(isPresented: $isEditingScores, onDismiss: reloadGame) {
+            NavigationStack {
+                LiveScoringView(gameID: gameID)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isEditingScores = false }
+                        }
+                    }
+            }
+        }
     }
 
     // MARK: - Final score
@@ -80,26 +104,8 @@ struct GameSummaryView: View {
 
     private var periodSection: some View {
         Section("By Period") {
-            HStack {
-                Text("").frame(width: 44, alignment: .leading)
-                Text(store.team.name).font(.caption).bold().frame(maxWidth: .infinity)
-                Text(game.opponent).font(.caption).bold().frame(maxWidth: .infinity)
-            }
-            .foregroundStyle(.secondary)
-
-            ForEach(game.periodBreakdown(), id: \.period) { row in
-                HStack {
-                    Text(game.periodFormat.periodLabel(row.period))
-                        .font(.subheadline).bold()
-                        .frame(width: 44, alignment: .leading)
-                    Text("\(row.our)")
-                        .monospacedDigit()
-                        .frame(maxWidth: .infinity)
-                    Text("\(row.opponent)")
-                        .monospacedDigit()
-                        .frame(maxWidth: .infinity)
-                }
-            }
+            // Shared read-only grid (#8) — same component used in Live Scoring.
+            PeriodBreakdownGrid(game: game, ourName: store.team.name)
 
             // Editable opponent running totals (fat-finger recovery).
             DisclosureGroup("Edit opponent totals") {
@@ -126,40 +132,9 @@ struct GameSummaryView: View {
 
     private var statsSection: some View {
         Section("Player Stats") {
-            // Horizontally scrollable table (issue #12): at large Dynamic Type
-            // the columns grow and the table scrolls sideways instead of
-            // clipping the numbers or squeezing the player name. `Grid` keeps
-            // the header and rows column-aligned.
-            ScrollView(.horizontal, showsIndicators: false) {
-                Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 10) {
-                    GridRow {
-                        Text("Player").frame(minWidth: 120, alignment: .leading)
-                        Text("PTS")
-                        Text("2P")
-                        Text("3P")
-                        Text("FT")
-                    }
-                    .font(.caption).bold()
-                    .foregroundStyle(.secondary)
-
-                    ForEach(game.stats(for: store.team.players)) { stat in
-                        GridRow {
-                            HStack(spacing: 8) {
-                                JerseyBadge(number: stat.player.number, size: 26)
-                                Text(stat.player.name).lineLimit(1)
-                            }
-                            .frame(minWidth: 120, alignment: .leading)
-                            Text("\(stat.points)").bold()
-                            Text("\(stat.twoPointers)")
-                            Text("\(stat.threePointers)")
-                            Text(stat.freeThrowDisplay)
-                        }
-                        .font(.subheadline)
-                        .monospacedDigit()
-                    }
-                }
-                .padding(.vertical, 2)
-            }
+            // Shared table (#8) — the same component used in Live Scoring.
+            // It's the horizontally-scrollable Grid version that also fixes #12.
+            PlayerStatsTable(stats: game.stats(for: store.team.players))
         }
     }
 
@@ -219,6 +194,14 @@ struct GameSummaryView: View {
 
     private func loadGameIfNeeded() {
         if game.id != gameID, let loaded = store.game(id: gameID) {
+            game = loaded
+        }
+    }
+
+    /// Reload from the store after the edit sheet closes so score edits made in
+    /// the scoring view are reflected here (#8).
+    private func reloadGame() {
+        if let loaded = store.game(id: gameID) {
             game = loaded
         }
     }
