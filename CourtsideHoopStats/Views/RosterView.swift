@@ -8,22 +8,8 @@ struct RosterView: View {
     var body: some View {
         NavigationStack {
             List {
-                // Team name + jersey are edited in Settings now (#27-followup);
-                // Roster is players-only. A switcher appears only when there's
-                // more than one team, so the single-team case stays clean.
-                if store.teams.count > 1 {
-                    Section("Team") {
-                        Picker("Active team", selection: Binding(
-                            get: { store.activeTeamID },
-                            set: { store.setActiveTeam($0) }
-                        )) {
-                            ForEach(store.teams) { team in
-                                Text(team.name).tag(team.id)
-                            }
-                        }
-                    }
-                }
-
+                // Roster is players-only. Team name/jersey and switching the
+                // active team all live in Settings now.
                 Section("Players") {
                     if store.team.players.isEmpty {
                         Text("No players yet. Tap ✚ to add your roster.")

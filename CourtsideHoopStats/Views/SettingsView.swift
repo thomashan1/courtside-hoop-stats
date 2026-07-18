@@ -6,6 +6,7 @@ struct SettingsView: View {
 
     @State private var showAddTeam = false
     @State private var newTeamName = ""
+    @State private var editingTeam: TeamRef?
 
     var body: some View {
         NavigationStack {
@@ -54,6 +55,9 @@ struct SettingsView: View {
             } message: {
                 Text("Create another team to track separately. It becomes the active team.")
             }
+            .sheet(item: $editingTeam) { ref in
+                NavigationStack { TeamDetailView(teamID: ref.id) }
+            }
         }
     }
 
@@ -62,19 +66,27 @@ struct SettingsView: View {
     private var teamsSection: some View {
         Section {
             ForEach(store.teams) { team in
-                NavigationLink {
-                    TeamDetailView(teamID: team.id)
-                } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: team.id == store.activeTeamID ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(team.id == store.activeTeamID ? Color.teamAccent : .secondary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(team.name).foregroundStyle(.primary)
-                            Text("^[\(team.players.count) player](inflect: true)")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
+                HStack(spacing: 12) {
+                    Image(systemName: team.id == store.activeTeamID ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(team.id == store.activeTeamID ? Color.teamAccent : .secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(team.name).foregroundStyle(.primary)
+                        Text("^[\(team.players.count) player](inflect: true)")
+                            .font(.caption).foregroundStyle(.secondary)
                     }
+                    Spacer()
+                    // Edit name / jersey / delete — separate from selecting active.
+                    Button {
+                        editingTeam = TeamRef(id: team.id)
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .foregroundStyle(Color.teamAccent)
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Edit \(team.name)")
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { store.setActiveTeam(team.id) }   // tap = make active
                 .swipeActions(edge: .trailing) {
                     if store.teams.count > 1 {
                         Button(role: .destructive) {
@@ -93,10 +105,13 @@ struct SettingsView: View {
         } header: {
             Text("Teams")
         } footer: {
-            Text("Tap a team to edit its name, jersey, or make it active. The active team (checkmark) is what Roster and the Games list show.")
+            Text("Tap a team to make it active (checkmark) — Roster and the Games list follow it. Tap ⓘ to edit its name, jersey, or delete it.")
         }
     }
 }
+
+/// Identifiable wrapper so a team id can drive a `.sheet(item:)`.
+private struct TeamRef: Identifiable { let id: UUID }
 
 // MARK: - Team detail (all team editing lives here, #27-followup)
 
@@ -136,18 +151,6 @@ struct TeamDetailView: View {
                     Text("Away games use the other jersey — \((team.homeJersey ?? .white).opposite.label).")
                 }
 
-                if store.activeTeamID != teamID {
-                    Section {
-                        Button {
-                            store.setActiveTeam(teamID)
-                        } label: {
-                            Label("Make Active Team", systemImage: "checkmark.circle")
-                        }
-                    } footer: {
-                        Text("Roster and the Games list show the active team.")
-                    }
-                }
-
                 if store.teams.count > 1 {
                     Section {
                         Button(role: .destructive) {
@@ -165,6 +168,11 @@ struct TeamDetailView: View {
         }
         .navigationTitle(team?.name ?? "Team")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
     }
 }
 
