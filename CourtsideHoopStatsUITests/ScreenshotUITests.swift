@@ -1,0 +1,60 @@
+import XCTest
+
+/// Drives the app through its main screens with deterministic demo data
+/// (`-uiTestSeedDemo`) and captures full-screen screenshots. These serve three
+/// purposes: merge-gate visual verification, README imagery, and App Store
+/// listing screenshots.
+///
+/// Run: `xcodebuild test -scheme CourtsideHoopStats \
+///   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+///   -only-testing:CourtsideHoopStatsUITests`
+/// then extract attachments from the .xcresult (see docs/SCREENSHOTS.md).
+final class ScreenshotUITests: XCTestCase {
+    override func setUp() {
+        continueAfterFailure = false
+    }
+
+    private func launchSeeded() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeedDemo"]
+        app.launch()
+        return app
+    }
+
+    /// Save a full-device screenshot as a kept attachment.
+    private func snap(_ app: XCUIApplication, _ name: String) {
+        let shot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: shot)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func testCaptureScreens() {
+        let app = launchSeeded()
+
+        // 1) Games list — upcoming + played sections.
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+        snap(app, "01-games-list")
+
+        // 2) Finished game → Summary (final score, period grid, player stats).
+        app.staticTexts["vs Lakeside Lightning"].tap()
+        XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+        snap(app, "02-game-summary")
+
+        // Back to the list.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+
+        // 3) In-progress game → Live Scoring.
+        XCTAssertTrue(app.staticTexts["vs Northgate Falcons"].waitForExistence(timeout: 10))
+        app.staticTexts["vs Northgate Falcons"].tap()
+        // The live scoring screen always shows the Score Log header.
+        XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
+        snap(app, "03-live-scoring")
+
+        // 4) Roster tab.
+        app.tabBars.buttons["Roster"].tap()
+        XCTAssertTrue(app.navigationBars["Roster"].waitForExistence(timeout: 10))
+        snap(app, "04-roster")
+    }
+}
