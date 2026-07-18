@@ -6,21 +6,47 @@
 	objectVersion = 70;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		EA11EA11EA11EA11EA11EA11 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB02AB02AB02AB02AB02AB02;
+			remoteInfo = CourtsideHoopStats;
+		};
+		FA11FA11FA11FA11FA11FA11 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB02AB02AB02AB02AB02AB02;
+			remoteInfo = CourtsideHoopStats;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CourtsideHoopStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CourtsideHoopStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC02DC02DC02DC02DC02DC02 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		DC03DC03DC03DC03DC03DC03 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		EA03EA03EA03EA03EA03EA03 /* CourtsideHoopStatsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CourtsideHoopStatsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CourtsideHoopStatsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStats; sourceTree = "<group>"; };
 		DC01DC01DC01DC01DC01DC01 /* docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = docs; sourceTree = "<group>"; };
+		EA09EA09EA09EA09EA09EA09 /* CourtsideHoopStatsUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStatsUITests; sourceTree = "<group>"; };
 		FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStatsTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AB05AB05AB05AB05AB05AB05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA05EA05EA05EA05EA05EA05 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -45,6 +71,7 @@
 				DC01DC01DC01DC01DC01DC01 /* docs */,
 				AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */,
 				FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */,
+				EA09EA09EA09EA09EA09EA09 /* CourtsideHoopStatsUITests */,
 				AB08AB08AB08AB08AB08AB08 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +81,7 @@
 			children = (
 				AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */,
 				FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */,
+				EA03EA03EA03EA03EA03EA03 /* CourtsideHoopStatsUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -82,6 +110,29 @@
 			productName = CourtsideHoopStats;
 			productReference = AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */;
 			productType = "com.apple.product-type.application";
+		};
+		EA02EA02EA02EA02EA02EA02 /* CourtsideHoopStatsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EA0BEA0BEA0BEA0BEA0BEA0B /* Build configuration list for PBXNativeTarget "CourtsideHoopStatsUITests" */;
+			buildPhases = (
+				EA04EA04EA04EA04EA04EA04 /* Sources */,
+				EA05EA05EA05EA05EA05EA05 /* Frameworks */,
+				EA06EA06EA06EA06EA06EA06 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EA10EA10EA10EA10EA10EA10 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				EA09EA09EA09EA09EA09EA09 /* CourtsideHoopStatsUITests */,
+			);
+			name = CourtsideHoopStatsUITests;
+			packageProductDependencies = (
+			);
+			productName = CourtsideHoopStatsUITests;
+			productReference = EA03EA03EA03EA03EA03EA03 /* CourtsideHoopStatsUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 		FA02FA02FA02FA02FA02FA02 /* CourtsideHoopStatsTests */ = {
 			isa = PBXNativeTarget;
@@ -119,6 +170,10 @@
 					AB02AB02AB02AB02AB02AB02 = {
 						CreatedOnToolsVersion = 16.0;
 					};
+					EA02EA02EA02EA02EA02EA02 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AB02AB02AB02AB02AB02AB02;
+					};
 					FA02FA02FA02FA02FA02FA02 = {
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = AB02AB02AB02AB02AB02AB02;
@@ -141,12 +196,20 @@
 			targets = (
 				AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */,
 				FA02FA02FA02FA02FA02FA02 /* CourtsideHoopStatsTests */,
+				EA02EA02EA02EA02EA02EA02 /* CourtsideHoopStatsUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AB06AB06AB06AB06AB06AB06 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EA06EA06EA06EA06EA06EA06 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -170,6 +233,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EA04EA04EA04EA04EA04EA04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FA04FA04FA04FA04FA04FA04 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -180,22 +250,17 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		EA10EA10EA10EA10EA10EA10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */;
+			targetProxy = EA11EA11EA11EA11EA11EA11 /* PBXContainerItemProxy */;
+		};
 		FA10FA10FA10FA10FA10FA10 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */;
 			targetProxy = FA11FA11FA11FA11FA11FA11 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXContainerItemProxy section */
-		FA11FA11FA11FA11FA11FA11 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AB02AB02AB02AB02AB02AB02;
-			remoteInfo = CourtsideHoopStats;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin XCBuildConfiguration section */
 		AB0CAB0CAB0CAB0CAB0CAB0C /* Debug */ = {
@@ -379,6 +444,42 @@
 			};
 			name = Release;
 		};
+		EA0EEA0EEA0EEA0EEA0EEA0E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStatsUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CourtsideHoopStats;
+			};
+			name = Debug;
+		};
+		EA0FEA0FEA0FEA0FEA0FEA0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStatsUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CourtsideHoopStats;
+			};
+			name = Release;
+		};
 		FA0EFA0EFA0EFA0EFA0EFA0E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -434,6 +535,15 @@
 			buildConfigurations = (
 				AB0EAB0EAB0EAB0EAB0EAB0E /* Debug */,
 				AB0FAB0FAB0FAB0FAB0FAB0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		EA0BEA0BEA0BEA0BEA0BEA0B /* Build configuration list for PBXNativeTarget "CourtsideHoopStatsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EA0EEA0EEA0EEA0EEA0EEA0E /* Debug */,
+				EA0FEA0FEA0FEA0FEA0FEA0F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

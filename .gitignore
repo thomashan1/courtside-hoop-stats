@@ -43,3 +43,6 @@ fastlane/screenshots/**/*.png
 
 # Claude
 .claude/
+
+# Generated app screenshots (regenerate via scripts/screenshots.sh)
+screenshots/

@@ -17,7 +17,23 @@ final class AppStore: ObservableObject {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
+    /// When true, mutations are not persisted. Set for UI-test screenshot runs
+    /// so seeded demo content never overwrites real data.
+    private let ephemeral: Bool
+
     init() {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
+            let demoTeam = DemoData.makeTeam()
+            team = demoTeam
+            games = DemoData.makeGames(team: demoTeam)
+            textSizeIndex = 0
+            ephemeral = true
+            return
+        }
+        #endif
+        ephemeral = false
+
         // `didSet` does not fire for values assigned inside init, so this
         // initial load does not trigger a redundant save.
         if let data = UserDefaults.standard.data(forKey: teamKey),
@@ -39,6 +55,7 @@ final class AppStore: ObservableObject {
     }
 
     private func save() {
+        if ephemeral { return }
         if let data = try? encoder.encode(team) {
             UserDefaults.standard.set(data, forKey: teamKey)
         }

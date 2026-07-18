@@ -38,6 +38,16 @@
                ReferencedContainer = "container:CourtsideHoopStats.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "EA02EA02EA02EA02EA02EA02"
+               BuildableName = "CourtsideHoopStatsUITests.xctest"
+               BlueprintName = "CourtsideHoopStatsUITests"
+               ReferencedContainer = "container:CourtsideHoopStats.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
