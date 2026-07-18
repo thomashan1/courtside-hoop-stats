@@ -8,10 +8,11 @@ struct RosterView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Team") {
-                    // Only surfaces when there's more than one team, so the
-                    // common single-team case stays as simple as before (#20).
-                    if store.teams.count > 1 {
+                // Team name + jersey are edited in Settings now (#27-followup);
+                // Roster is players-only. A switcher appears only when there's
+                // more than one team, so the single-team case stays clean.
+                if store.teams.count > 1 {
+                    Section("Team") {
                         Picker("Active team", selection: Binding(
                             get: { store.activeTeamID },
                             set: { store.setActiveTeam($0) }
@@ -21,25 +22,6 @@ struct RosterView: View {
                             }
                         }
                     }
-
-                    TextField("Team name", text: Binding(
-                        get: { store.team.name },
-                        set: { store.renameTeam($0) }
-                    ))
-                    .textInputAutocapitalization(.words)
-                }
-
-                Section {
-                    Picker("Home jersey", selection: homeJerseyBinding) {
-                        ForEach(JerseyColor.allCases) { color in
-                            Text(color.label).tag(color)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                } header: {
-                    Text("Home Jersey")
-                } footer: {
-                    Text("Away games use the other jersey — \(homeJerseyBinding.wrappedValue.opposite.label).")
                 }
 
                 Section("Players") {
@@ -93,13 +75,6 @@ struct RosterView: View {
                 PlayerEditSheet(player: player)
             }
         }
-    }
-
-    private var homeJerseyBinding: Binding<JerseyColor> {
-        Binding(
-            get: { store.team.homeJersey ?? .white },
-            set: { store.team.homeJersey = $0 }
-        )
     }
 }
 

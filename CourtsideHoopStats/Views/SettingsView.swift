@@ -6,8 +6,6 @@ struct SettingsView: View {
 
     @State private var showAddTeam = false
     @State private var newTeamName = ""
-    @State private var renamingTeam: Team?
-    @State private var renameText = ""
 
     var body: some View {
         NavigationStack {
@@ -56,14 +54,6 @@ struct SettingsView: View {
             } message: {
                 Text("Create another team to track separately. It becomes the active team.")
             }
-            .alert("Rename Team", isPresented: renameAlertPresented) {
-                TextField("Team name", text: $renameText)
-                Button("Cancel", role: .cancel) { renamingTeam = nil }
-                Button("Save") {
-                    if let team = renamingTeam { store.renameTeam(id: team.id, to: renameText) }
-                    renamingTeam = nil
-                }
-            }
         }
     }
 
@@ -72,8 +62,8 @@ struct SettingsView: View {
     private var teamsSection: some View {
         Section {
             ForEach(store.teams) { team in
-                Button {
-                    store.setActiveTeam(team.id)
+                NavigationLink {
+                    TeamDetailView(teamID: team.id)
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: team.id == store.activeTeamID ? "checkmark.circle.fill" : "circle")
@@ -83,7 +73,6 @@ struct SettingsView: View {
                             Text("^[\(team.players.count) player](inflect: true)")
                                 .font(.caption).foregroundStyle(.secondary)
                         }
-                        Spacer()
                     }
                 }
                 .swipeActions(edge: .trailing) {
@@ -92,11 +81,6 @@ struct SettingsView: View {
                             store.deleteTeam(team.id)
                         } label: { Label("Delete", systemImage: "trash") }
                     }
-                    Button {
-                        renamingTeam = team
-                        renameText = team.name
-                    } label: { Label("Rename", systemImage: "pencil") }
-                    .tint(.blue)
                 }
             }
 
@@ -109,12 +93,78 @@ struct SettingsView: View {
         } header: {
             Text("Teams")
         } footer: {
-            Text("The active team (checkmark) is what Roster and the Games list show. Deleting a team also deletes its games.")
+            Text("Tap a team to edit its name, jersey, or make it active. The active team (checkmark) is what Roster and the Games list show.")
         }
     }
+}
 
-    private var renameAlertPresented: Binding<Bool> {
-        Binding(get: { renamingTeam != nil }, set: { if !$0 { renamingTeam = nil } })
+// MARK: - Team detail (all team editing lives here, #27-followup)
+
+/// Edit a single team's name and home jersey, make it active, or delete it.
+/// Consolidates every team-level edit into Settings so Roster is players-only.
+struct TeamDetailView: View {
+    @EnvironmentObject var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+    let teamID: UUID
+
+    private var team: Team? { store.teams.first { $0.id == teamID } }
+
+    var body: some View {
+        Form {
+            if let team {
+                Section("Team Name") {
+                    TextField("Team name", text: Binding(
+                        get: { team.name },
+                        set: { var t = team; t.name = $0; store.updateTeam(t) }
+                    ))
+                    .textInputAutocapitalization(.words)
+                }
+
+                Section {
+                    Picker("Home jersey", selection: Binding(
+                        get: { team.homeJersey ?? .white },
+                        set: { var t = team; t.homeJersey = $0; store.updateTeam(t) }
+                    )) {
+                        ForEach(JerseyColor.allCases) { color in
+                            Text(color.label).tag(color)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                } header: {
+                    Text("Home Jersey")
+                } footer: {
+                    Text("Away games use the other jersey — \((team.homeJersey ?? .white).opposite.label).")
+                }
+
+                if store.activeTeamID != teamID {
+                    Section {
+                        Button {
+                            store.setActiveTeam(teamID)
+                        } label: {
+                            Label("Make Active Team", systemImage: "checkmark.circle")
+                        }
+                    } footer: {
+                        Text("Roster and the Games list show the active team.")
+                    }
+                }
+
+                if store.teams.count > 1 {
+                    Section {
+                        Button(role: .destructive) {
+                            store.deleteTeam(teamID)
+                            dismiss()
+                        } label: {
+                            Label("Delete Team", systemImage: "trash")
+                                .foregroundStyle(.red)
+                        }
+                    } footer: {
+                        Text("Deletes this team and all of its games.")
+                    }
+                }
+            }
+        }
+        .navigationTitle(team?.name ?? "Team")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

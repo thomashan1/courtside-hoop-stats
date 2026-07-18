@@ -137,6 +137,13 @@ final class AppStore: ObservableObject {
         if !trimmed.isEmpty { teams[i].name = trimmed }
     }
 
+    /// Replace a team wholesale (used by the Settings team editor for live
+    /// name/jersey edits, #27-followup). No-op if the id isn't found.
+    func updateTeam(_ team: Team) {
+        guard let i = teams.firstIndex(where: { $0.id == team.id }) else { return }
+        teams[i] = team
+    }
+
     /// Delete a team and its games. No-op on the last remaining team so there's
     /// always an active team.
     func deleteTeam(_ id: UUID) {
