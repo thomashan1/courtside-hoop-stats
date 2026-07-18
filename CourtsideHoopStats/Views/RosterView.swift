@@ -64,13 +64,19 @@ struct RosterView: View {
                         }
                     }
                     .onDelete { store.deletePlayers(at: $0) }
-                    .onMove { store.movePlayers(from: $0, to: $1) }
                 }
             }
             .navigationTitle("Roster")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if !store.team.players.isEmpty { EditButton() }
+                    if store.team.players.count > 1 {
+                        Menu {
+                            Button("Name") { store.sortPlayers(by: .name) }
+                            Button("Number") { store.sortPlayers(by: .number) }
+                        } label: {
+                            Label("Sort", systemImage: "arrow.up.arrow.down")
+                        }
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -118,6 +124,19 @@ struct PlayerEditSheet: View {
                     .textInputAutocapitalization(.words)
                 TextField("Jersey number", text: $number)
                     .keyboardType(.numbersAndPunctuation)
+
+                // Delete lives here too, so you don't have to swipe the row.
+                if let player {
+                    Section {
+                        Button(role: .destructive) {
+                            store.deletePlayer(player.id)
+                            dismiss()
+                        } label: {
+                            Label("Delete Player", systemImage: "trash")
+                                .foregroundStyle(.red)
+                        }
+                    }
+                }
             }
             .navigationTitle(player == nil ? "Add Player" : "Edit Player")
             .navigationBarTitleDisplayMode(.inline)
