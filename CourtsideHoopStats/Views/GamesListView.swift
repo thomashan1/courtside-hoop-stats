@@ -55,7 +55,8 @@ struct GamesListView: View {
                     }
                 }
             }
-            .navigationTitle("Games")
+            // Show the active team name (multi-team) — the tab bar labels it "Games".
+            .navigationTitle(store.team.name)
             .confirmationDialog("Delete this game?",
                                 isPresented: Binding(get: { pendingDelete != nil },
                                                      set: { if !$0 { pendingDelete = nil } }),
@@ -78,6 +79,7 @@ struct GamesListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel("New Game")
                     #if DEBUG
                     // Easter egg: long-press to drop in a random finished game
                     // with realistic stats, for exercising the UI.

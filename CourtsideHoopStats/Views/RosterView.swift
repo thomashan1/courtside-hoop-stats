@@ -34,7 +34,8 @@ struct RosterView: View {
                     .onDelete { store.deletePlayers(at: $0) }
                 }
             }
-            .navigationTitle("Roster")
+            // Show the active team name (multi-team) — the tab bar labels it "Roster".
+            .navigationTitle(store.team.name)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if store.team.players.count > 1 {

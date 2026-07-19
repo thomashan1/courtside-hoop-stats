@@ -95,11 +95,12 @@ final class ScreenshotUITests: XCTestCase {
         // Pop back to the Games list so the stack is clean for later steps.
         // (Live Scoring hides the system nav bar; use its custom Back button.)
         app.buttons["Back"].tap()
-        XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 10))
+        // Games/Roster nav titles are the active team name now — assert on content.
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
         // 4) Roster tab.
         app.tabBars.buttons["Roster"].tap()
-        XCTAssertTrue(app.navigationBars["Roster"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Players"].waitForExistence(timeout: 10))
         snap(app, "04-roster")
 
         // 4b) Settings → team management (#20).
@@ -119,7 +120,7 @@ final class ScreenshotUITests: XCTestCase {
         // previously-used gym; the prior-value suggestion is deterministic (live
         // MapKit results may also appear but aren't asserted on).
         app.tabBars.buttons["Games"].tap()
-        app.navigationBars["Games"].buttons.element(boundBy: 0).tap() // "+"
+        app.buttons["New Game"].tap()   // labeled "+" button
         let location = app.textFields["Location / Gym"]
         XCTAssertTrue(location.waitForExistence(timeout: 10))
         location.tap()

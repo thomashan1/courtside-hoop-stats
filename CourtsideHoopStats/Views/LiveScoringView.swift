@@ -36,7 +36,7 @@ struct LiveScoringView: View {
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
-    @ScaledMetric private var cardMinWidth: CGFloat = 82
+    @ScaledMetric private var cardMinWidth: CGFloat = 100
 
     init(gameID: UUID) {
         self.gameID = gameID
@@ -448,19 +448,19 @@ private struct PlayerCard: View {
     }
 
     var body: some View {
-        // Single compact row: jersey bubble + first name. Tap to score.
+        // Single row: bigger jersey bubble (easy to see/tap) + first name.
         Button(action: onTap) {
-            HStack(spacing: 7) {
-                JerseyBadge(number: player.number, size: 26)
+            HStack(spacing: 8) {
+                JerseyBadge(number: player.number, size: 36)
                 Text(player.firstName)
-                    .font(.subheadline).bold()
+                    .font(.headline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(.primary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 7)
-            .padding(.horizontal, 6)
+            .padding(.vertical, 9)
+            .padding(.horizontal, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10))
             )
