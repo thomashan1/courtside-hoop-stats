@@ -13,6 +13,8 @@ struct GamesListView: View {
     @State private var path: [GameRoute] = []
     /// Set by the New Game sheet's "Start Now" so we can navigate once it dismisses.
     @State private var pendingStartID: UUID?
+    /// A played game pending delete-confirmation (it has recorded scores).
+    @State private var pendingDelete: Game?
 
     /// Pre-entered games not yet started, soonest first (active team only).
     private var scheduled: [Game] {
@@ -44,13 +46,30 @@ struct GamesListView: View {
                 if !played.isEmpty {
                     Section {
                         ForEach(played) { row($0) }
-                            .onDelete { delete(played, $0) }
+                            .onDelete { offsets in
+                                // Played games have recorded scores — confirm.
+                                if let i = offsets.first { pendingDelete = played[i] }
+                            }
                     } header: {
                         if !scheduled.isEmpty { Text("Games") }
                     }
                 }
             }
             .navigationTitle("Games")
+            .confirmationDialog("Delete this game?",
+                                isPresented: Binding(get: { pendingDelete != nil },
+                                                     set: { if !$0 { pendingDelete = nil } }),
+                                titleVisibility: .visible) {
+                Button("Delete Game & Scores", role: .destructive) {
+                    if let game = pendingDelete { store.deleteGame(id: game.id) }
+                    pendingDelete = nil
+                }
+                Button("Cancel", role: .cancel) { pendingDelete = nil }
+            } message: {
+                if let game = pendingDelete {
+                    Text("“vs \(game.opponent)” and its recorded scores will be deleted. This can't be undone.")
+                }
+            }
             .navigationDestination(for: GameRoute.self) { destination($0) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

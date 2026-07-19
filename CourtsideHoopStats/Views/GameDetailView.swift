@@ -97,6 +97,9 @@ struct EditGameSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let game: Game
+    /// Whether the period format can be changed. False once a game has started,
+    /// so editing details never rescrambles recorded periods.
+    var allowsFormatChange: Bool = true
     var onSave: (Game) -> Void
 
     @State private var opponent: String
@@ -105,9 +108,11 @@ struct EditGameSheet: View {
     @State private var location: String
     @State private var isHome: Bool
     @State private var periodFormat: PeriodFormat
+    @State private var notes: String
 
-    init(game: Game, onSave: @escaping (Game) -> Void) {
+    init(game: Game, allowsFormatChange: Bool = true, onSave: @escaping (Game) -> Void) {
         self.game = game
+        self.allowsFormatChange = allowsFormatChange
         self.onSave = onSave
         _opponent = State(initialValue: game.opponent)
         _date = State(initialValue: game.date)
@@ -115,6 +120,7 @@ struct EditGameSheet: View {
         _location = State(initialValue: game.location)
         _isHome = State(initialValue: game.isHome)
         _periodFormat = State(initialValue: game.periodFormat)
+        _notes = State(initialValue: game.notes)
     }
 
     private var trimmedOpponent: String {
@@ -129,9 +135,11 @@ struct EditGameSheet: View {
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",
                                   text: $location, priorValues: store.knownLocations)
-                    Picker("Format", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
+                    if allowsFormatChange {
+                        Picker("Format", selection: $periodFormat) {
+                            ForEach(PeriodFormat.allCases, id: \.self) { format in
+                                Text(format.displayName).tag(format)
+                            }
                         }
                     }
                 }
@@ -145,6 +153,11 @@ struct EditGameSheet: View {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
                     DatePicker("Date", selection: $date, displayedComponents: .date)
+                }
+
+                Section("Notes") {
+                    TextField("Scouting notes, observations…", text: $notes, axis: .vertical)
+                        .lineLimit(3...10)
                 }
             }
             .navigationTitle("Edit Game")
@@ -168,7 +181,8 @@ struct EditGameSheet: View {
         updated.league = league.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.location = location.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.isHome = isHome
-        updated.periodFormat = periodFormat
+        if allowsFormatChange { updated.periodFormat = periodFormat }
+        updated.notes = notes
         onSave(updated)
         dismiss()
     }

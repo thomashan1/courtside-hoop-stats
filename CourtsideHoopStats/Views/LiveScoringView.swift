@@ -23,6 +23,9 @@ struct LiveScoringView: View {
     @State private var showOpponentTotals = false
     /// Presents the List-based score-log editor (reorder + delete, #9).
     @State private var showLogEditor = false
+    /// Presents the game-details editor (location, notes, matchup) so details
+    /// can be fixed mid-game — the same Cancel/Save sheet used elsewhere.
+    @State private var showDetails = false
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
@@ -72,6 +75,23 @@ struct LiveScoringView: View {
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) { actionBar }
         .onAppear(perform: loadGameIfNeeded)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showDetails = true
+                } label: {
+                    Label("Details", systemImage: "info.circle")
+                }
+            }
+        }
+        .sheet(isPresented: $showDetails) {
+            // Format can't change once a game is under way (would rescramble
+            // recorded periods).
+            EditGameSheet(game: game, allowsFormatChange: false) { updated in
+                game = updated
+                store.updateGame(game)
+            }
+        }
         .sheet(isPresented: $showEndPeriod) {
             EndPeriodSheet(
                 periodLabel: game.periodFormat.periodLabel(game.currentPeriod),
