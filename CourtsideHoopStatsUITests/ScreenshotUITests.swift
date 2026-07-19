@@ -71,7 +71,9 @@ final class ScreenshotUITests: XCTestCase {
         // strip, freeing grid space (11-player roster).
         app.buttons["Bench Ella #9"].tap()
         app.buttons["Bench Mia #8"].tap()
-        XCTAssertTrue(app.staticTexts["Not playing"].waitForExistence(timeout: 5))
+        let benchToggle = app.buttons["Not playing (2)"]
+        XCTAssertTrue(benchToggle.waitForExistence(timeout: 5))
+        benchToggle.tap()   // expand the collapsed strip to show the chips
         snap(app, "11-bench")
 
         // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.

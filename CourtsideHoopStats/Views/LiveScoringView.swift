@@ -29,6 +29,9 @@ struct LiveScoringView: View {
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
+    /// Whether the "Not playing" bench strip is expanded. Collapsed by default so
+    /// it takes almost no space.
+    @State private var showBench = false
     /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
     /// new event is recorded.
     @State private var redoStack: [GameEvent] = []
@@ -167,27 +170,40 @@ struct LiveScoringView: View {
     private var benchStrip: some View {
         if !benchedPlayers.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Not playing")
-                    .font(.caption).foregroundStyle(.secondary)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(benchedPlayers) { player in
-                            Button {
-                                unbench(player.id)
-                            } label: {
-                                HStack(spacing: 5) {
-                                    Text(benchLabel(player))
-                                        .font(.subheadline)
-                                        .foregroundStyle(.primary)
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.caption)
-                                        .foregroundStyle(Color.teamAccent)
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { showBench.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Not playing (\(benchedPlayers.count))")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2).foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(showBench ? 90 : 0))
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if showBench {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(benchedPlayers) { player in
+                                Button {
+                                    unbench(player.id)
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Text(benchLabel(player))
+                                            .font(.subheadline)
+                                            .foregroundStyle(.primary)
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(Color.teamAccent)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
                                 }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
