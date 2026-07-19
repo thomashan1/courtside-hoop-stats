@@ -8,22 +8,24 @@ import Foundation
 enum DemoData {
     /// A believable youth-basketball roster.
     static func makeTeam() -> Team {
+        // Last-name initial only — real-ish roster kept privacy-safe for the
+        // public repo / App Store screenshots. Ordered alphabetically (the demo
+        // presents a Name-sorted roster); game scripts below index into THIS order.
         Team(
-            name: "Riverside Hawks",
+            name: "Swish Warriors",
             players: [
-                Player(name: "Ava Chen", number: "4"),
-                Player(name: "Maya Patel", number: "7"),
-                Player(name: "Zoe Williams", number: "10"),
-                Player(name: "Sofia Garcia", number: "12"),
-                Player(name: "Lily Nguyen", number: "15"),
-                Player(name: "Emma Johnson", number: "21"),
-                Player(name: "Chloe Kim", number: "23"),
-                Player(name: "Grace Lee", number: "34"),
-                Player(name: "Harper Reed", number: "5"),
-                Player(name: "Mia Torres", number: "8"),
-                Player(name: "Ella Brooks", number: "9"),
+                Player(name: "Adrian Y.", number: "19"),   // 0
+                Player(name: "Austin W.", number: "8"),     // 1
+                Player(name: "Bradley C.", number: "1"),    // 2
+                Player(name: "Brendon C.", number: "3"),    // 3
+                Player(name: "Jake L.", number: "7"),       // 4
+                Player(name: "Kaleb K.", number: "24"),     // 5
+                Player(name: "Lucas Z.", number: "30"),     // 6
+                Player(name: "Mason C.", number: "5"),      // 7
+                Player(name: "Nicholas H.", number: "77"),  // 8
+                Player(name: "Wesley C.", number: "88"),    // 9
             ],
-            homeJersey: .white
+            homeJersey: .blue
         )
     }
 
@@ -105,36 +107,38 @@ enum DemoData {
          scheduledGame()]
     }
 
-    // MARK: - Finished game (45–41 win) with a full four-quarter breakdown.
+    // MARK: - Finished game (48–41 win) with a full four-quarter breakdown.
 
     private static func finishedGame(team: Team) -> Game {
         let p = team.players
         var events: [GameEvent] = []
-        // (playerIndex, type, period) — our per-quarter deltas: 10, 12, 11, 12 = 45.
+        // (playerIndex, type, period). Nicholas (#77, index 8) is the standout —
+        // six made 3s and a game-high 27. Our per-quarter deltas: 12, 12, 11, 13 = 48.
         let script: [(Int, EventType, Int)] = [
-            // Q1 = 10
-            (0, .twoPoint, 1), (2, .threePoint, 1), (1, .twoPoint, 1),
-            (3, .twoPoint, 1), (0, .ftMade, 1),
+            // Q1 = 12
+            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1),
+            (7, .twoPoint, 1), (8, .ftMade, 1), (0, .ftMade, 1),
             // Q2 = 12
-            (2, .twoPoint, 2), (4, .threePoint, 2), (0, .twoPoint, 2),
-            (1, .ftMade, 2), (1, .ftMissed, 2), (5, .twoPoint, 2), (2, .ftMade, 2),
+            (8, .threePoint, 2), (3, .twoPoint, 2), (4, .twoPoint, 2),
+            (8, .twoPoint, 2), (1, .threePoint, 2),
             // Q3 = 11
-            (0, .threePoint, 3), (6, .twoPoint, 3), (2, .twoPoint, 3),
-            (3, .twoPoint, 3), (0, .ftMade, 3), (4, .ftMissed, 3),
-            // Q4 = 12
-            (1, .threePoint, 4), (0, .twoPoint, 4), (2, .twoPoint, 4),
-            (7, .twoPoint, 4), (5, .ftMade, 4), (5, .ftMade, 4), (6, .ftMissed, 4),
+            (8, .threePoint, 3), (7, .twoPoint, 3), (8, .twoPoint, 3),
+            (6, .twoPoint, 3), (8, .ftMade, 3), (8, .ftMissed, 3), (2, .ftMade, 3),
+            // Q4 = 13
+            (8, .threePoint, 4), (8, .threePoint, 4), (5, .twoPoint, 4),
+            (6, .twoPoint, 4), (8, .ftMade, 4), (8, .ftMade, 4), (8, .ftMade, 4),
+            (4, .ftMissed, 4),
         ]
         for (idx, type, period) in script {
             events.append(GameEvent(playerID: p[idx].id, type: type, period: period,
                                     timestamp: refDate.addingTimeInterval(Double(period) * 600)))
         }
-        // Opponent running totals per quarter: 8, 19, 30, 41 (final 41 < our 45).
+        // Opponent running totals per quarter: 8, 19, 30, 41 (final 41 < our 48).
         let periodEnds: [Int: PeriodEndScore] = [
-            1: PeriodEndScore(ourRunningTotal: 10, opponentRunningTotal: 8),
-            2: PeriodEndScore(ourRunningTotal: 22, opponentRunningTotal: 19),
-            3: PeriodEndScore(ourRunningTotal: 33, opponentRunningTotal: 30),
-            4: PeriodEndScore(ourRunningTotal: 45, opponentRunningTotal: 41),
+            1: PeriodEndScore(ourRunningTotal: 12, opponentRunningTotal: 8),
+            2: PeriodEndScore(ourRunningTotal: 24, opponentRunningTotal: 19),
+            3: PeriodEndScore(ourRunningTotal: 35, opponentRunningTotal: 30),
+            4: PeriodEndScore(ourRunningTotal: 48, opponentRunningTotal: 41),
         ]
         return Game(
             date: refDate,
@@ -146,7 +150,7 @@ enum DemoData {
             periodFormat: .quarters,
             events: events,
             periodEndScores: periodEnds,
-            notes: "Great defensive third quarter. Watch #12 on the press next time.",
+            notes: "Great defensive third quarter. Watch #8 on the press next time.",
             isComplete: true,
             hasStarted: true
         )
@@ -156,11 +160,12 @@ enum DemoData {
 
     private static func inProgressGame(team: Team) -> Game {
         let p = team.players
+        // Nicholas (index 8) opens with a 3; running total 7 at the Q1 break.
         let events: [GameEvent] = [
-            GameEvent(playerID: p[0].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[2].id, type: .threePoint, period: 1),
-            GameEvent(playerID: p[1].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[3].id, type: .twoPoint, period: 2),
+            GameEvent(playerID: p[8].id, type: .threePoint, period: 1),
+            GameEvent(playerID: p[2].id, type: .twoPoint, period: 1),
+            GameEvent(playerID: p[8].id, type: .twoPoint, period: 1),
+            GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
         ]
         return Game(
             date: refDate.addingTimeInterval(7 * 86_400),
