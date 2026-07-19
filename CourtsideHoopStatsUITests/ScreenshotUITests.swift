@@ -45,7 +45,8 @@ final class ScreenshotUITests: XCTestCase {
         // 2b) Edit a finished game in the scoring view (#8): the Summary's
         // "Edit Scores" button opens the same two-tap Live Scoring UI.
         app.buttons["Edit Scores"].tap()
-        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10))
+        // The edit cover is Live Scoring, which now uses its own Back button.
+        XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 10))
         snap(app, "05-edit-finished-game")
 
         // 2c) Score-log editor (#9): reorder events + movable period dividers.
@@ -54,7 +55,7 @@ final class ScreenshotUITests: XCTestCase {
         snap(app, "07-score-log-editor")
         app.navigationBars["Edit Score Log"].buttons["Done"].tap()
 
-        app.buttons["Done"].tap()
+        app.buttons["Back"].tap()   // close the edit cover
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
         // Back to the list.
@@ -85,8 +86,8 @@ final class ScreenshotUITests: XCTestCase {
         app.navigationBars["Edit Game"].buttons["Cancel"].tap()
 
         // Pop back to the Games list so the stack is clean for later steps.
-        // (Live Scoring has no nav title now, so target the back button directly.)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
+        // (Live Scoring hides the system nav bar; use its custom Back button.)
+        app.buttons["Back"].tap()
         XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 10))
 
         // 4) Roster tab.

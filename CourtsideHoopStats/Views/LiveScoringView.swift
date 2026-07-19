@@ -16,7 +16,6 @@ struct LiveScoringView: View {
     /// Local working copy of the game; persisted via `store.updateGame` on
     /// every mutation (per the architecture in REQUIREMENTS.md).
     @State private var game: Game
-    @State private var selectedPlayerID: UUID?
     @State private var showEndPeriod = false
     /// Presented from the inert "Final" divider when re-editing a finished game,
     /// so opponent totals can still be corrected after the game ends (#23).
@@ -32,15 +31,10 @@ struct LiveScoringView: View {
     /// Whether the "Not playing" bench strip is expanded. Collapsed by default so
     /// it takes almost no space.
     @State private var showBench = false
-    /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
-    /// new event is recorded.
-    @State private var redoStack: [GameEvent] = []
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
-    @ScaledMetric private var cardMinWidth: CGFloat = 78
-    @ScaledMetric private var actionMinWidth: CGFloat = 72
-    @ScaledMetric private var actionMinHeight: CGFloat = 48
+    @ScaledMetric private var cardMinWidth: CGFloat = 82
 
     init(gameID: UUID) {
         self.gameID = gameID
@@ -64,7 +58,6 @@ struct LiveScoringView: View {
     private func bench(_ id: UUID) {
         guard !game.benchedPlayerIDs.contains(id) else { return }
         game.benchedPlayerIDs.append(id)
-        if selectedPlayerID == id { selectedPlayerID = nil }
         store.updateGame(game)
     }
 
@@ -75,6 +68,10 @@ struct LiveScoringView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Compact control row folded into the (dark) scoreboard, replacing
+            // the system nav bar — back, undo/redo, and details all live here.
+            scoreboardTopBar
+
             ScoreboardView(
                 ourName: store.team.name,
                 ourScore: game.ourScore,
@@ -114,6 +111,13 @@ struct LiveScoringView: View {
             // reads as a distinct control area, separate from the Score Log.
             VStack(alignment: .leading, spacing: 8) {
                 benchStrip
+                // Teach the long-press gesture until the first point is scored.
+                if game.events.isEmpty && !store.team.players.isEmpty {
+                    Text("Press and hold a player to score")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
                 playerGrid
             }
             .padding(.horizontal)
@@ -127,23 +131,13 @@ struct LiveScoringView: View {
             )
         }
         .background(Color(.systemGroupedBackground))
-        // The scoreboard already shows both team names, so no nav title needed.
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        // The scoreboard banner behind the nav bar is dark — force light bar
-        // content so the title/buttons are readable.
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .safeAreaInset(edge: .bottom) { actionBar }
+        // Hidden system nav bar — the scoreboard's own top row carries the
+        // controls, reclaiming the bar's height (long-press a card to score).
+        .toolbar(.hidden, for: .navigationBar)
+        // Hide the tab bar while scoring: more room, and no accidental
+        // navigation away from a live game.
+        .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadGameIfNeeded)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showDetails = true
-                } label: {
-                    Label("Details", systemImage: "info.circle")
-                }
-            }
-        }
         .sheet(isPresented: $showDetails) {
             // Format can't change once a game is under way (would rescramble
             // recorded periods).
@@ -171,6 +165,27 @@ struct LiveScoringView: View {
         }
     }
 
+    // MARK: - Scoreboard top bar (replaces the system nav bar)
+
+    private var scoreboardTopBar: some View {
+        HStack(spacing: 22) {
+            Button { dismiss() } label: {
+                Image(systemName: "chevron.backward").fontWeight(.semibold)
+            }
+            .accessibilityLabel("Back")
+            Spacer()
+            Button { showDetails = true } label: { Image(systemName: "info.circle") }
+                .accessibilityLabel("Details")
+        }
+        .font(.title3)
+        .tint(.white)
+        .foregroundStyle(.white)
+        .padding(.horizontal)
+        .padding(.top, 6)
+        .padding(.bottom, 2)
+        .background(Color.scoreboardBackground.ignoresSafeArea(edges: .top))
+    }
+
     // MARK: - Player grid
 
     private var playerGrid: some View {
@@ -187,8 +202,7 @@ struct LiveScoringView: View {
                     ForEach(activePlayers) { player in
                         PlayerCard(
                             player: player,
-                            isSelected: selectedPlayerID == player.id,
-                            onTap: { toggleSelection(player.id) },
+                            onScore: { recordScore($0, for: player.id) },
                             onBench: { bench(player.id) }
                         )
                     }
@@ -367,84 +381,6 @@ struct LiveScoringView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Action bar (floating Liquid Glass chrome, pinned to bottom)
-
-    private var actionBar: some View {
-        VStack(spacing: 10) {
-            HStack {
-                if let player = selectedPlayer {
-                    HStack(spacing: 8) {
-                        JerseyBadge(number: player.number, size: 26)
-                        Text(player.name).font(.subheadline).bold()
-                    }
-                    .foregroundStyle(.primary)
-                } else {
-                    Text("Select a player")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Button {
-                    undo()
-                } label: {
-                    Label("Undo", systemImage: "arrow.uturn.backward")
-                        .font(.subheadline)
-                }
-                .disabled(game.events.isEmpty)
-                .tint(.teamAccent)
-
-                Button {
-                    redo()
-                } label: {
-                    Label("Redo", systemImage: "arrow.uturn.forward")
-                        .font(.subheadline)
-                }
-                .disabled(redoStack.isEmpty)
-                .tint(.teamAccent)
-            }
-
-            // Wrapping grid so the actions reflow (rather than cram/clip) at
-            // large accessibility text sizes.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: actionMinWidth), spacing: 8)], spacing: 8) {
-                actionButton(.twoPoint)
-                actionButton(.threePoint)
-                actionButton(.ftMade)
-                actionButton(.ftMissed)
-            }
-        }
-        .padding()
-        .glassEffect(.regular, in: .rect(cornerRadius: 28))
-        .padding(.horizontal)
-        .padding(.bottom, 4)
-    }
-
-    private func actionButton(_ type: EventType) -> some View {
-        let enabled = selectedPlayerID != nil
-        return Button {
-            record(type)
-        } label: {
-            Text(type.buttonLabel)
-                .font(.subheadline).bold()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity, minHeight: actionMinHeight)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(enabled ? Color.teamAccent : Color(.tertiarySystemFill))
-                )
-                .foregroundStyle(enabled ? .white : Color.secondary)
-        }
-        .disabled(!enabled)
-    }
-
-
-    private var selectedPlayer: Player? {
-        guard let id = selectedPlayerID else { return nil }
-        return player(for: id)
-    }
-
     private func player(for id: UUID) -> Player? {
         store.team.players.first { $0.id == id }
     }
@@ -465,32 +401,13 @@ struct LiveScoringView: View {
         }
     }
 
-    private func toggleSelection(_ id: UUID) {
-        selectedPlayerID = (selectedPlayerID == id) ? nil : id
-    }
-
-    private func record(_ type: EventType) {
-        guard let playerID = selectedPlayerID else { return }
+    /// Record a scoring event for a player directly (from the card's long-press
+    /// menu). A haptic confirms the tap landed on the right player.
+    private func recordScore(_ type: EventType, for playerID: UUID) {
         let event = GameEvent(playerID: playerID, type: type, period: game.currentPeriod)
         game.events.append(event)
-        redoStack.removeAll()   // a new event invalidates the redo history
         store.updateGame(game)
-        // Clear selection after each event so a new event requires an explicit
-        // player tap — reduces mis-attributed entries courtside.
-        selectedPlayerID = nil
-    }
-
-    private func undo() {
-        guard let last = game.events.last else { return }
-        redoStack.append(last)
-        game.events.removeLast()
-        store.updateGame(game)
-    }
-
-    private func redo() {
-        guard let event = redoStack.popLast() else { return }
-        game.events.append(event)
-        store.updateGame(game)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     private func endPeriod(opponentTotal: Int) {
@@ -516,8 +433,8 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
-    let isSelected: Bool
-    let onTap: () -> Void
+    /// Record a scoring event for this player (from the long-press menu).
+    let onScore: (EventType) -> Void
     /// Bench (hide) this player — they're not at the game.
     let onBench: () -> Void
 
@@ -528,39 +445,33 @@ private struct PlayerCard: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
-            // Just the jersey bubble + first name — small and glanceable. See
-            // per-player cumulative points in the Stats panel instead.
-            VStack(spacing: 5) {
-                JerseyBadge(number: player.number, size: 30)
-                Text(player.firstName)
-                    .font(.subheadline).bold()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .foregroundStyle(.primary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.teamAccent.opacity(0.20)
-                                     : Color.teamAccent.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isSelected ? Color.teamAccent : .clear, lineWidth: 2.5)
-                    )
-            )
+        // Single compact row: jersey bubble + first name. Long-press to score.
+        HStack(spacing: 7) {
+            JerseyBadge(number: player.number, size: 26)
+            Text(player.firstName)
+                .font(.subheadline).bold()
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .foregroundStyle(.primary)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 7)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10))
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(idLabel)
-        // Long-press to bench (mark not playing) — keeps the card clean and the
-        // big tap target uncluttered. Restore from the "Not playing" strip.
+        .accessibilityAddTraits(.isButton)
+        // Long-press → score directly (or bench). Replaces the bottom action bar.
         .contextMenu {
-            Button {
-                onBench()
-            } label: {
-                Label("Not playing", systemImage: "person.slash")
-            }
+            Button { onScore(.twoPoint) } label: { Label("+2 points", systemImage: "2.circle") }
+            Button { onScore(.threePoint) } label: { Label("+3 points", systemImage: "3.circle") }
+            Button { onScore(.ftMade) } label: { Label("Free throw made", systemImage: "checkmark.circle") }
+            Button { onScore(.ftMissed) } label: { Label("Free throw missed", systemImage: "xmark.circle") }
+            Divider()
+            Button { onBench() } label: { Label("Not playing", systemImage: "person.slash") }
         }
     }
 }
