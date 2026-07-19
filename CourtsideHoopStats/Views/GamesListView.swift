@@ -74,6 +74,15 @@ struct GamesListView: View {
             .navigationDestination(for: GameRoute.self) { destination($0) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    // Quick pickup game — skip setup, start scoring immediately (#34).
+                    Button {
+                        startPickupGame()
+                    } label: {
+                        Image(systemName: "bolt.fill")
+                    }
+                    .accessibilityLabel("Quick Pickup Game")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingNewGame = true
                     } label: {
@@ -135,6 +144,16 @@ struct GamesListView: View {
 
     private func delete(_ list: [Game], _ offsets: IndexSet) {
         for index in offsets { store.deleteGame(id: list[index].id) }
+    }
+
+    /// Create a no-setup pickup game (single running period) and jump straight
+    /// into scoring. Details can be filled in later from the game's Details (#34).
+    private func startPickupGame() {
+        var game = Game(opponent: "Pickup Game")
+        game.periodFormat = .pickup
+        game.hasStarted = true
+        store.addGame(game)
+        path.append(.live(game.id))
     }
 }
 
@@ -237,6 +256,8 @@ struct NewGameSheet: View {
         NavigationStack {
             Form {
                 Section("Details") {
+                    DatePicker("Date & Time", selection: $date,
+                               displayedComponents: [.date, .hourAndMinute])
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",
@@ -249,7 +270,7 @@ struct NewGameSheet: View {
                     }
                 }
 
-                Section("Matchup") {
+                Section("Opponent") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
@@ -257,8 +278,6 @@ struct NewGameSheet: View {
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    DatePicker("Date & Time", selection: $date,
-                               displayedComponents: [.date, .hourAndMinute])
                 }
 
                 Section {

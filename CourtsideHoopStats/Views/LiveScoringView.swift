@@ -317,9 +317,16 @@ struct LiveScoringView: View {
     /// advances (or finishes).
     /// When re-editing a finished game the divider is inert ("Final") so editing
     /// events never forces a re-finish and `isComplete` is preserved (#8).
+    /// Label for the end-of-period control: "Finish Game" for a pickup game (no
+    /// periods), otherwise "End Q3" / "End Q4 & Finish".
+    private var endPeriodLabel: String {
+        if game.periodFormat == .pickup { return "Finish Game" }
+        let label = game.periodFormat.periodLabel(game.currentPeriod)
+        return game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)"
+    }
+
     @ViewBuilder
     private var endPeriodDivider: some View {
-        let label = game.periodFormat.periodLabel(game.currentPeriod)
         if game.isComplete {
             // Inert as a period control (editing never re-finishes, #8), but
             // tappable to correct opponent totals after the game ends (#23).
@@ -342,8 +349,7 @@ struct LiveScoringView: View {
             } label: {
                 HStack(spacing: 10) {
                     dividerLine
-                    Label(game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)",
-                          systemImage: "flag.checkered")
+                    Label(endPeriodLabel, systemImage: "flag.checkered")
                         .font(.subheadline).bold()
                         .foregroundStyle(Color.teamAccent)
                         .fixedSize()
