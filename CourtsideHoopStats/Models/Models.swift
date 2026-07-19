@@ -139,11 +139,13 @@ enum ScoreLogItem: Identifiable, Hashable {
 enum PeriodFormat: String, Codable, CaseIterable {
     case quarters   // 4 periods, label "Q"
     case halves     // 2 periods, label "H"
+    case pickup     // 1 running period, no breaks (casual games, #35)
 
     var periodCount: Int {
         switch self {
         case .quarters: return 4
         case .halves:   return 2
+        case .pickup:   return 1
         }
     }
 
@@ -151,6 +153,7 @@ enum PeriodFormat: String, Codable, CaseIterable {
         switch self {
         case .quarters: return "Q"
         case .halves:   return "H"
+        case .pickup:   return ""
         }
     }
 
@@ -158,11 +161,14 @@ enum PeriodFormat: String, Codable, CaseIterable {
         switch self {
         case .quarters: return "4 Quarters"
         case .halves:   return "2 Halves"
+        case .pickup:   return "Pickup (no periods)"
         }
     }
 
-    /// Human label for a specific period, e.g. "Q1" or "H2".
-    func periodLabel(_ period: Int) -> String { "\(label)\(period)" }
+    /// Human label for a specific period, e.g. "Q1" or "H2"; "Game" for pickup.
+    func periodLabel(_ period: Int) -> String {
+        self == .pickup ? "Game" : "\(label)\(period)"
+    }
 }
 
 // MARK: - Scores

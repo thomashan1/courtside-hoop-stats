@@ -31,10 +31,12 @@ struct LiveScoringView: View {
     /// Whether the "Not playing" bench strip is expanded. Collapsed by default so
     /// it takes almost no space.
     @State private var showBench = false
+    /// The player whose point pad is open (tap a card to score, #33).
+    @State private var scoringPlayer: Player?
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
-    @ScaledMetric private var cardMinWidth: CGFloat = 82
+    @ScaledMetric private var cardMinWidth: CGFloat = 100
 
     init(gameID: UUID) {
         self.gameID = gameID
@@ -111,9 +113,9 @@ struct LiveScoringView: View {
             // reads as a distinct control area, separate from the Score Log.
             VStack(alignment: .leading, spacing: 8) {
                 benchStrip
-                // Teach the long-press gesture until the first point is scored.
+                // Cue the tap-to-score flow until the first point is scored.
                 if game.events.isEmpty && !store.team.players.isEmpty {
-                    Text("Press and hold a player to score")
+                    Text("Tap a player to score")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
@@ -163,6 +165,13 @@ struct LiveScoringView: View {
                 store.updateGame(game)
             }
         }
+        .sheet(item: $scoringPlayer) { player in
+            ScorePadSheet(
+                player: player,
+                onScore: { recordScore($0, for: player.id) },
+                onBench: { bench(player.id) }
+            )
+        }
     }
 
     // MARK: - Scoreboard top bar (replaces the system nav bar)
@@ -200,11 +209,7 @@ struct LiveScoringView: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(activePlayers) { player in
-                        PlayerCard(
-                            player: player,
-                            onScore: { recordScore($0, for: player.id) },
-                            onBench: { bench(player.id) }
-                        )
+                        PlayerCard(player: player) { scoringPlayer = player }
                     }
                 }
             }
@@ -312,9 +317,16 @@ struct LiveScoringView: View {
     /// advances (or finishes).
     /// When re-editing a finished game the divider is inert ("Final") so editing
     /// events never forces a re-finish and `isComplete` is preserved (#8).
+    /// Label for the end-of-period control: "Finish Game" for a pickup game (no
+    /// periods), otherwise "End Q3" / "End Q4 & Finish".
+    private var endPeriodLabel: String {
+        if game.periodFormat == .pickup { return "Finish Game" }
+        let label = game.periodFormat.periodLabel(game.currentPeriod)
+        return game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)"
+    }
+
     @ViewBuilder
     private var endPeriodDivider: some View {
-        let label = game.periodFormat.periodLabel(game.currentPeriod)
         if game.isComplete {
             // Inert as a period control (editing never re-finishes, #8), but
             // tappable to correct opponent totals after the game ends (#23).
@@ -337,8 +349,7 @@ struct LiveScoringView: View {
             } label: {
                 HStack(spacing: 10) {
                     dividerLine
-                    Label(game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)",
-                          systemImage: "flag.checkered")
+                    Label(endPeriodLabel, systemImage: "flag.checkered")
                         .font(.subheadline).bold()
                         .foregroundStyle(Color.teamAccent)
                         .fixedSize()
@@ -433,10 +444,8 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
-    /// Record a scoring event for this player (from the long-press menu).
-    let onScore: (EventType) -> Void
-    /// Bench (hide) this player — they're not at the game.
-    let onBench: () -> Void
+    /// Single tap opens the big point pad for this player (#33, Jean's feedback).
+    let onTap: () -> Void
 
     /// Compact identity for accessibility, e.g. "Ava #4".
     private var idLabel: String {
@@ -445,34 +454,85 @@ private struct PlayerCard: View {
     }
 
     var body: some View {
-        // Single compact row: jersey bubble + first name. Long-press to score.
-        HStack(spacing: 7) {
-            JerseyBadge(number: player.number, size: 26)
-            Text(player.firstName)
-                .font(.subheadline).bold()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .foregroundStyle(.primary)
+        // Single row: bigger jersey bubble (easy to see/tap) + first name.
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                JerseyBadge(number: player.number, size: 36)
+                Text(player.firstName)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 12))
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 7)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10))
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 12))
-        .accessibilityElement(children: .ignore)
+        .buttonStyle(.plain)
         .accessibilityLabel(idLabel)
-        .accessibilityAddTraits(.isButton)
-        // Long-press → score directly (or bench). Replaces the bottom action bar.
-        .contextMenu {
-            Button { onScore(.twoPoint) } label: { Label("+2 points", systemImage: "2.circle") }
-            Button { onScore(.threePoint) } label: { Label("+3 points", systemImage: "3.circle") }
-            Button { onScore(.ftMade) } label: { Label("Free throw made", systemImage: "checkmark.circle") }
-            Button { onScore(.ftMissed) } label: { Label("Free throw missed", systemImage: "xmark.circle") }
-            Divider()
-            Button { onBench() } label: { Label("Not playing", systemImage: "person.slash") }
+    }
+}
+
+// MARK: - Score pad (tap a player → big point buttons, #33)
+
+/// A big, high-contrast point pad for one player. Tapping a point button
+/// records it and dismisses; benching is a secondary action here.
+struct ScorePadSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let player: Player
+    let onScore: (EventType) -> Void
+    let onBench: () -> Void
+
+    var body: some View {
+        VStack(spacing: 18) {
+            HStack(spacing: 12) {
+                JerseyBadge(number: player.number, size: 40)
+                Text(player.name)
+                    .font(.title2).bold()
+                    .lineLimit(1).minimumScaleFactor(0.6)
+            }
+            .padding(.top, 8)
+
+            Grid(horizontalSpacing: 14, verticalSpacing: 14) {
+                GridRow {
+                    padButton("+2", .twoPoint)
+                    padButton("+3", .threePoint)
+                }
+                GridRow {
+                    padButton("FT ✓", .ftMade)
+                    padButton("FT ✗", .ftMissed)
+                }
+            }
+
+            Button(role: .destructive) {
+                onBench()
+                dismiss()
+            } label: {
+                Label("Not playing", systemImage: "person.slash")
+            }
+            .padding(.top, 2)
         }
+        .padding()
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func padButton(_ label: String, _ type: EventType) -> some View {
+        Button {
+            onScore(type)
+            dismiss()
+        } label: {
+            Text(label)
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .frame(maxWidth: .infinity, minHeight: 88)
+                .background(RoundedRectangle(cornerRadius: 18).fill(Color.teamAccent))
+                .foregroundStyle(.white)
+        }
+        .buttonStyle(.plain)
     }
 }
 

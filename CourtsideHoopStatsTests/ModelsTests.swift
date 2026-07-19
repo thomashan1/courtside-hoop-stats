@@ -51,6 +51,16 @@ struct ModelsTests {
         #expect(PeriodFormat.halves.periodLabel(1) == "H1")
     }
 
+    @Test func pickupFormatIsSingleRunningPeriod() {
+        #expect(PeriodFormat.pickup.periodCount == 1)
+        #expect(PeriodFormat.pickup.periodLabel(1) == "Game")
+        // A pickup game is always on its final (only) period.
+        var game = Game(opponent: "Rivals", periodFormat: .pickup)
+        game.events = [GameEvent(playerID: UUID(), type: .twoPoint, period: 1)]
+        #expect(game.currentPeriod == 1)
+        #expect(game.isFinalPeriod)
+    }
+
     // MARK: - Game.ourScore
 
     @Test func ourScoreEmptyIsZero() {

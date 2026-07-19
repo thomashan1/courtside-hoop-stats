@@ -35,7 +35,7 @@ struct GameDetailView: View {
                 LabeledContent("Format", value: game.periodFormat.displayName)
             }
 
-            Section("Matchup") {
+            Section("Opponent") {
                 LabeledContent("Opponent", value: game.opponent)
                 LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
                 LabeledContent("Jersey") {
@@ -140,6 +140,8 @@ struct EditGameSheet: View {
         NavigationStack {
             Form {
                 Section("Details") {
+                    DatePicker("Date & Time", selection: $date,
+                               displayedComponents: [.date, .hourAndMinute])
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",
@@ -154,7 +156,7 @@ struct EditGameSheet: View {
                     }
                 }
 
-                Section("Matchup") {
+                Section("Opponent") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
@@ -162,8 +164,6 @@ struct EditGameSheet: View {
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    DatePicker("Date & Time", selection: $date,
-                               displayedComponents: [.date, .hourAndMinute])
                 }
 
                 Section("Notes") {
