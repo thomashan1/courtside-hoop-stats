@@ -69,16 +69,16 @@ final class ScreenshotUITests: XCTestCase {
         snap(app, "03-live-scoring")
 
         // 3a) Tap a player → the big point pad (#33).
-        app.buttons["Ava #4"].tap()
+        app.buttons["Nicholas #77"].tap()
         XCTAssertTrue(app.buttons["+2"].waitForExistence(timeout: 5))
         snap(app, "12-score-pad")
         app.buttons["+2"].tap()   // records + dismisses
 
         // 3b) Bench players via the pad's "Not playing"; they collapse into a strip.
-        app.buttons["Ella #9"].tap()
+        app.buttons["Wesley #88"].tap()
         XCTAssertTrue(app.buttons["Not playing"].waitForExistence(timeout: 5))
         app.buttons["Not playing"].tap()
-        app.buttons["Mia #8"].tap()
+        app.buttons["Kaleb #24"].tap()
         XCTAssertTrue(app.buttons["Not playing"].waitForExistence(timeout: 5))
         app.buttons["Not playing"].tap()
         let benchToggle = app.buttons["Not playing (2)"]
