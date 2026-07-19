@@ -17,21 +17,24 @@ UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
-## Current status (2026-07-15)
+## Current status (2026-07-19)
 
-- **Pipeline validated ✅** — earlier confirmed Xcode + signing + device install
-  work end-to-end (via a minimal dummy app).
-- **Full app reintroduced & compiling ✅** — the staged scaffold has been moved
-  into the compiled target (`Staged/` is gone) with the adaptive design pass
-  applied. All four screens are live: **Roster, Games list, Live Scoring
-  (core), Game Summary**. Builds clean (0 warnings) for the iPhone 17 Pro
-  simulator; verified in both light and dark mode via screenshots.
-- **Design pass done** — forced-dark palette replaced with adaptive system
-  colors; grass-green accent tuned per light/dark; Liquid Glass (`.glassEffect()`)
-  confined to the Live Scoring floating action bar; scoreboard banner is the one
-  intentional solid-dark element.
-- **Next up:** on-device testing, then multi-user sharing (see
-  [`docs/SHARING.md`](docs/SHARING.md), deferred until the local app is stable).
+- **Shipping to one device.** All four screens are live and device-tested on
+  Thomas's iPhone 17 Pro: **Roster, Games, Live Scoring, Game Summary**, plus
+  multi-team management in Settings. Builds clean (0 warnings); a UI-test
+  screenshot harness verifies the main flows (`scripts/screenshots.sh`).
+- **Live scoring reworked (Jean's feedback).** Tap a player → a big point pad
+  (+2 / +3 / FT); no floating action bar, no long-press. The Score Log is on top
+  (oldest-first, sticky period headers, auto-scroll); players sit in the bottom
+  thumb zone. Nav + tab bars are hidden while scoring for space. Bench absent
+  players; edit/reorder any entry.
+- **Recent features:** multiple teams (#20), edit-a-finished-game (#8), score-log
+  reorder + movable dividers (#9), location autocomplete (#13), consistency pass
+  (Cancel/Save editors, delete confirms — see `docs/UI_GUIDELINES.md`), quick
+  **Pickup Game** + `.pickup` format (#34/#35), start time, location address FYI.
+- **Before an App Store submission:** replace the **placeholder app icon**, and
+  decide iPhone-only vs an iPad layout pass (#7/#32).
+- **Deferred:** multi-user sharing (#15, CloudKit — see `docs/SHARING.md`).
 
 ## Naming (settled)
 

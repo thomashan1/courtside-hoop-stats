@@ -60,13 +60,10 @@ struct GameSummaryView: View {
         // "looks the same" as entering it live (#8). Reload on dismiss so the
         // summary reflects any edits.
         .fullScreenCover(isPresented: $isEditingScores, onDismiss: reloadGame) {
+            // Live Scoring provides its own Back button (its scoreboard top bar),
+            // which dismisses this cover.
             NavigationStack {
                 LiveScoringView(gameID: gameID)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { isEditingScores = false }
-                        }
-                    }
             }
         }
     }
