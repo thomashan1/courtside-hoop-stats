@@ -126,7 +126,8 @@ struct LiveScoringView: View {
             )
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("vs \(game.opponent)")
+        // The scoreboard already shows both team names, so no nav title needed.
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         // The scoreboard banner behind the nav bar is dark — force light bar
         // content so the title/buttons are readable.
@@ -280,7 +281,8 @@ struct LiveScoringView: View {
 
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
-            EventLogView(game: $game, players: store.team.players) {
+            EventLogView(game: $game, players: store.team.players,
+                         pinsPeriodHeaders: true) {
                 store.updateGame(game)
             }
 

@@ -155,7 +155,7 @@ struct ScoreboardView: View {
 
     /// The big score scales with Dynamic Type (capped so it can't overflow the
     /// banner) so it grows for larger accessibility text sizes.
-    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 40
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 32
 
     var body: some View {
         HStack(alignment: .center) {
@@ -174,19 +174,20 @@ struct ScoreboardView: View {
             teamColumn(name: opponentName, score: opponentScore, highlight: false)
         }
         .padding(.horizontal)
-        .padding(.vertical, 12)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
         .background(Color.scoreboardBackground)
     }
 
     private func teamColumn(name: String, score: Int, highlight: Bool) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 1) {
             Text(name)
                 .font(.subheadline).bold()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 .foregroundStyle(.white)
             Text("\(score)")
-                .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
+                .font(.system(size: min(scoreSize, 48), weight: .heavy, design: .rounded))
                 .monospacedDigit()
                 .lineLimit(1)
                 .foregroundStyle(highlight ? Color.scoreboardAccent : .white)

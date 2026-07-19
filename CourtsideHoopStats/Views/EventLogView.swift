@@ -14,6 +14,9 @@ struct EventLogView: View {
     let players: [Player]
     /// When false the log is display-only (no tap-to-edit, no swipe-to-delete).
     var isEditable: Bool = true
+    /// When true, the per-period (Q1/Q2/…) headers stick to the top of the
+    /// enclosing scroll view as you scroll, so you always see the current period.
+    var pinsPeriodHeaders: Bool = false
     /// Called after any edit/delete so the caller can persist the game.
     var persist: () -> Void
 
@@ -31,9 +34,18 @@ struct EventLogView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                VStack(alignment: .leading, spacing: 14) {
+                LazyVStack(alignment: .leading, spacing: 14,
+                           pinnedViews: pinsPeriodHeaders ? [.sectionHeaders] : []) {
                     ForEach(periodsAscending, id: \.self) { period in
-                        periodGroup(period)
+                        Section {
+                            VStack(alignment: .leading, spacing: 8) {
+                                ForEach(eventsOldestFirst(in: period)) { event in
+                                    eventRow(event)
+                                }
+                            }
+                        } header: {
+                            periodHeader(period)
+                        }
                     }
                 }
             }
@@ -48,38 +60,40 @@ struct EventLogView: View {
         }
     }
 
-    private func periodGroup(_ period: Int) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Quarter / half separator.
-            HStack(spacing: 8) {
-                Text(game.periodFormat.periodLabel(period))
-                    .font(.subheadline).bold()
-                    .foregroundStyle(.secondary)
-                Rectangle()
-                    .fill(Color(.separator))
-                    .frame(height: 1)
-                Text("\(ourPoints(in: period)) pts")
-                    .font(.caption).bold()
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
+    /// Quarter / half separator — the sticky header when pinning is on.
+    private func periodHeader(_ period: Int) -> some View {
+        HStack(spacing: 8) {
+            Text(game.periodFormat.periodLabel(period))
+                .font(.subheadline).bold()
+                .foregroundStyle(.secondary)
+            Rectangle()
+                .fill(Color(.separator))
+                .frame(height: 1)
+            Text("\(ourPoints(in: period)) pts")
+                .font(.caption).bold()
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 4)
+        // Opaque behind the sticky header so scrolling rows don't show through.
+        .background(pinsPeriodHeaders ? Color(.systemGroupedBackground) : Color.clear)
+    }
 
-            ForEach(eventsOldestFirst(in: period)) { event in
-                let row = EventLogRow(event: event,
-                                      player: player(for: event.playerID),
-                                      format: game.periodFormat,
-                                      runningTotal: cumulativeTotals[event.id] ?? 0,
-                                      showsChevron: isEditable)
-                if isEditable {
-                    // Tap opens the editor (which also deletes). No custom swipe
-                    // here — it fought the scroll view; delete + reorder live in
-                    // the List-based ScoreLogEditor now (#9).
-                    Button { editingEvent = event } label: { row }
-                        .buttonStyle(.plain)
-                } else {
-                    row
-                }
-            }
+    @ViewBuilder
+    private func eventRow(_ event: GameEvent) -> some View {
+        let row = EventLogRow(event: event,
+                              player: player(for: event.playerID),
+                              format: game.periodFormat,
+                              runningTotal: cumulativeTotals[event.id] ?? 0,
+                              showsChevron: isEditable)
+        if isEditable {
+            // Tap opens the editor (which also deletes). No custom swipe here —
+            // it fought the scroll view; delete + reorder live in the List-based
+            // ScoreLogEditor now (#9).
+            Button { editingEvent = event } label: { row }
+                .buttonStyle(.plain)
+        } else {
+            row
         }
     }
 
