@@ -117,12 +117,13 @@ struct LiveScoringView: View {
                 playerGrid
             }
             .padding(.horizontal)
-            .padding(.top, 10)
+            .padding(.top, 12)
             .padding(.bottom, 2)
             .background(
-                Color(.systemBackground)
-                    .ignoresSafeArea(edges: .horizontal)
-                    .shadow(color: .black.opacity(0.12), radius: 5, y: -2)
+                UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22)
+                    .fill(Color(.systemBackground))
+                    .ignoresSafeArea(edges: [.horizontal, .bottom])
+                    .shadow(color: .black.opacity(0.18), radius: 10, y: -3)
             )
         }
         .background(Color(.systemGroupedBackground))
@@ -186,7 +187,6 @@ struct LiveScoringView: View {
                     ForEach(activePlayers) { player in
                         PlayerCard(
                             player: player,
-                            points: pointsByPlayer[player.id, default: 0],
                             isSelected: selectedPlayerID == player.id,
                             onTap: { toggleSelection(player.id) },
                             onBench: { bench(player.id) }
@@ -357,7 +357,7 @@ struct LiveScoringView: View {
             }
             .padding(.top, 12)
         } label: {
-            Label("Player Stats & Periods", systemImage: "chart.bar.xaxis")
+            Label("Stats", systemImage: "chart.bar.xaxis")
                 .font(.headline)
                 .foregroundStyle(.primary)
         }
@@ -439,15 +439,6 @@ struct LiveScoringView: View {
         .disabled(!enabled)
     }
 
-    // MARK: - Derived helpers
-
-    private var pointsByPlayer: [UUID: Int] {
-        var totals: [UUID: Int] = [:]
-        for event in game.events {
-            totals[event.playerID, default: 0] += event.type.points
-        }
-        return totals
-    }
 
     private var selectedPlayer: Player? {
         guard let id = selectedPlayerID else { return nil }
@@ -525,13 +516,12 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
-    let points: Int
     let isSelected: Bool
     let onTap: () -> Void
     /// Bench (hide) this player — they're not at the game.
     let onBench: () -> Void
 
-    /// Compact identity: first name + jersey number, e.g. "Ava #4".
+    /// Compact identity for accessibility, e.g. "Ava #4".
     private var idLabel: String {
         let number = player.number.isEmpty ? "" : "#\(player.number)"
         return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
@@ -539,19 +529,18 @@ private struct PlayerCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 2) {
-                Text(idLabel)
+            // Just the jersey bubble + first name — small and glanceable. See
+            // per-player cumulative points in the Stats panel instead.
+            VStack(spacing: 5) {
+                JerseyBadge(number: player.number, size: 30)
+                Text(player.firstName)
                     .font(.subheadline).bold()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .foregroundStyle(.primary)
-                Text("\(points) pts")
-                    .font(.caption).bold()
-                    .monospacedDigit()
-                    .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 7)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? Color.teamAccent.opacity(0.20)

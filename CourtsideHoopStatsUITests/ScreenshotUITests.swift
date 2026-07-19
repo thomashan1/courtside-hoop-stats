@@ -85,7 +85,8 @@ final class ScreenshotUITests: XCTestCase {
         app.navigationBars["Edit Game"].buttons["Cancel"].tap()
 
         // Pop back to the Games list so the stack is clean for later steps.
-        app.navigationBars["vs Northgate Falcons"].buttons.element(boundBy: 0).tap()
+        // (Live Scoring has no nav title now, so target the back button directly.)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 10))
 
         // 4) Roster tab.
