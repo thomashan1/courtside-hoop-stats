@@ -9,6 +9,7 @@ struct GameSummaryView: View {
     @State private var game: Game
     /// Presents the full scoring view to edit a finished game's events (#8).
     @State private var isEditingScores = false
+    @State private var showDetails = false
 
     /// Final-score digits scale with Dynamic Type (capped so they can't overflow
     /// the row), matching the live scoreboard's behavior (issue #12).
@@ -33,6 +34,13 @@ struct GameSummaryView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    showDetails = true
+                } label: {
+                    Label("Details", systemImage: "info.circle")
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
                     isEditingScores = true
                 } label: {
                     Label("Edit Scores", systemImage: "square.and.pencil")
@@ -40,6 +48,14 @@ struct GameSummaryView: View {
             }
         }
         .onAppear(perform: loadGameIfNeeded)
+        .sheet(isPresented: $showDetails) {
+            // Details + notes editor (Cancel/Save). Format is locked — the game
+            // is played, so its periods are fixed.
+            EditGameSheet(game: game, allowsFormatChange: false) { updated in
+                store.updateGame(updated)
+                game = updated
+            }
+        }
         // Re-open the same two-tap scoring screen so editing a finished game
         // "looks the same" as entering it live (#8). Reload on dismiss so the
         // summary reflects any edits.
@@ -112,11 +128,16 @@ struct GameSummaryView: View {
 
     // MARK: - Player stats table
 
+    /// Players who were at the game (benched players excluded from stats).
+    private var playingPlayers: [Player] {
+        store.team.players.filter { !game.benchedPlayerIDs.contains($0.id) }
+    }
+
     private var statsSection: some View {
         Section("Player Stats") {
             // Shared table (#8) — the same component used in Live Scoring.
             // It's the horizontally-scrollable Grid version that also fixes #12.
-            PlayerStatsTable(stats: game.stats(for: store.team.players))
+            PlayerStatsTable(stats: game.stats(for: playingPlayers))
         }
     }
 
@@ -130,16 +151,14 @@ struct GameSummaryView: View {
         }
     }
 
-    // MARK: - Notes
+    // MARK: - Notes (read-only — edit via the Details button, #23/consistency)
 
+    @ViewBuilder
     private var notesSection: some View {
-        Section("Notes") {
-            TextField(
-                "Scouting notes, observations…",
-                text: Binding(get: { game.notes }, set: { game.notes = $0; persist() }),
-                axis: .vertical
-            )
-            .lineLimit(3...10)
+        if !game.notes.isEmpty {
+            Section("Notes") {
+                Text(game.notes)
+            }
         }
     }
 
@@ -147,10 +166,17 @@ struct GameSummaryView: View {
 
     private var detailsSection: some View {
         Section("Details") {
-            LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
+            LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .shortened))
             LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
             if !game.league.isEmpty { LabeledContent("League", value: game.league) }
-            if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+            if !game.location.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Location", value: game.location)
+                    if !game.locationAddress.isEmpty {
+                        Text(game.locationAddress).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
             LabeledContent("Format", value: game.periodFormat.displayName)
         }
     }
@@ -169,9 +195,5 @@ struct GameSummaryView: View {
         if let loaded = store.game(id: gameID) {
             game = loaded
         }
-    }
-
-    private func persist() {
-        store.updateGame(game)
     }
 }

@@ -15,6 +15,9 @@ import MapKit
 struct LocationField: View {
     let title: String
     @Binding var text: String
+    /// The picked place's street address, shown as a smaller-font FYI under the
+    /// field once a MapKit suggestion is chosen. Cleared when the field is emptied.
+    @Binding var address: String
     let priorValues: [String]
 
     @FocusState private var focused: Bool
@@ -38,7 +41,15 @@ struct LocationField: View {
                 .textInputAutocapitalization(.words)
                 .onChange(of: text) { _, newValue in
                     search.update(query: newValue)
+                    if newValue.isEmpty { address = "" }
                 }
+
+            // FYI address of the picked place (not while actively choosing).
+            if !focused, !address.isEmpty {
+                Text(address)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             if focused {
                 ForEach(priorMatches, id: \.self) { value in
@@ -56,6 +67,7 @@ struct LocationField: View {
     private func suggestionButton(_ value: String, systemImage: String, detail: String?) -> some View {
         Button {
             text = value
+            address = detail ?? ""   // keep the address as FYI (empty for prior values)
             focused = false
             search.clear()
         } label: {

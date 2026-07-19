@@ -19,6 +19,9 @@ enum DemoData {
                 Player(name: "Emma Johnson", number: "21"),
                 Player(name: "Chloe Kim", number: "23"),
                 Player(name: "Grace Lee", number: "34"),
+                Player(name: "Harper Reed", number: "5"),
+                Player(name: "Mia Torres", number: "8"),
+                Player(name: "Ella Brooks", number: "9"),
             ],
             homeJersey: .white
         )
@@ -41,6 +44,58 @@ enum DemoData {
 
     /// A fixed reference date so screenshots are reproducible.
     private static let refDate = Date(timeIntervalSince1970: 1_752_000_000) // 2025-07-08
+
+    // MARK: - Random test game (easter egg: long-press "+" on the Games list)
+
+    private static let opponents = [
+        "Lakeside Lightning", "Northgate Falcons", "Summit Storm", "Valley Vipers",
+        "Harbor Sharks", "Central Cyclones", "Pine Ridge Panthers", "Bayview Bobcats",
+    ]
+    private static let gyms = [
+        "Riverside Community Gym", "Northgate High", "Summit Rec Center",
+        "Central Arena", "Valley Fieldhouse", "Bayview Middle School",
+    ]
+
+    /// A finished game for `team` with random-but-realistic quarter-by-quarter
+    /// scoring, for exercising the UI. DEBUG only.
+    static func randomGame(team: Team) -> Game {
+        let players = team.players.isEmpty
+            ? [Player(name: "Test Player", number: "0")] : team.players
+        var events: [GameEvent] = []
+        var periodEnds: [Int: PeriodEndScore] = [:]
+        var ourTotal = 0
+        var oppTotal = 0
+        let base = Date()
+
+        for quarter in 1...4 {
+            // A handful of our scoring plays per quarter.
+            for _ in 0..<Int.random(in: 3...7) {
+                let player = players.randomElement()!
+                // Weight toward 2-pointers, with some 3s and free throws.
+                let type = [EventType.twoPoint, .twoPoint, .twoPoint,
+                            .threePoint, .ftMade, .ftMissed].randomElement()!
+                events.append(GameEvent(playerID: player.id, type: type, period: quarter,
+                                        timestamp: base.addingTimeInterval(Double(events.count))))
+                ourTotal += type.points
+            }
+            oppTotal += Int.random(in: 6...15)
+            periodEnds[quarter] = PeriodEndScore(ourRunningTotal: ourTotal,
+                                                 opponentRunningTotal: oppTotal)
+        }
+
+        var game = Game(opponent: opponents.randomElement()!)
+        game.teamID = team.id
+        game.date = Date().addingTimeInterval(-Double(Int.random(in: 0...21)) * 86_400)
+        game.league = "Metro Youth League"
+        game.location = gyms.randomElement()!
+        game.isHome = Bool.random()
+        game.periodFormat = .quarters
+        game.events = events
+        game.periodEndScores = periodEnds
+        game.isComplete = true
+        game.hasStarted = true
+        return game
+    }
 
     /// Games list: one finished game (rich stats, the #8 edit target), one game
     /// in progress, and one scheduled.
@@ -86,6 +141,7 @@ enum DemoData {
             opponent: "Lakeside Lightning",
             league: "Metro Youth League",
             location: "Riverside Community Gym",
+            locationAddress: "455 Riverside Dr, Springfield",
             isHome: true,
             periodFormat: .quarters,
             events: events,

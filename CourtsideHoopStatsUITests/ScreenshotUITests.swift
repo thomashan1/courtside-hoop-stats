@@ -66,8 +66,27 @@ final class ScreenshotUITests: XCTestCase {
         // The live scoring screen always shows the Score Log header.
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         snap(app, "03-live-scoring")
+
+        // 3a) Bench players not at the game via long-press → "Not playing".
+        // They collapse into a strip, freeing grid space (11-player roster).
+        app.buttons["Ella #9"].press(forDuration: 1.1)
+        app.buttons["Not playing"].tap()
+        app.buttons["Mia #8"].press(forDuration: 1.1)
+        app.buttons["Not playing"].tap()
+        let benchToggle = app.buttons["Not playing (2)"]
+        XCTAssertTrue(benchToggle.waitForExistence(timeout: 5))
+        benchToggle.tap()   // expand the collapsed strip to show the chips
+        snap(app, "11-bench")
+
+        // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.
+        app.buttons["Details"].tap()
+        XCTAssertTrue(app.navigationBars["Edit Game"].waitForExistence(timeout: 10))
+        snap(app, "10-game-details")
+        app.navigationBars["Edit Game"].buttons["Cancel"].tap()
+
         // Pop back to the Games list so the stack is clean for later steps.
-        app.navigationBars["vs Northgate Falcons"].buttons.element(boundBy: 0).tap()
+        // (Live Scoring has no nav title now, so target the back button directly.)
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Games"].waitForExistence(timeout: 10))
 
         // 4) Roster tab.
@@ -85,8 +104,8 @@ final class ScreenshotUITests: XCTestCase {
         app.buttons["Edit Eastside Eagles"].tap()
         XCTAssertTrue(app.staticTexts["Home Jersey"].waitForExistence(timeout: 10))
         snap(app, "09-team-detail")
-        // Dismiss the editor sheet before moving on (it covers the tab bar).
-        app.navigationBars["Eastside Eagles"].buttons["Done"].tap()
+        // Dismiss the editor sheet before moving on (Cancel/Save now).
+        app.navigationBars["Eastside Eagles"].buttons["Cancel"].tap()
 
         // 5) New Game sheet → Location autocomplete (#13). Type a fragment of a
         // previously-used gym; the prior-value suggestion is deterministic (live

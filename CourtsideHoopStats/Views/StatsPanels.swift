@@ -52,10 +52,10 @@ struct PlayerStatsTable: View {
 
 // MARK: - By-period score grid
 
-/// The read-only period-by-period score grid (our points vs opponent). Our
-/// column is derived from events; the opponent column from recorded running
-/// totals. Editing opponent totals lives with the caller (the Summary keeps its
-/// "Edit opponent totals" disclosure) — this component is display-only.
+/// The read-only period-by-period score grid — a **cumulative** running
+/// linescore (score at the end of each period; the last row is the final).
+/// Our column is derived from events; the opponent column from the recorded
+/// running totals. Display-only.
 struct PeriodBreakdownGrid: View {
     let game: Game
     let ourName: String
@@ -69,7 +69,7 @@ struct PeriodBreakdownGrid: View {
             }
             .foregroundStyle(.secondary)
 
-            ForEach(game.periodBreakdown(), id: \.period) { row in
+            ForEach(game.periodBreakdownCumulative(), id: \.period) { row in
                 HStack {
                     Text(game.periodFormat.periodLabel(row.period))
                         .font(.subheadline).bold()

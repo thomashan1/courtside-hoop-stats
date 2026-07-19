@@ -122,46 +122,41 @@ struct TeamDetailView: View {
     @Environment(\.dismiss) private var dismiss
     let teamID: UUID
 
+    // Staged edits (Cancel/Save), matching every other record editor.
+    @State private var name = ""
+    @State private var jersey: JerseyColor = .white
+    @State private var confirmingDelete = false
+
     private var team: Team? { store.teams.first { $0.id == teamID } }
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
         Form {
-            if let team {
-                Section("Team Name") {
-                    TextField("Team name", text: Binding(
-                        get: { team.name },
-                        set: { var t = team; t.name = $0; store.updateTeam(t) }
-                    ))
+            Section("Team Name") {
+                TextField("Team name", text: $name)
                     .textInputAutocapitalization(.words)
-                }
+            }
 
-                Section {
-                    Picker("Home jersey", selection: Binding(
-                        get: { team.homeJersey ?? .white },
-                        set: { var t = team; t.homeJersey = $0; store.updateTeam(t) }
-                    )) {
-                        ForEach(JerseyColor.allCases) { color in
-                            Text(color.label).tag(color)
-                        }
+            Section {
+                Picker("Home jersey", selection: $jersey) {
+                    ForEach(JerseyColor.allCases) { color in
+                        Text(color.label).tag(color)
                     }
-                    .pickerStyle(.segmented)
-                } header: {
-                    Text("Home Jersey")
-                } footer: {
-                    Text("Away games use the other jersey — \((team.homeJersey ?? .white).opposite.label).")
                 }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Home Jersey")
+            } footer: {
+                Text("Away games use the other jersey — \(jersey.opposite.label).")
+            }
 
-                if store.teams.count > 1 {
-                    Section {
-                        Button(role: .destructive) {
-                            store.deleteTeam(teamID)
-                            dismiss()
-                        } label: {
-                            Label("Delete Team", systemImage: "trash")
-                                .foregroundStyle(.red)
-                        }
-                    } footer: {
-                        Text("Deletes this team and all of its games.")
+            if store.teams.count > 1 {
+                Section {
+                    Button(role: .destructive) {
+                        confirmingDelete = true
+                    } label: {
+                        Label("Delete Team", systemImage: "trash")
+                            .foregroundStyle(.red)
                     }
                 }
             }
@@ -169,10 +164,38 @@ struct TeamDetailView: View {
         .navigationTitle(team?.name ?? "Team")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
+                Button("Save") { save() }
+                    .disabled(trimmedName.isEmpty)
             }
         }
+        .onAppear {
+            if let team {
+                name = team.name
+                jersey = team.homeJersey ?? .white
+            }
+        }
+        .confirmationDialog("Delete \(team?.name ?? "team")?",
+                            isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete Team & Its Games", role: .destructive) {
+                store.deleteTeam(teamID)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This deletes the team and all of its games. This can't be undone.")
+        }
+    }
+
+    private func save() {
+        guard var team else { return }
+        team.name = trimmedName
+        team.homeJersey = jersey
+        store.updateTeam(team)
+        dismiss()
     }
 }
 

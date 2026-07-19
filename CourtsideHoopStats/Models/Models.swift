@@ -184,11 +184,17 @@ struct Game: Identifiable, Codable {
     var opponent: String
     var league: String = ""
     var location: String = ""
+    /// The street address of the picked location (from MapKit), kept as a
+    /// smaller-font FYI under the location. Empty for manually-typed gyms.
+    var locationAddress: String = ""
     var isHome: Bool = true
     var periodFormat: PeriodFormat = .quarters
     var events: [GameEvent] = []
     var periodEndScores: [Int: PeriodEndScore] = [:]   // key = period number
     var notes: String = ""
+    /// Roster players sat out of this game (not at the game). Hidden from the
+    /// live-scoring grid to save space; their existing events are untouched.
+    var benchedPlayerIDs: [UUID] = []
     var isComplete: Bool = false
     /// Whether scoring has begun. Optional for backward compatibility: games
     /// saved before scheduling existed decode as `nil` and are treated as
@@ -252,6 +258,23 @@ struct Game: Identifiable, Codable {
                 .reduce(0) { $0 + $1.type.points }
             rows.append((period, ourDelta, score.opponentRunningTotal - prevOpp))
             prevOpp = score.opponentRunningTotal
+        }
+        return rows
+    }
+
+    /// Cumulative score at the **end of each period** — a running linescore
+    /// (Q1 total, Q2 total, …), where the last row equals the final score. Our
+    /// side is derived from events; the opponent side is the recorded running
+    /// total (already cumulative).
+    func periodBreakdownCumulative() -> [(period: Int, our: Int, opponent: Int)] {
+        var rows: [(Int, Int, Int)] = []
+        var ourTotal = 0
+        for period in 1...periodFormat.periodCount {
+            guard let score = periodEndScores[period] else { break }
+            ourTotal += events
+                .filter { $0.period == period }
+                .reduce(0) { $0 + $1.type.points }
+            rows.append((period, ourTotal, score.opponentRunningTotal))
         }
         return rows
     }

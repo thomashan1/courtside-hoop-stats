@@ -23,16 +23,22 @@ struct LiveScoringView: View {
     @State private var showOpponentTotals = false
     /// Presents the List-based score-log editor (reorder + delete, #9).
     @State private var showLogEditor = false
+    /// Presents the game-details editor (location, notes, matchup) so details
+    /// can be fixed mid-game — the same Cancel/Save sheet used elsewhere.
+    @State private var showDetails = false
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
+    /// Whether the "Not playing" bench strip is expanded. Collapsed by default so
+    /// it takes almost no space.
+    @State private var showBench = false
     /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
     /// new event is recorded.
     @State private var redoStack: [GameEvent] = []
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
-    @ScaledMetric private var cardMinWidth: CGFloat = 96
+    @ScaledMetric private var cardMinWidth: CGFloat = 78
     @ScaledMetric private var actionMinWidth: CGFloat = 72
     @ScaledMetric private var actionMinHeight: CGFloat = 48
 
@@ -46,6 +52,27 @@ struct LiveScoringView: View {
         [GridItem(.adaptive(minimum: cardMinWidth), spacing: 12)]
     }
 
+    /// Players at the game — shown in the grid. Benched players are hidden.
+    private var activePlayers: [Player] {
+        store.team.players.filter { !game.benchedPlayerIDs.contains($0.id) }
+    }
+    /// Players sat out, shown as compact chips you can tap to bring back.
+    private var benchedPlayers: [Player] {
+        store.team.players.filter { game.benchedPlayerIDs.contains($0.id) }
+    }
+
+    private func bench(_ id: UUID) {
+        guard !game.benchedPlayerIDs.contains(id) else { return }
+        game.benchedPlayerIDs.append(id)
+        if selectedPlayerID == id { selectedPlayerID = nil }
+        store.updateGame(game)
+    }
+
+    private func unbench(_ id: UUID) {
+        game.benchedPlayerIDs.removeAll { $0 == id }
+        store.updateGame(game)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             ScoreboardView(
@@ -56,22 +83,75 @@ struct LiveScoringView: View {
                 periodLabel: game.periodFormat.periodLabel(game.currentPeriod)
             )
 
-            ScrollView {
-                playerGrid
-                    .padding()
-                eventLog
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                statsPanel
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
+            // Pinned Score Log header — stays put while the entries scroll.
+            scoreLogHeader
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 6)
+
+            // …the log entries scroll…
+            ScrollViewReader { proxy in
+                ScrollView {
+                    eventLog
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                        .id("scoreLogEnd")
+                    statsPanel
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                }
+                // Keep the newest event (bottom of the log) in view as you score.
+                .onChange(of: game.events.count) { _, _ in
+                    withAnimation(.snappy(duration: 0.2)) {
+                        proxy.scrollTo("scoreLogEnd", anchor: .bottom)
+                    }
+                }
+                .onAppear { proxy.scrollTo("scoreLogEnd", anchor: .bottom) }
             }
+
+            // …and the player cards sit at the bottom, in the thumb zone right
+            // above the action bar. The deck has its own elevated surface so it
+            // reads as a distinct control area, separate from the Score Log.
+            VStack(alignment: .leading, spacing: 8) {
+                benchStrip
+                playerGrid
+            }
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 2)
+            .background(
+                UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22)
+                    .fill(Color(.systemBackground))
+                    .ignoresSafeArea(edges: [.horizontal, .bottom])
+                    .shadow(color: .black.opacity(0.18), radius: 10, y: -3)
+            )
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("vs \(game.opponent)")
+        // The scoreboard already shows both team names, so no nav title needed.
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // The scoreboard banner behind the nav bar is dark — force light bar
+        // content so the title/buttons are readable.
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .safeAreaInset(edge: .bottom) { actionBar }
         .onAppear(perform: loadGameIfNeeded)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showDetails = true
+                } label: {
+                    Label("Details", systemImage: "info.circle")
+                }
+            }
+        }
+        .sheet(isPresented: $showDetails) {
+            // Format can't change once a game is under way (would rescramble
+            // recorded periods).
+            EditGameSheet(game: game, allowsFormatChange: false) { updated in
+                game = updated
+                store.updateGame(game)
+            }
+        }
         .sheet(isPresented: $showEndPeriod) {
             EndPeriodSheet(
                 periodLabel: game.periodFormat.periodLabel(game.currentPeriod),
@@ -104,51 +184,118 @@ struct LiveScoringView: View {
                 .padding(.top, 40)
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(store.team.players) { player in
+                    ForEach(activePlayers) { player in
                         PlayerCard(
                             player: player,
-                            points: pointsByPlayer[player.id, default: 0],
-                            isSelected: selectedPlayerID == player.id
-                        ) {
-                            toggleSelection(player.id)
+                            isSelected: selectedPlayerID == player.id,
+                            onTap: { toggleSelection(player.id) },
+                            onBench: { bench(player.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Bench (players not at this game)
+
+    @ViewBuilder
+    private var benchStrip: some View {
+        if !benchedPlayers.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                // Collapsed control is a distinct capsule so it reads as its own
+                // element, not part of the Score Log below it.
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { showBench.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.slash")
+                            .font(.caption)
+                        Text("Not playing (\(benchedPlayers.count))")
+                            .font(.subheadline)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                            .rotationEffect(.degrees(showBench ? 180 : 0))
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                }
+                .buttonStyle(.plain)
+
+                if showBench {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(benchedPlayers) { player in
+                                Button {
+                                    unbench(player.id)
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Text(benchLabel(player))
+                                            .font(.subheadline)
+                                            .foregroundStyle(.primary)
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.caption)
+                                            .foregroundStyle(Color.teamAccent)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Capsule().fill(Color.teamAccent.opacity(0.12)))
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func benchLabel(_ player: Player) -> String {
+        let number = player.number.isEmpty ? "" : "#\(player.number)"
+        return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     // MARK: - Event log
 
+    /// Pinned above the scrolling log so the title + Edit/Reorder stay in view.
+    private var scoreLogHeader: some View {
+        HStack {
+            Text("Score Log")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+            if !game.events.isEmpty {
+                Button {
+                    showLogEditor = true
+                } label: {
+                    Label("Edit / Reorder", systemImage: "arrow.up.arrow.down")
+                        .font(.subheadline)
+                }
+                .tint(.teamAccent)
+            }
+        }
+    }
+
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Score Log")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if !game.events.isEmpty {
-                    Button {
-                        showLogEditor = true
-                    } label: {
-                        Label("Edit / Reorder", systemImage: "arrow.up.arrow.down")
-                            .font(.subheadline)
-                    }
-                    .tint(.teamAccent)
-                }
-            }
-
-            endPeriodDivider
-
-            EventLogView(game: $game, players: store.team.players) {
+            EventLogView(game: $game, players: store.team.players,
+                         pinsPeriodHeaders: true) {
                 store.updateGame(game)
             }
+
+            // The "end this period" control sits at the bottom, after the current
+            // period's (newest) events — the natural place to finish a period.
+            endPeriodDivider
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The current quarter/half boundary, shown at the top of the Score Log.
-    /// Tapping it records the opponent's total and advances (or finishes).
+    /// The current quarter/half boundary, shown at the bottom of the Score Log
+    /// (after the newest events). Tapping it records the opponent's total and
+    /// advances (or finishes).
     /// When re-editing a finished game the divider is inert ("Final") so editing
     /// events never forces a re-finish and `isComplete` is preserved (#8).
     @ViewBuilder
@@ -205,11 +352,12 @@ struct LiveScoringView: View {
                 if !game.periodBreakdown().isEmpty {
                     PeriodBreakdownGrid(game: game, ourName: store.team.name)
                 }
-                PlayerStatsTable(stats: game.stats(for: store.team.players))
+                // Only players at the game — benched players are excluded.
+                PlayerStatsTable(stats: game.stats(for: activePlayers))
             }
             .padding(.top, 12)
         } label: {
-            Label("Player Stats & Periods", systemImage: "chart.bar.xaxis")
+            Label("Stats", systemImage: "chart.bar.xaxis")
                 .font(.headline)
                 .foregroundStyle(.primary)
         }
@@ -291,15 +439,6 @@ struct LiveScoringView: View {
         .disabled(!enabled)
     }
 
-    // MARK: - Derived helpers
-
-    private var pointsByPlayer: [UUID: Int] {
-        var totals: [UUID: Int] = [:]
-        for event in game.events {
-            totals[event.playerID, default: 0] += event.type.points
-        }
-        return totals
-    }
 
     private var selectedPlayer: Player? {
         guard let id = selectedPlayerID else { return nil }
@@ -377,11 +516,12 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
-    let points: Int
     let isSelected: Bool
     let onTap: () -> Void
+    /// Bench (hide) this player — they're not at the game.
+    let onBench: () -> Void
 
-    /// Compact identity: first name + jersey number, e.g. "Ava #4".
+    /// Compact identity for accessibility, e.g. "Ava #4".
     private var idLabel: String {
         let number = player.number.isEmpty ? "" : "#\(player.number)"
         return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
@@ -389,30 +529,39 @@ private struct PlayerCard: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 2) {
-                Text(idLabel)
+            // Just the jersey bubble + first name — small and glanceable. See
+            // per-player cumulative points in the Stats panel instead.
+            VStack(spacing: 5) {
+                JerseyBadge(number: player.number, size: 30)
+                Text(player.firstName)
                     .font(.subheadline).bold()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .foregroundStyle(.primary)
-                Text("\(points) pts")
-                    .font(.caption).bold()
-                    .monospacedDigit()
-                    .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? Color.teamAccent.opacity(0.18)
-                                     : Color(.secondarySystemGroupedBackground))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.teamAccent.opacity(0.20)
+                                     : Color.teamAccent.opacity(0.08))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        RoundedRectangle(cornerRadius: 12)
                             .stroke(isSelected ? Color.teamAccent : .clear, lineWidth: 2.5)
                     )
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(idLabel)
+        // Long-press to bench (mark not playing) — keeps the card clean and the
+        // big tap target uncluttered. Restore from the "Not playing" strip.
+        .contextMenu {
+            Button {
+                onBench()
+            } label: {
+                Label("Not playing", systemImage: "person.slash")
+            }
+        }
     }
 }
 

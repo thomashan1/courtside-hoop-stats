@@ -24,7 +24,14 @@ struct GameDetailView: View {
         Form {
             Section("Details") {
                 if !game.league.isEmpty { LabeledContent("League", value: game.league) }
-                if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+                if !game.location.isEmpty {
+                    VStack(alignment: .leading, spacing: 2) {
+                        LabeledContent("Location", value: game.location)
+                        if !game.locationAddress.isEmpty {
+                            Text(game.locationAddress).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 LabeledContent("Format", value: game.periodFormat.displayName)
             }
 
@@ -34,7 +41,7 @@ struct GameDetailView: View {
                 LabeledContent("Jersey") {
                     JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
                 }
-                LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
+                LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .shortened))
             }
 
             Section {
@@ -97,24 +104,32 @@ struct EditGameSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     let game: Game
+    /// Whether the period format can be changed. False once a game has started,
+    /// so editing details never rescrambles recorded periods.
+    var allowsFormatChange: Bool = true
     var onSave: (Game) -> Void
 
     @State private var opponent: String
     @State private var date: Date
     @State private var league: String
     @State private var location: String
+    @State private var locationAddress: String
     @State private var isHome: Bool
     @State private var periodFormat: PeriodFormat
+    @State private var notes: String
 
-    init(game: Game, onSave: @escaping (Game) -> Void) {
+    init(game: Game, allowsFormatChange: Bool = true, onSave: @escaping (Game) -> Void) {
         self.game = game
+        self.allowsFormatChange = allowsFormatChange
         self.onSave = onSave
         _opponent = State(initialValue: game.opponent)
         _date = State(initialValue: game.date)
         _league = State(initialValue: game.league)
         _location = State(initialValue: game.location)
+        _locationAddress = State(initialValue: game.locationAddress)
         _isHome = State(initialValue: game.isHome)
         _periodFormat = State(initialValue: game.periodFormat)
+        _notes = State(initialValue: game.notes)
     }
 
     private var trimmedOpponent: String {
@@ -128,10 +143,13 @@ struct EditGameSheet: View {
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",
-                                  text: $location, priorValues: store.knownLocations)
-                    Picker("Format", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
+                                  text: $location, address: $locationAddress,
+                                  priorValues: store.knownLocations)
+                    if allowsFormatChange {
+                        Picker("Format", selection: $periodFormat) {
+                            ForEach(PeriodFormat.allCases, id: \.self) { format in
+                                Text(format.displayName).tag(format)
+                            }
                         }
                     }
                 }
@@ -144,7 +162,13 @@ struct EditGameSheet: View {
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
+                    DatePicker("Date & Time", selection: $date,
+                               displayedComponents: [.date, .hourAndMinute])
+                }
+
+                Section("Notes") {
+                    TextField("Scouting notes, observations…", text: $notes, axis: .vertical)
+                        .lineLimit(3...10)
                 }
             }
             .navigationTitle("Edit Game")
@@ -167,8 +191,10 @@ struct EditGameSheet: View {
         updated.date = date
         updated.league = league.trimmingCharacters(in: .whitespacesAndNewlines)
         updated.location = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        updated.locationAddress = updated.location.isEmpty ? "" : locationAddress
         updated.isHome = isHome
-        updated.periodFormat = periodFormat
+        if allowsFormatChange { updated.periodFormat = periodFormat }
+        updated.notes = notes
         onSave(updated)
         dismiss()
     }
