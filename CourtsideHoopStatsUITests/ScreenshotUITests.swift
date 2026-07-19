@@ -67,10 +67,12 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         snap(app, "03-live-scoring")
 
-        // 3a) Bench players not at the game — they collapse into a "Not playing"
-        // strip, freeing grid space (11-player roster).
-        app.buttons["Bench Ella #9"].tap()
-        app.buttons["Bench Mia #8"].tap()
+        // 3a) Bench players not at the game via long-press → "Not playing".
+        // They collapse into a strip, freeing grid space (11-player roster).
+        app.buttons["Ella #9"].press(forDuration: 1.1)
+        app.buttons["Not playing"].tap()
+        app.buttons["Mia #8"].press(forDuration: 1.1)
+        app.buttons["Not playing"].tap()
         let benchToggle = app.buttons["Not playing (2)"]
         XCTAssertTrue(benchToggle.waitForExistence(timeout: 5))
         benchToggle.tap()   // expand the collapsed strip to show the chips

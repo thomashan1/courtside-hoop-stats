@@ -514,18 +514,15 @@ private struct PlayerCard: View {
             )
         }
         .buttonStyle(.plain)
-        .overlay(alignment: .topTrailing) {
-            // Bench the player (hide from the grid). Small so it doesn't crowd
-            // the big scoring tap target; benching is reversible from the strip.
-            Button(action: onBench) {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(5)
-                    .contentShape(Rectangle())
+        .accessibilityLabel(idLabel)
+        // Long-press to bench (mark not playing) — keeps the card clean and the
+        // big tap target uncluttered. Restore from the "Not playing" strip.
+        .contextMenu {
+            Button {
+                onBench()
+            } label: {
+                Label("Not playing", systemImage: "person.slash")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Bench \(idLabel)")
         }
     }
 }
