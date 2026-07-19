@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// A grouped event log. Events are grouped under period (quarter/half)
-/// separators, newest period first.
+/// separators, oldest first — so the most recent entry sits at the bottom,
+/// nearest the player cards / action bar.
 ///
 /// - In **editable** mode (Live Scoring and the Edit-Scores view) tapping an
 ///   event opens an editor and a left-swipe deletes it.
@@ -18,9 +19,9 @@ struct EventLogView: View {
 
     @State private var editingEvent: GameEvent?
 
-    /// Periods that have at least one event, most recent first.
-    private var periodsDescending: [Int] {
-        Set(game.events.map(\.period)).sorted(by: >)
+    /// Periods that have at least one event, oldest first (Q1 at the top).
+    private var periodsAscending: [Int] {
+        Set(game.events.map(\.period)).sorted()
     }
 
     var body: some View {
@@ -31,7 +32,7 @@ struct EventLogView: View {
                     .foregroundStyle(.secondary)
             } else {
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(periodsDescending, id: \.self) { period in
+                    ForEach(periodsAscending, id: \.self) { period in
                         periodGroup(period)
                     }
                 }
@@ -63,7 +64,7 @@ struct EventLogView: View {
                     .monospacedDigit()
             }
 
-            ForEach(eventsNewestFirst(in: period)) { event in
+            ForEach(eventsOldestFirst(in: period)) { event in
                 let row = EventLogRow(event: event,
                                       player: player(for: event.playerID),
                                       format: game.periodFormat,
@@ -84,10 +85,10 @@ struct EventLogView: View {
 
     // MARK: - Derived
 
-    private func eventsNewestFirst(in period: Int) -> [GameEvent] {
+    private func eventsOldestFirst(in period: Int) -> [GameEvent] {
         game.events
             .filter { $0.period == period }
-            .sorted { $0.timestamp > $1.timestamp }
+            .sorted { $0.timestamp < $1.timestamp }
     }
 
     private func ourPoints(in period: Int) -> Int {

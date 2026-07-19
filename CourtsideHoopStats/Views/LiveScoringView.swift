@@ -84,13 +84,23 @@ struct LiveScoringView: View {
             )
 
             // Score Log (and the at-a-glance panel) scroll on top…
-            ScrollView {
-                eventLog
-                    .padding([.horizontal, .top])
-                    .padding(.bottom, 8)
-                statsPanel
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    eventLog
+                        .padding([.horizontal, .top])
+                        .padding(.bottom, 8)
+                        .id("scoreLogEnd")
+                    statsPanel
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                }
+                // Keep the newest event (bottom of the log) in view as you score.
+                .onChange(of: game.events.count) { _, _ in
+                    withAnimation(.snappy(duration: 0.2)) {
+                        proxy.scrollTo("scoreLogEnd", anchor: .bottom)
+                    }
+                }
+                .onAppear { proxy.scrollTo("scoreLogEnd", anchor: .bottom) }
             }
 
             // …and the player cards sit at the bottom, in the thumb zone right
@@ -257,17 +267,20 @@ struct LiveScoringView: View {
                 }
             }
 
-            endPeriodDivider
-
             EventLogView(game: $game, players: store.team.players) {
                 store.updateGame(game)
             }
+
+            // The "end this period" control sits at the bottom, after the current
+            // period's (newest) events — the natural place to finish a period.
+            endPeriodDivider
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The current quarter/half boundary, shown at the top of the Score Log.
-    /// Tapping it records the opponent's total and advances (or finishes).
+    /// The current quarter/half boundary, shown at the bottom of the Score Log
+    /// (after the newest events). Tapping it records the opponent's total and
+    /// advances (or finishes).
     /// When re-editing a finished game the divider is inert ("Final") so editing
     /// events never forces a re-finish and `isComplete` is preserved (#8).
     @ViewBuilder
@@ -324,7 +337,8 @@ struct LiveScoringView: View {
                 if !game.periodBreakdown().isEmpty {
                     PeriodBreakdownGrid(game: game, ourName: store.team.name)
                 }
-                PlayerStatsTable(stats: game.stats(for: store.team.players))
+                // Only players at the game — benched players are excluded.
+                PlayerStatsTable(stats: game.stats(for: activePlayers))
             }
             .padding(.top, 12)
         } label: {

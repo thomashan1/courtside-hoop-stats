@@ -5,7 +5,7 @@ import SwiftUI
 /// view (the inline log's old problem).
 ///
 /// The log is one ordered sequence of **events** and **period-end markers**,
-/// shown newest-first. Dragging an event or a marker across a boundary
+/// shown oldest-first. Dragging an event or a marker across a boundary
 /// reassigns periods (`Game.applyingReorderedLog`). Opponent totals ride with
 /// their marker. Events can be edited (tap) or deleted (swipe); markers reorder
 /// only.
@@ -15,7 +15,7 @@ struct ScoreLogEditor: View {
     let players: [Player]
     var persist: () -> Void
 
-    /// Newest-first display order of the log.
+    /// Oldest-first display order of the log.
     @State private var items: [ScoreLogItem] = []
     @State private var editingEvent: GameEvent?
 
@@ -48,7 +48,7 @@ struct ScoreLogEditor: View {
                 )
             }
         }
-        .onAppear { items = game.orderedLog().reversed() }
+        .onAppear { items = game.orderedLog() }
     }
 
     // MARK: - Rows
@@ -113,10 +113,10 @@ struct ScoreLogEditor: View {
 
     private func move(from source: IndexSet, to destination: Int) {
         items.move(fromOffsets: source, toOffset: destination)
-        // `items` is newest-first; the model wants oldest-first.
-        game = game.applyingReorderedLog(items.reversed())
+        // `items` is already oldest-first, matching the model's order.
+        game = game.applyingReorderedLog(items)
         // Re-derive the display list so ids/periods stay in sync.
-        items = game.orderedLog().reversed()
+        items = game.orderedLog()
         persist()
     }
 
@@ -124,12 +124,12 @@ struct ScoreLogEditor: View {
         guard let i = game.events.firstIndex(where: { $0.id == updated.id }) else { return }
         game.events[i] = updated
         persist()
-        items = game.orderedLog().reversed()
+        items = game.orderedLog()
     }
 
     private func deleteEvent(_ event: GameEvent) {
         game.events.removeAll { $0.id == event.id }
         persist()
-        items = game.orderedLog().reversed()
+        items = game.orderedLog()
     }
 }
