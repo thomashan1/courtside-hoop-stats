@@ -31,9 +31,6 @@ struct LiveScoringView: View {
     /// Whether the "Not playing" bench strip is expanded. Collapsed by default so
     /// it takes almost no space.
     @State private var showBench = false
-    /// Events removed by Undo, so they can be re-applied by Redo. Cleared when a
-    /// new event is recorded.
-    @State private var redoStack: [GameEvent] = []
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
@@ -114,6 +111,13 @@ struct LiveScoringView: View {
             // reads as a distinct control area, separate from the Score Log.
             VStack(alignment: .leading, spacing: 8) {
                 benchStrip
+                // Teach the long-press gesture until the first point is scored.
+                if game.events.isEmpty && !store.team.players.isEmpty {
+                    Text("Press and hold a player to score")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
                 playerGrid
             }
             .padding(.horizontal)
@@ -130,6 +134,9 @@ struct LiveScoringView: View {
         // Hidden system nav bar — the scoreboard's own top row carries the
         // controls, reclaiming the bar's height (long-press a card to score).
         .toolbar(.hidden, for: .navigationBar)
+        // Hide the tab bar while scoring: more room, and no accidental
+        // navigation away from a live game.
+        .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadGameIfNeeded)
         .sheet(isPresented: $showDetails) {
             // Format can't change once a game is under way (would rescramble
@@ -167,12 +174,6 @@ struct LiveScoringView: View {
             }
             .accessibilityLabel("Back")
             Spacer()
-            Button { undo() } label: { Image(systemName: "arrow.uturn.backward") }
-                .disabled(game.events.isEmpty)
-                .accessibilityLabel("Undo")
-            Button { redo() } label: { Image(systemName: "arrow.uturn.forward") }
-                .disabled(redoStack.isEmpty)
-                .accessibilityLabel("Redo")
             Button { showDetails = true } label: { Image(systemName: "info.circle") }
                 .accessibilityLabel("Details")
         }
@@ -405,22 +406,8 @@ struct LiveScoringView: View {
     private func recordScore(_ type: EventType, for playerID: UUID) {
         let event = GameEvent(playerID: playerID, type: type, period: game.currentPeriod)
         game.events.append(event)
-        redoStack.removeAll()   // a new event invalidates the redo history
         store.updateGame(game)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-    }
-
-    private func undo() {
-        guard let last = game.events.last else { return }
-        redoStack.append(last)
-        game.events.removeLast()
-        store.updateGame(game)
-    }
-
-    private func redo() {
-        guard let event = redoStack.popLast() else { return }
-        game.events.append(event)
-        store.updateGame(game)
     }
 
     private func endPeriod(opponentTotal: Int) {
