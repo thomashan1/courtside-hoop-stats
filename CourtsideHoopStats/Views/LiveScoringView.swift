@@ -83,11 +83,17 @@ struct LiveScoringView: View {
                 periodLabel: game.periodFormat.periodLabel(game.currentPeriod)
             )
 
-            // Score Log (and the at-a-glance panel) scroll on top…
+            // Pinned Score Log header — stays put while the entries scroll.
+            scoreLogHeader
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 6)
+
+            // …the log entries scroll…
             ScrollViewReader { proxy in
                 ScrollView {
                     eventLog
-                        .padding([.horizontal, .top])
+                        .padding(.horizontal)
                         .padding(.bottom, 8)
                         .id("scoreLogEnd")
                     statsPanel
@@ -104,7 +110,8 @@ struct LiveScoringView: View {
             }
 
             // …and the player cards sit at the bottom, in the thumb zone right
-            // above the action bar, so both taps of the two-tap flow are low.
+            // above the action bar. The deck has its own elevated surface so it
+            // reads as a distinct control area, separate from the Score Log.
             VStack(alignment: .leading, spacing: 8) {
                 benchStrip
                 playerGrid
@@ -113,14 +120,17 @@ struct LiveScoringView: View {
             .padding(.top, 10)
             .padding(.bottom, 2)
             .background(
-                Color(.systemGroupedBackground)
+                Color(.systemBackground)
                     .ignoresSafeArea(edges: .horizontal)
-                    .overlay(alignment: .top) { Divider() }
+                    .shadow(color: .black.opacity(0.12), radius: 5, y: -2)
             )
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
+        // The scoreboard banner behind the nav bar is dark — force light bar
+        // content so the title/buttons are readable.
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .safeAreaInset(edge: .bottom) { actionBar }
         .onAppear(perform: loadGameIfNeeded)
         .toolbar {
@@ -249,24 +259,27 @@ struct LiveScoringView: View {
 
     // MARK: - Event log
 
+    /// Pinned above the scrolling log so the title + Edit/Reorder stay in view.
+    private var scoreLogHeader: some View {
+        HStack {
+            Text("Score Log")
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Spacer()
+            if !game.events.isEmpty {
+                Button {
+                    showLogEditor = true
+                } label: {
+                    Label("Edit / Reorder", systemImage: "arrow.up.arrow.down")
+                        .font(.subheadline)
+                }
+                .tint(.teamAccent)
+            }
+        }
+    }
+
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Score Log")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-                Spacer()
-                if !game.events.isEmpty {
-                    Button {
-                        showLogEditor = true
-                    } label: {
-                        Label("Edit / Reorder", systemImage: "arrow.up.arrow.down")
-                            .font(.subheadline)
-                    }
-                    .tint(.teamAccent)
-                }
-            }
-
             EventLogView(game: $game, players: store.team.players) {
                 store.updateGame(game)
             }
@@ -539,8 +552,8 @@ private struct PlayerCard: View {
             .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.teamAccent.opacity(0.18)
-                                     : Color(.secondarySystemGroupedBackground))
+                    .fill(isSelected ? Color.teamAccent.opacity(0.20)
+                                     : Color.teamAccent.opacity(0.08))
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(isSelected ? Color.teamAccent : .clear, lineWidth: 2.5)
