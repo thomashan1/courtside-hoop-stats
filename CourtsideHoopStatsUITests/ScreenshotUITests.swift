@@ -67,6 +67,13 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         snap(app, "03-live-scoring")
 
+        // 3a) Bench players not at the game — they collapse into a "Not playing"
+        // strip, freeing grid space (11-player roster).
+        app.buttons["Bench Ella #9"].tap()
+        app.buttons["Bench Mia #8"].tap()
+        XCTAssertTrue(app.staticTexts["Not playing"].waitForExistence(timeout: 5))
+        snap(app, "11-bench")
+
         // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.
         app.buttons["Details"].tap()
         XCTAssertTrue(app.navigationBars["Edit Game"].waitForExistence(timeout: 10))

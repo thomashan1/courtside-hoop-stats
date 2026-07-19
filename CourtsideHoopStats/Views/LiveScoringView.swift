@@ -49,6 +49,27 @@ struct LiveScoringView: View {
         [GridItem(.adaptive(minimum: cardMinWidth), spacing: 12)]
     }
 
+    /// Players at the game — shown in the grid. Benched players are hidden.
+    private var activePlayers: [Player] {
+        store.team.players.filter { !game.benchedPlayerIDs.contains($0.id) }
+    }
+    /// Players sat out, shown as compact chips you can tap to bring back.
+    private var benchedPlayers: [Player] {
+        store.team.players.filter { game.benchedPlayerIDs.contains($0.id) }
+    }
+
+    private func bench(_ id: UUID) {
+        guard !game.benchedPlayerIDs.contains(id) else { return }
+        game.benchedPlayerIDs.append(id)
+        if selectedPlayerID == id { selectedPlayerID = nil }
+        store.updateGame(game)
+    }
+
+    private func unbench(_ id: UUID) {
+        game.benchedPlayerIDs.removeAll { $0 == id }
+        store.updateGame(game)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             ScoreboardView(
@@ -62,6 +83,8 @@ struct LiveScoringView: View {
             ScrollView {
                 playerGrid
                     .padding()
+                benchStrip
+                    .padding(.horizontal)
                 eventLog
                     .padding(.horizontal)
                     .padding(.bottom, 8)
@@ -124,18 +147,58 @@ struct LiveScoringView: View {
                 .padding(.top, 40)
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(store.team.players) { player in
+                    ForEach(activePlayers) { player in
                         PlayerCard(
                             player: player,
                             points: pointsByPlayer[player.id, default: 0],
-                            isSelected: selectedPlayerID == player.id
-                        ) {
-                            toggleSelection(player.id)
-                        }
+                            isSelected: selectedPlayerID == player.id,
+                            onTap: { toggleSelection(player.id) },
+                            onBench: { bench(player.id) }
+                        )
                     }
                 }
             }
         }
+    }
+
+    // MARK: - Bench (players not at this game)
+
+    @ViewBuilder
+    private var benchStrip: some View {
+        if !benchedPlayers.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Not playing")
+                    .font(.caption).foregroundStyle(.secondary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(benchedPlayers) { player in
+                            Button {
+                                unbench(player.id)
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Text(benchLabel(player))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(Color.teamAccent)
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func benchLabel(_ player: Player) -> String {
+        let number = player.number.isEmpty ? "" : "#\(player.number)"
+        return [player.firstName, number].filter { !$0.isEmpty }.joined(separator: " ")
     }
 
     // MARK: - Event log
@@ -400,6 +463,8 @@ private struct PlayerCard: View {
     let points: Int
     let isSelected: Bool
     let onTap: () -> Void
+    /// Bench (hide) this player — they're not at the game.
+    let onBench: () -> Void
 
     /// Compact identity: first name + jersey number, e.g. "Ava #4".
     private var idLabel: String {
@@ -433,6 +498,19 @@ private struct PlayerCard: View {
             )
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) {
+            // Bench the player (hide from the grid). Small so it doesn't crowd
+            // the big scoring tap target; benching is reversible from the strip.
+            Button(action: onBench) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(5)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Bench \(idLabel)")
+        }
     }
 }
 

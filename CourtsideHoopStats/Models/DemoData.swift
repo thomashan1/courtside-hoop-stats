@@ -19,6 +19,9 @@ enum DemoData {
                 Player(name: "Emma Johnson", number: "21"),
                 Player(name: "Chloe Kim", number: "23"),
                 Player(name: "Grace Lee", number: "34"),
+                Player(name: "Harper Reed", number: "5"),
+                Player(name: "Mia Torres", number: "8"),
+                Player(name: "Ella Brooks", number: "9"),
             ],
             homeJersey: .white
         )
@@ -86,6 +89,7 @@ enum DemoData {
             opponent: "Lakeside Lightning",
             league: "Metro Youth League",
             location: "Riverside Community Gym",
+            locationAddress: "455 Riverside Dr, Springfield",
             isHome: true,
             periodFormat: .quarters,
             events: events,

@@ -304,6 +304,23 @@ struct ModelsTests {
         #expect(result.periodEndScores[2]?.opponentRunningTotal == 15)
     }
 
+    @Test func periodBreakdownCumulativeIsRunningTotal() {
+        let a = UUID()
+        var game = Game(opponent: "Hawks", periodFormat: .halves)
+        game.events = [
+            GameEvent(playerID: a, type: .twoPoint, period: 1),   // H1: 2
+            GameEvent(playerID: a, type: .threePoint, period: 2), // H2: +3
+        ]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 8),
+            2: PeriodEndScore(ourRunningTotal: 5, opponentRunningTotal: 15),
+        ]
+        let rows = game.periodBreakdownCumulative()
+        // Cumulative: end of H1 = 2/8, end of H2 = 5/15 (the final score).
+        #expect(rows.map(\.our) == [2, 5])
+        #expect(rows.map(\.opponent) == [8, 15])
+    }
+
     // MARK: - Roster sorting (#27)
 
     @Test func sortPlayersByNumberIsNumericNotLexical() {

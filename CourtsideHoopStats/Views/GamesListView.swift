@@ -138,7 +138,7 @@ struct GameRowView: View {
                 Text("vs \(game.opponent)")
                     .font(.headline)
                 HStack(spacing: 6) {
-                    Text(game.date, style: .date)
+                    Text(game.date.formatted(date: .abbreviated, time: .shortened))
                     if !game.location.isEmpty {
                         Text("·")
                         Text(game.location)
@@ -212,6 +212,7 @@ struct NewGameSheet: View {
     @State private var date = Date()
     @State private var league = ""
     @State private var location = ""
+    @State private var locationAddress = ""
     @State private var isHome = true
     @State private var periodFormat: PeriodFormat = .quarters
 
@@ -227,7 +228,8 @@ struct NewGameSheet: View {
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",
-                                  text: $location, priorValues: store.knownLocations)
+                                  text: $location, address: $locationAddress,
+                                  priorValues: store.knownLocations)
                     Picker("Format", selection: $periodFormat) {
                         ForEach(PeriodFormat.allCases, id: \.self) { format in
                             Text(format.displayName).tag(format)
@@ -243,7 +245,8 @@ struct NewGameSheet: View {
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))
                     }
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
+                    DatePicker("Date & Time", selection: $date,
+                               displayedComponents: [.date, .hourAndMinute])
                 }
 
                 Section {
@@ -274,11 +277,13 @@ struct NewGameSheet: View {
     }
 
     private func makeGame(started: Bool) -> Game {
+        let cleanLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
         var game = Game(
             date: date,
             opponent: trimmedOpponent,
             league: league.trimmingCharacters(in: .whitespacesAndNewlines),
-            location: location.trimmingCharacters(in: .whitespacesAndNewlines),
+            location: cleanLocation,
+            locationAddress: cleanLocation.isEmpty ? "" : locationAddress,
             isHome: isHome,
             periodFormat: periodFormat
         )

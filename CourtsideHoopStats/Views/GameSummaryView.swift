@@ -161,10 +161,17 @@ struct GameSummaryView: View {
 
     private var detailsSection: some View {
         Section("Details") {
-            LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .omitted))
+            LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .shortened))
             LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
             if !game.league.isEmpty { LabeledContent("League", value: game.league) }
-            if !game.location.isEmpty { LabeledContent("Location", value: game.location) }
+            if !game.location.isEmpty {
+                VStack(alignment: .leading, spacing: 2) {
+                    LabeledContent("Location", value: game.location)
+                    if !game.locationAddress.isEmpty {
+                        Text(game.locationAddress).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
             LabeledContent("Format", value: game.periodFormat.displayName)
         }
     }
