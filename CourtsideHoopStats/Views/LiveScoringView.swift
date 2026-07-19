@@ -38,7 +38,7 @@ struct LiveScoringView: View {
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
-    @ScaledMetric private var cardMinWidth: CGFloat = 96
+    @ScaledMetric private var cardMinWidth: CGFloat = 78
     @ScaledMetric private var actionMinWidth: CGFloat = 72
     @ScaledMetric private var actionMinHeight: CGFloat = 48
 
@@ -83,18 +83,30 @@ struct LiveScoringView: View {
                 periodLabel: game.periodFormat.periodLabel(game.currentPeriod)
             )
 
+            // Score Log (and the at-a-glance panel) scroll on top…
             ScrollView {
-                playerGrid
-                    .padding()
-                benchStrip
-                    .padding(.horizontal)
                 eventLog
-                    .padding(.horizontal)
+                    .padding([.horizontal, .top])
                     .padding(.bottom, 8)
                 statsPanel
                     .padding(.horizontal)
                     .padding(.bottom, 8)
             }
+
+            // …and the player cards sit at the bottom, in the thumb zone right
+            // above the action bar, so both taps of the two-tap flow are low.
+            VStack(alignment: .leading, spacing: 8) {
+                benchStrip
+                playerGrid
+            }
+            .padding(.horizontal)
+            .padding(.top, 10)
+            .padding(.bottom, 2)
+            .background(
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea(edges: .horizontal)
+                    .overlay(alignment: .top) { Divider() }
+            )
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("vs \(game.opponent)")
@@ -169,17 +181,25 @@ struct LiveScoringView: View {
     @ViewBuilder
     private var benchStrip: some View {
         if !benchedPlayers.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
+                // Collapsed control is a distinct capsule so it reads as its own
+                // element, not part of the Score Log below it.
                 Button {
                     withAnimation(.snappy(duration: 0.2)) { showBench.toggle() }
                 } label: {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "person.slash")
+                            .font(.caption)
                         Text("Not playing (\(benchedPlayers.count))")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(.caption2).foregroundStyle(.secondary)
-                            .rotationEffect(.degrees(showBench ? 90 : 0))
+                            .font(.subheadline)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                            .rotationEffect(.degrees(showBench ? 180 : 0))
                     }
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
                 }
                 .buttonStyle(.plain)
 
@@ -200,7 +220,7 @@ struct LiveScoringView: View {
                                     }
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
-                                    .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                                    .background(Capsule().fill(Color.teamAccent.opacity(0.12)))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -502,13 +522,13 @@ private struct PlayerCard: View {
                     .foregroundStyle(Color.teamAccent)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
+            .padding(.vertical, 7)
             .background(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(isSelected ? Color.teamAccent.opacity(0.18)
                                      : Color(.secondarySystemGroupedBackground))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        RoundedRectangle(cornerRadius: 12)
                             .stroke(isSelected ? Color.teamAccent : .clear, lineWidth: 2.5)
                     )
             )
