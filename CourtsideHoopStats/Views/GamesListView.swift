@@ -170,11 +170,6 @@ struct NewGameSheet: View {
                             Text(format.displayName).tag(format)
                         }
                     }
-                }
-
-                Section("Opponent") {
-                    TextField("Opponent (optional)", text: $opponent)
-                        .textInputAutocapitalization(.words)
                     Toggle("Home game", isOn: $isHome)
                         .tint(.teamAccent)
                     LabeledContent("Jersey") {
@@ -182,14 +177,24 @@ struct NewGameSheet: View {
                     }
                 }
 
+                Section("Opponent") {
+                    TextField("Opponent (optional)", text: $opponent)
+                        .textInputAutocapitalization(.words)
+                }
+
                 Section {
                     Button {
                         start()
                     } label: {
-                        Label("Start Game", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
+                        HStack {
+                            Spacer()
+                            Label("Start Game", systemImage: "play.fill")
+                                .labelStyle(.titleAndIcon)
+                            Spacer()
+                        }
                     }
                     .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 } footer: {
                     Text("Nothing here is required. **Start Game** begins scoring now; **Save** schedules it for later. You can edit any of this mid-game from Details.")
                 }
