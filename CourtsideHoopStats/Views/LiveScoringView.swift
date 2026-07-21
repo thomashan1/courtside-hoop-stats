@@ -392,10 +392,6 @@ struct LiveScoringView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func player(for id: UUID) -> Player? {
-        store.team.players.first { $0.id == id }
-    }
-
     /// The opponent running total recorded at the previous period end (0 if none),
     /// used to pre-fill the end-period sheet since totals are cumulative.
     private var previousOpponentTotal: Int {

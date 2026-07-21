@@ -73,17 +73,6 @@ enum EventType: String, Codable, CaseIterable {
         }
     }
 
-    /// Compact label used on the action strip.
-    var buttonLabel: String {
-        switch self {
-        case .twoPoint:   return "2 PT"
-        case .threePoint: return "3 PT"
-        case .ftMade:     return "FT ✓"
-        case .ftMissed:   return "FT ✗"
-        case .foul:       return "Foul"
-        }
-    }
-
     /// Descriptive label used in the event editor.
     var logLabel: String {
         switch self {

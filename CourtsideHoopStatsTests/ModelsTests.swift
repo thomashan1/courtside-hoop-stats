@@ -199,7 +199,7 @@ struct ModelsTests {
         #expect(lucasStats.ftMade == 1)
         #expect(lucasStats.ftAttempts == 2)      // made + missed
         #expect(lucasStats.fouls == 1)
-        #expect(lucasStats.freeThrowDisplay == "1/2")
+        #expect(lucasStats.freeThrowDisplay == "1/2 (50%)")   // FT% appended (#41)
     }
 
     @Test func statsSortedByPointsDescending() {
