@@ -19,7 +19,7 @@ from the real UI.
 
 ```bash
 scripts/screenshots.sh                 # iPhone 17 Pro (default — README shots)
-scripts/screenshots.sh "iPhone 16 Plus" # App Store size → 1284 × 2778 frames
+scripts/screenshots.sh "iPhone 14 Plus" # App Store size → 1284 × 2778 frames
 ```
 
 PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
@@ -38,6 +38,6 @@ full set).
 The app is **iPhone-only**, so only iPhone screenshots are needed. We upload the
 **1284 × 2778** set (the largest of Apple's accepted **6.5" / 6.7"** buckets),
 captured by running the harness on a Plus/Max-class simulator (e.g.
-`scripts/screenshots.sh "iPhone 16 Plus"`). App Store Connect scales that set down
+`scripts/screenshots.sh "iPhone 14 Plus"`). App Store Connect scales that set down
 for smaller displays, so a single size covers the listing. The shots are already
 full-device frames — no cropping needed.

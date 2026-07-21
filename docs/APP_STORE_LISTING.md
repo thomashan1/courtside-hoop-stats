@@ -130,7 +130,7 @@ at **1284 × 2778** — the largest of Apple's accepted **6.5" / 6.7"** buckets 
 by running the harness on a Plus/Max-class simulator:
 
 ```bash
-scripts/screenshots.sh "iPhone 16 Plus"   # → full-device 1284 × 2778 frames
+scripts/screenshots.sh "iPhone 14 Plus"   # → full-device 1284 × 2778 frames
 ```
 
 - 1284 × 2778 (6.5"/6.7") — the set we upload.
@@ -171,7 +171,7 @@ No demo account needed (there is no login).
   Xcode 27 **GM (~Sept 2026)**, or archiving from a **release-macOS Mac / CI**.
 - [ ] Set the signing **Team** to your paid team + a Distribution provisioning profile
 - [ ] Bump build number, `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
-- [ ] Capture store screenshots at 1284 × 2778 (`scripts/screenshots.sh "iPhone 16 Plus"`)
+- [ ] Capture store screenshots at 1284 × 2778 (`scripts/screenshots.sh "iPhone 14 Plus"`)
 - [ ] Host the Privacy Policy at a public HTTPS URL and paste it in
 - [ ] Fill App Privacy = *Data Not Collected*; Age rating = 4+
 - [ ] One real game of use (validate with the actual courtside user) before release
