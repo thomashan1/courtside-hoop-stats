@@ -130,6 +130,26 @@ final class AppStore: ObservableObject {
         activeTeamID = id
     }
 
+    /// Add an imported team + roster as a NEW team (#40). IDs are regenerated so
+    /// it can never collide with existing data, and a duplicate name is
+    /// disambiguated. Non-destructive — nothing existing is touched. Returns the
+    /// team as it was actually inserted; it becomes the active team.
+    @discardableResult
+    func importTeam(from export: TeamExport) -> Team {
+        var team = export.team
+        team.id = UUID()
+        team.players = team.players.map { var p = $0; p.id = UUID(); return p }
+
+        var name = team.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if name.isEmpty { name = "Imported Team" }
+        if teams.contains(where: { $0.name == name }) { name += " (Imported)" }
+        team.name = name
+
+        teams.append(team)
+        activeTeamID = team.id
+        return team
+    }
+
     /// Rename a specific team (any team, not just the active one).
     func renameTeam(id: UUID, to name: String) {
         guard let i = teams.firstIndex(where: { $0.id == id }) else { return }

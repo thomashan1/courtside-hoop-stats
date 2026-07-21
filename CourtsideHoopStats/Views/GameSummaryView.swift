@@ -29,7 +29,7 @@ struct GameSummaryView: View {
             notesSection
             detailsSection
         }
-        .navigationTitle("vs \(game.opponent)")
+        .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

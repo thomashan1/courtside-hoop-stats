@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// App-level settings, including team management (#20).
 struct SettingsView: View {
@@ -7,6 +8,10 @@ struct SettingsView: View {
     @State private var showAddTeam = false
     @State private var newTeamName = ""
     @State private var editingTeam: TeamRef?
+
+    // Team import (#40).
+    @State private var showImporter = false
+    @State private var importMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -58,6 +63,18 @@ struct SettingsView: View {
             .sheet(item: $editingTeam) { ref in
                 NavigationStack { TeamDetailView(teamID: ref.id) }
             }
+            .fileImporter(isPresented: $showImporter,
+                          allowedContentTypes: [.json]) { result in
+                handleImport(result)
+            }
+            .alert("Import Team", isPresented: Binding(
+                get: { importMessage != nil },
+                set: { if !$0 { importMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { importMessage = nil }
+            } message: {
+                Text(importMessage ?? "")
+            }
         }
     }
 
@@ -102,10 +119,42 @@ struct SettingsView: View {
             } label: {
                 Label("Add Team", systemImage: "plus")
             }
+
+            // Import a team + roster from a shared/AirDrop'd .json file (#40).
+            Button {
+                showImporter = true
+            } label: {
+                Label("Import Team…", systemImage: "square.and.arrow.down")
+            }
         } header: {
             Text("Teams")
         } footer: {
-            Text("Tap a team to make it active (checkmark) — Roster and the Games list follow it. Tap ⓘ to edit its name, jersey, or delete it.")
+            Text("Tap a team to make it active (checkmark) — Roster and the Games list follow it. Tap ⓘ to edit its name, jersey, export it, or delete it.")
+        }
+    }
+
+    // MARK: - Import (#40)
+
+    private func handleImport(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            // Files delivered by the picker are security-scoped.
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            do {
+                let data = try Data(contentsOf: url)
+                let export = try TeamExport.coder.decoder.decode(TeamExport.self, from: data)
+                guard export.format == TeamExport.marker else {
+                    importMessage = "That file isn't a Courtside team export."
+                    return
+                }
+                let team = store.importTeam(from: export)
+                importMessage = "Imported “\(team.name)” with ^[\(team.players.count) player](inflect: true). It's now the active team."
+            } catch {
+                importMessage = "Couldn't read that file. Make sure it's a Courtside team export (.json)."
+            }
+        case .failure:
+            break   // user cancelled the picker
         }
     }
 }
@@ -148,6 +197,17 @@ struct TeamDetailView: View {
                 Text("Home Jersey")
             } footer: {
                 Text("Away games use the other jersey — \(jersey.opposite.label).")
+            }
+
+            if let team {
+                Section {
+                    ShareLink(item: TeamPackage(team: team),
+                              preview: SharePreview("\(team.name) roster")) {
+                        Label("Export Team…", systemImage: "square.and.arrow.up")
+                    }
+                } footer: {
+                    Text("Save or AirDrop this team and its roster as a file. Import it on another device from Settings ▸ Teams ▸ Import Team.")
+                }
             }
 
             if store.teams.count > 1 {

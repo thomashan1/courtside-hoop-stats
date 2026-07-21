@@ -491,7 +491,7 @@ struct ScorePadSheet: View {
         VStack(spacing: 18) {
             HStack(spacing: 12) {
                 JerseyBadge(number: player.number, size: 40)
-                Text(player.name)
+                Text(player.firstName)
                     .font(.title2).bold()
                     .lineLimit(1).minimumScaleFactor(0.6)
             }

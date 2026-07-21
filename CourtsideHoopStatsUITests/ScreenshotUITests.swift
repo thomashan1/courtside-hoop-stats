@@ -118,16 +118,15 @@ final class ScreenshotUITests: XCTestCase {
 
         app.tabBars.buttons["Games"].tap()
 
-        // 5) Quick Pickup Game (#34) — bolt starts scoring immediately, no setup.
-        app.buttons["Quick Pickup Game"].tap()
-        XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
-        snap(app, "13-pickup-game")
-        app.buttons["Back"].tap()
-
-        // 6) New Game sheet → Location autocomplete (#13). Type a fragment of a
-        // previously-used gym; the prior-value suggestion is deterministic (live
-        // MapKit results may also appear but aren't asserted on).
+        // 5) New Game form (#44) — "+" opens a form; every field is optional.
+        // "Start Game" begins scoring immediately, "Save" schedules for later.
         app.buttons["New Game"].tap()   // labeled "+" button
+        XCTAssertTrue(app.buttons["Start Game"].waitForExistence(timeout: 10))
+        snap(app, "13-new-game")
+
+        // 6) Location autocomplete (#13) in the New Game form — type a fragment
+        // of a previously-used gym; the prior-value suggestion is deterministic
+        // (live MapKit results may also appear but aren't asserted).
         let location = app.textFields["Location / Gym"]
         XCTAssertTrue(location.waitForExistence(timeout: 10))
         location.tap()
