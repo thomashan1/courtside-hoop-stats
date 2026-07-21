@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/img/app-icon.png" width="120" alt="Courtside Hoop Stats app icon">
-</p>
-
 # Courtside Hoop Stats
 
 A native iOS app for tracking youth basketball stats **courtside** — fast,
@@ -10,7 +6,11 @@ third-party dependencies, local storage (UserDefaults/JSON).
 
 Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 
-## Screens
+## Screenshots
+
+<p align="center">
+  <img src="docs/img/app-icon.png" width="96" alt="Courtside Hoop Stats app icon">
+</p>
 
 | Live scoring | Tap to score | Game summary |
 |---|---|---|
@@ -22,14 +22,18 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 
 ## What it does
 
-- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗). The
-  score log stays on top (with sticky period headers); players sit in the thumb
-  zone. Bench absent players; reorder or edit any entry.
-- **Games** — schedule games, or hit **⚡️ Quick Pickup** to start scoring with no
-  setup at all.
-- **Teams** — manage multiple teams in Settings; Roster and Games follow the
-  active team.
-- **Summary** — final score, cumulative by-period linescore, and per-player stats.
+- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗).
+  Players show by **first name** for fast, unambiguous tapping. The score log
+  stays on top (with sticky period headers); players sit in the thumb zone.
+  Bench absent players; reorder or edit any entry.
+- **Games** — tap **+** to open the New Game form, where every field is optional.
+  Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
+  later.
+- **Teams** — manage multiple teams in Settings, and **export/import** a team
+  (roster + games) to move it between devices or back it up. Roster and Games
+  follow the active team.
+- **Summary** — final score, cumulative by-period linescore, and per-player stats
+  including **FT%** (e.g. `5/6 (83%)`).
 
 ## Build
 
