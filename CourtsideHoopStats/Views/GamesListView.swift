@@ -9,10 +9,7 @@ enum GameRoute: Hashable {
 
 struct GamesListView: View {
     @EnvironmentObject var store: AppStore
-    @State private var showingNewGame = false
     @State private var path: [GameRoute] = []
-    /// Set by the New Game sheet's "Start Now" so we can navigate once it dismisses.
-    @State private var pendingStartID: UUID?
     /// A played game pending delete-confirmation (it has recorded scores).
     @State private var pendingDelete: Game?
 
@@ -32,7 +29,7 @@ struct GamesListView: View {
                     ContentUnavailableView {
                         Label("No Games Yet", systemImage: "basketball")
                     } description: {
-                        Text("Tap ✚ to schedule or start your first game.")
+                        Text("Tap ✚ to start your first game.")
                     }
                 }
 
@@ -68,23 +65,18 @@ struct GamesListView: View {
                 Button("Cancel", role: .cancel) { pendingDelete = nil }
             } message: {
                 if let game = pendingDelete {
-                    Text("“vs \(game.opponent)” and its recorded scores will be deleted. This can't be undone.")
+                    let name = game.opponent.isEmpty ? "This game" : "“vs \(game.opponent)”"
+                    Text("\(name) and its recorded scores will be deleted. This can't be undone.")
                 }
             }
             .navigationDestination(for: GameRoute.self) { destination($0) }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // Quick pickup game — skip setup, start scoring immediately (#34).
+                    // No setup required — create the game and jump straight into
+                    // scoring. Opponent, date, location, etc. are filled in later
+                    // from the in-game Details editor (#44).
                     Button {
-                        startPickupGame()
-                    } label: {
-                        Image(systemName: "bolt.fill")
-                    }
-                    .accessibilityLabel("Quick Pickup Game")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingNewGame = true
+                        startNewGame()
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -99,16 +91,6 @@ struct GamesListView: View {
                         }
                     )
                     #endif
-                }
-            }
-            .sheet(isPresented: $showingNewGame) {
-                NewGameSheet(onStartNow: { pendingStartID = $0 })
-            }
-            .onChange(of: showingNewGame) { _, presented in
-                // Navigate into scoring only after the sheet has fully dismissed.
-                if !presented, let id = pendingStartID {
-                    pendingStartID = nil
-                    path.append(.live(id))
                 }
             }
         }
@@ -146,11 +128,11 @@ struct GamesListView: View {
         for index in offsets { store.deleteGame(id: list[index].id) }
     }
 
-    /// Create a no-setup pickup game (single running period) and jump straight
-    /// into scoring. Details can be filled in later from the game's Details (#34).
-    private func startPickupGame() {
-        var game = Game(opponent: "Pickup Game")
-        game.periodFormat = .pickup
+    /// Create a game with no required setup and jump straight into scoring.
+    /// Defaults to the quarters format; opponent, date, location, and league are
+    /// all optional and editable later from the in-game Details editor (#44).
+    private func startNewGame() {
+        var game = Game(opponent: "")
         game.hasStarted = true
         store.addGame(game)
         path.append(.live(game.id))
@@ -166,7 +148,7 @@ struct GameRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("vs \(game.opponent)")
+                Text(game.opponent.isEmpty ? "New Game" : "vs \(game.opponent)")
                     .font(.headline)
                 HStack(spacing: 6) {
                     Text(game.date.formatted(date: .abbreviated, time: .shortened))
@@ -227,111 +209,6 @@ struct GameRowView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
             .background(Capsule().fill(color))
-    }
-}
-
-// MARK: - New game
-
-struct NewGameSheet: View {
-    @EnvironmentObject var store: AppStore
-    @Environment(\.dismiss) private var dismiss
-
-    /// Called when the user taps "Start Now" (after the game is created).
-    var onStartNow: (UUID) -> Void
-
-    @State private var opponent = ""
-    @State private var date = Date()
-    @State private var league = ""
-    @State private var location = ""
-    @State private var locationAddress = ""
-    @State private var isHome = true
-    @State private var periodFormat: PeriodFormat = .quarters
-
-    private var trimmedOpponent: String {
-        opponent.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-    private var canSave: Bool { !trimmedOpponent.isEmpty }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Details") {
-                    DatePicker("Date & Time", selection: $date,
-                               displayedComponents: [.date, .hourAndMinute])
-                    SuggestingTextField(title: "League / Tournament",
-                                        text: $league, suggestions: store.knownLeagues)
-                    LocationField(title: "Location / Gym",
-                                  text: $location, address: $locationAddress,
-                                  priorValues: store.knownLocations)
-                    Picker("Format", selection: $periodFormat) {
-                        ForEach(PeriodFormat.allCases, id: \.self) { format in
-                            Text(format.displayName).tag(format)
-                        }
-                    }
-                }
-
-                Section("Opponent") {
-                    TextField("Opponent", text: $opponent)
-                        .textInputAutocapitalization(.words)
-                    Toggle("Home game", isOn: $isHome)
-                        .tint(.teamAccent)
-                    LabeledContent("Jersey") {
-                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
-                    }
-                }
-
-                Section {
-                    Button {
-                        start()
-                    } label: {
-                        Label("Start Now", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!canSave)
-                } footer: {
-                    Text("**Save** to schedule this game for later, or **Start Now** to begin scoring immediately.")
-                }
-            }
-            .navigationTitle("New Game")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .disabled(!canSave)
-                }
-            }
-        }
-    }
-
-    private func makeGame(started: Bool) -> Game {
-        let cleanLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
-        var game = Game(
-            date: date,
-            opponent: trimmedOpponent,
-            league: league.trimmingCharacters(in: .whitespacesAndNewlines),
-            location: cleanLocation,
-            locationAddress: cleanLocation.isEmpty ? "" : locationAddress,
-            isHome: isHome,
-            periodFormat: periodFormat
-        )
-        game.hasStarted = started
-        return game
-    }
-
-    private func save() {
-        store.addGame(makeGame(started: false))
-        dismiss()
-    }
-
-    private func start() {
-        let game = makeGame(started: true)
-        store.addGame(game)
-        onStartNow(game.id)
-        dismiss()
     }
 }
 

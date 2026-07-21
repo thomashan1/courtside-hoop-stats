@@ -178,8 +178,9 @@ struct EditGameSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
+                    // Opponent is optional — a game can start with no setup and
+                    // have its details filled in (or left blank) later (#44).
                     Button("Save") { save() }
-                        .disabled(trimmedOpponent.isEmpty)
                 }
             }
         }
