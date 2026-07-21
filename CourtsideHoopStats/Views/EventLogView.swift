@@ -154,7 +154,7 @@ struct EventLogRow: View {
         HStack(spacing: 10) {
             JerseyBadge(number: player?.number ?? "?", size: 24)
 
-            Text(player?.name ?? "Unknown")
+            Text(player?.firstName ?? "Unknown")
                 .font(.subheadline)
                 .foregroundStyle(.primary)
 

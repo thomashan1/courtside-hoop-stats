@@ -381,5 +381,11 @@ struct PlayerStats: Identifiable {
 
     var id: UUID { player.id }
 
-    var freeThrowDisplay: String { "\(ftMade)/\(ftAttempts)" }
+    /// Made/attempts, with a whole-percent FT% when there's at least one
+    /// attempt (e.g. "5/6 (83%)"). No percentage for 0 attempts — just "0/0".
+    var freeThrowDisplay: String {
+        guard ftAttempts > 0 else { return "\(ftMade)/\(ftAttempts)" }
+        let percent = Int((Double(ftMade) / Double(ftAttempts) * 100).rounded())
+        return "\(ftMade)/\(ftAttempts) (\(percent)%)"
+    }
 }
