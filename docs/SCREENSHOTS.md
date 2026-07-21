@@ -18,12 +18,14 @@ from the real UI.
 ## Run it
 
 ```bash
-scripts/screenshots.sh                     # iPhone 17 Pro (default)
-scripts/screenshots.sh "iPhone 17 Pro Max" # App Store 6.9" device size
+scripts/screenshots.sh                 # iPhone 17 Pro (default — README shots)
+scripts/screenshots.sh "iPhone 14 Plus" # App Store size → 1284 × 2778 frames
 ```
 
-PNGs land in `screenshots/` (git-ignored). Named `01-games-list.png`,
-`02-game-summary.png`, `03-live-scoring.png`, `04-roster.png`.
+PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
+`NN-name.png` — e.g. `01-games-list`, `02-game-summary`, `03-live-scoring`,
+`04-roster`, `12-score-pad`, `13-new-game` (see `ScreenshotUITests.swift` for the
+full set).
 
 ## Adding a screen
 
@@ -33,5 +35,9 @@ PNGs land in `screenshots/` (git-ignored). Named `01-games-list.png`,
 
 ## App Store sizes
 
-Apple requires 6.9" (iPhone 17 Pro Max class) and, if you support it, 6.5"/6.1".
-Re-run the script per simulator name; the shots are already full-device frames.
+The app is **iPhone-only**, so only iPhone screenshots are needed. We upload the
+**1284 × 2778** set (the largest of Apple's accepted **6.5" / 6.7"** buckets),
+captured by running the harness on a Plus/Max-class simulator (e.g.
+`scripts/screenshots.sh "iPhone 14 Plus"`). App Store Connect scales that set down
+for smaller displays, so a single size covers the listing. The shots are already
+full-device frames — no cropping needed.

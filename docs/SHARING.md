@@ -1,7 +1,16 @@
 # Multi-User Sharing — Design Notes
 
-**Status:** _Proposed / deferred._ Do not start until the local single-device app
-is stable and device-tested. Tracked in [`TERMINAL_TODO.md`](TERMINAL_TODO.md).
+**Status:** _Proposed / deferred_ (#15). Do not start until the local
+single-device app is stable and device-tested. Tracked in
+[`TERMINAL_TODO.md`](TERMINAL_TODO.md).
+
+> **Now shipped — a manual, local-first precursor (#40).** Settings ▸ Teams can
+> **export** a team + roster to a `.json` file (ShareLink → AirDrop/Files) and
+> **import** it on another device. It's a one-shot copy (roster only, no games, no
+> live sync) — enough to seed a second phone or back up a roster without any
+> account or backend. Full CloudKit `CKShare` (near-live, multi-account) below is
+> still the deferred end goal; the manual flow buys most of the practical value
+> at a fraction of the cost. See `CourtsideHoopStats/Models/TeamTransfer.swift`.
 
 ## Goal
 

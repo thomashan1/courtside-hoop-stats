@@ -17,23 +17,41 @@ UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
-## Current status (2026-07-19)
+## Current status (2026-07-21) — **v1-ready**
 
-- **Shipping to one device.** All four screens are live and device-tested on
-  Thomas's iPhone 17 Pro: **Roster, Games, Live Scoring, Game Summary**, plus
-  multi-team management in Settings. Builds clean (0 warnings); a UI-test
-  screenshot harness verifies the main flows (`scripts/screenshots.sh`).
-- **Live scoring reworked (Jean's feedback).** Tap a player → a big point pad
-  (+2 / +3 / FT); no floating action bar, no long-press. The Score Log is on top
-  (oldest-first, sticky period headers, auto-scroll); players sit in the bottom
-  thumb zone. Nav + tab bars are hidden while scoring for space. Bench absent
-  players; edit/reorder any entry.
-- **Recent features:** multiple teams (#20), edit-a-finished-game (#8), score-log
-  reorder + movable dividers (#9), location autocomplete (#13), consistency pass
-  (Cancel/Save editors, delete confirms — see `docs/UI_GUIDELINES.md`), quick
-  **Pickup Game** + `.pickup` format (#34/#35), start time, location address FYI.
-- **Before an App Store submission:** replace the **placeholder app icon**, and
-  decide iPhone-only vs an iPad layout pass (#7/#32).
+- **Shipping to one device; App-Store-ready metadata is drafted.** All four
+  screens are live and device-tested on Thomas's iPhone 17 Pro: **Roster, Games,
+  Live Scoring, Game Summary**, plus multi-team management in Settings. Builds
+  clean (0 warnings); a UI-test screenshot harness verifies the main flows
+  (`scripts/screenshots.sh`).
+- **iPhone-only (#7 resolved):** `TARGETED_DEVICE_FAMILY = 1`. No iPad layout;
+  #32 (iPad) remains open/deferred.
+- **Real app icon** shipped (basketball + stat bars on blue) — no longer a
+  placeholder.
+- **Live scoring (Jean's feedback).** Tap a player → a big point pad
+  (+2 / +3 / FT✓ / FT✗); no floating action bar, no long-press, no undo/redo.
+  The Score Log is on top (oldest-first, sticky period headers, auto-scroll);
+  players sit in the bottom thumb zone. Nav + tab bars are hidden while scoring
+  for space. Bench absent players; edit/reorder any entry.
+- **New Game form (#44):** tap **+** → a form where **every field is optional**.
+  **Start Game** begins scoring immediately; **Save** schedules it for later.
+  Period format (quarters / halves / pickup) is chosen at creation. The old ⚡️
+  "Quick Pickup" lightning button was removed.
+- **Displays:** in-game and Game Summary show **first names only**; the Roster
+  keeps full names (#42). The stats table shows **FT%** (e.g. `5/6 (83%)`, #41).
+- **Team export / import (#40):** share a team + roster as a `.json` file via
+  ShareLink (AirDrop / Files) — Export in a team's detail, Import from the Teams
+  list in Settings. Roster-only in v1; a manual, local-first precursor to
+  CloudKit sharing.
+- **Also live:** multiple teams (#20), edit-a-finished-game (#8), score-log
+  reorder + movable dividers (#9), location autocomplete (#13) + address, game
+  start time, consistency pass (Cancel/Save editors, delete confirms — see
+  `docs/UI_GUIDELINES.md`), `.pickup` format (#34/#35).
+- **App Store blocker:** the current Mac runs macOS 27 **beta**, so only the beta
+  Xcode runs, and Apple rejects beta-built binaries — this blocks **both** App
+  Store and TestFlight. Paths: wait for the macOS 27 / Xcode 27 **GM (~Sept
+  2026)**, or archive from a release-macOS Mac / CI. Development-signed install
+  straight to a device still works.
 - **Deferred:** multi-user sharing (#15, CloudKit — see `docs/SHARING.md`).
 
 ## Naming (settled)
@@ -85,16 +103,19 @@ tap targets, and error recovery are the top UX priorities.**
 ## Next steps
 
 The backlog now lives in **GitHub Issues** — see `gh issue list` (or the repo's
-Issues tab). Currently open highlights: model unit tests (⭐ prioritized),
-edit-a-finished-game in the scoring view, score-log reorder/running-total,
-accessibility pass, location autocomplete, and (deferred) CloudKit sharing.
+Issues tab). With the v1 feature set shipped, the notable open items are
+**#15** (multi-user CloudKit sharing — deferred; see `docs/SHARING.md`) and
+**#32** (iPad layout — deferred, app is iPhone-only). The remaining gate to an
+actual App Store submission is the beta-macOS build blocker described above, not
+a feature gap.
 
 ## MVP defaults chosen for the spec's open questions
 
 (Documented in `README.md`; all easily changed.)
 
 - Free throws: two action buttons (`FT ✓` / `FT ✗`), not a sub-panel.
-- No bench toggle — live grid shows the full roster.
+- Live grid shows the active roster; absent players can be **benched** so they
+  drop out of the scoring grid without leaving the team.
 - Opponent totals editable after the fact in Game Summary.
 - Team name editable inline on the Roster tab.
 - Player selection clears after each recorded event (reduces mis-attribution).

@@ -7,6 +7,14 @@ How to get the app onto Jean's phone now, and onto the App Store eventually.
 > cost, and it unlocks both TestFlight *and* the App Store. Approval usually
 > takes a day or two.
 
+> ⛔ **Current hard blocker (both TestFlight *and* App Store):** the dev Mac runs
+> **macOS 27 beta**, so only the **beta Xcode** runs on it, and Apple **rejects
+> beta-SDK binaries for upload** — that stops TestFlight *and* App Store, not just
+> the public listing. Unblock by waiting for the macOS 27 / Xcode 27 **GM
+> (~Sept 2026)**, or by archiving from a **release-macOS Mac / CI**. The
+> **development-signed install straight to a device** (Path A stopgap below) is
+> unaffected and still works today.
+
 ---
 
 ## App facts (for the forms)
@@ -69,16 +77,19 @@ Same $99 program, plus prep. Steps:
 
 ## Gotchas / to-do before App Store
 
-- **Release Xcode, not beta.** Apple often rejects builds made with beta tools.
-  Install the current *release* Xcode from the Mac App Store for any upload
-  (TestFlight or App Store). The beta is fine for day-to-day development.
-- **Swap the stock-image app icon** for art you own (or confirm a license) before
-  App Store submission. TestFlight to family is lower risk; the App Store is
-  public. (Tracked in `TERMINAL_TODO.md`.)
-- **Privacy policy must be hosted** at a public URL. Easiest: enable GitHub Pages
-  on this repo and point it at `docs/PRIVACY_POLICY.md` (or paste it into a simple
-  page).
-- **Screenshots** need capturing on the required simulators (see listing doc).
+- **Release Xcode, not beta — the current blocker.** Apple rejects builds made
+  with beta tools for *any* upload (TestFlight or App Store). The dev Mac is on
+  macOS 27 beta, which only runs the beta Xcode, so no upload works from it today.
+  Use the macOS 27 / Xcode 27 **GM** or a release-macOS Mac / CI. (See the blocker
+  callout at the top.)
+- **Privacy policy must be hosted** at a public URL. The policy is already written
+  (`docs/PRIVACY_POLICY.md`, contact thomashan@icloud.com) — it just needs
+  hosting. Easiest: enable GitHub Pages on this repo and point it at that file (or
+  paste it into a simple page).
+- **Screenshots** need capturing at 1284 × 2778 (see `docs/APP_STORE_LISTING.md`
+  and `docs/SCREENSHOTS.md`).
+- **App icon** is real, shipped art (basketball + stat bars on blue) — no longer a
+  placeholder, nothing to swap.
 - App name **"Courtside Hoop Stats"** was availability-checked and is clear.
 
 ---
