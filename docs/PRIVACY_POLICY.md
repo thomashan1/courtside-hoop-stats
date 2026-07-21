@@ -1,6 +1,6 @@
 # Privacy Policy — Courtside Hoop Stats
 
-_Last updated: [DATE]_
+_Last updated: July 21, 2026_
 
 Courtside Hoop Stats ("the app") is a basketball statistics tracker. This policy
 explains what information the app handles. In short: **the app does not collect,
@@ -43,7 +43,7 @@ those features are released, and this page will show a new "Last updated" date.
 
 ## Contact
 
-Questions about this policy? Contact: **thomashan@gmail.com**
+Questions about this policy? Contact: **thomashan@icloud.com**
 
 ---
 
