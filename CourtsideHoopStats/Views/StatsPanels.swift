@@ -33,7 +33,7 @@ struct PlayerStatsTable: View {
                     GridRow {
                         HStack(spacing: 8) {
                             JerseyBadge(number: stat.player.number, size: 26)
-                            Text(stat.player.name).lineLimit(1)
+                            Text(stat.player.firstName).lineLimit(1)
                         }
                         .frame(minWidth: 120, alignment: .leading)
                         Text("\(stat.points)").bold()

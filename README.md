@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/img/app-icon.png" width="120" alt="Courtside Hoop Stats app icon">
+</p>
+
 # Courtside Hoop Stats
 
 A native iOS app for tracking youth basketball stats **courtside** — fast,
