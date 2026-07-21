@@ -12,6 +12,8 @@ struct GamesListView: View {
     @State private var path: [GameRoute] = []
     /// A played game pending delete-confirmation (it has recorded scores).
     @State private var pendingDelete: Game?
+    /// Presents the New Game form (#44 — every field optional; Start or Save).
+    @State private var showingNewGame = false
 
     /// Pre-entered games not yet started, soonest first (active team only).
     private var scheduled: [Game] {
@@ -70,13 +72,16 @@ struct GamesListView: View {
                 }
             }
             .navigationDestination(for: GameRoute.self) { destination($0) }
+            .sheet(isPresented: $showingNewGame) {
+                NewGameSheet(onStartNow: { path.append(.live($0)) })
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    // No setup required — create the game and jump straight into
-                    // scoring. Opponent, date, location, etc. are filled in later
-                    // from the in-game Details editor (#44).
+                    // Open the New Game form — every field is optional. "Start
+                    // Game" begins scoring immediately; "Save" schedules it for
+                    // later (#44).
                     Button {
-                        startNewGame()
+                        showingNewGame = true
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -127,15 +132,106 @@ struct GamesListView: View {
     private func delete(_ list: [Game], _ offsets: IndexSet) {
         for index in offsets { store.deleteGame(id: list[index].id) }
     }
+}
 
-    /// Create a game with no required setup and jump straight into scoring.
-    /// Defaults to the quarters format; opponent, date, location, and league are
-    /// all optional and editable later from the in-game Details editor (#44).
-    private func startNewGame() {
-        var game = Game(opponent: "")
-        game.hasStarted = true
+// MARK: - New Game form (#44)
+
+/// Create a game: fill in as much or as little as you want — **every field is
+/// optional**. "Start Game" begins scoring immediately; "Save" schedules it for
+/// later. Anything left blank is editable mid-game from the Details editor.
+struct NewGameSheet: View {
+    @EnvironmentObject var store: AppStore
+    @Environment(\.dismiss) private var dismiss
+
+    /// Called after the game is created via "Start Game", to navigate into it.
+    var onStartNow: (UUID) -> Void
+
+    @State private var opponent = ""
+    @State private var date = Date()
+    @State private var league = ""
+    @State private var location = ""
+    @State private var locationAddress = ""
+    @State private var isHome = true
+    @State private var periodFormat: PeriodFormat = .quarters
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Details") {
+                    DatePicker("Date & Time", selection: $date,
+                               displayedComponents: [.date, .hourAndMinute])
+                    SuggestingTextField(title: "League / Tournament",
+                                        text: $league, suggestions: store.knownLeagues)
+                    LocationField(title: "Location / Gym",
+                                  text: $location, address: $locationAddress,
+                                  priorValues: store.knownLocations)
+                    Picker("Format", selection: $periodFormat) {
+                        ForEach(PeriodFormat.allCases, id: \.self) { format in
+                            Text(format.displayName).tag(format)
+                        }
+                    }
+                }
+
+                Section("Opponent") {
+                    TextField("Opponent (optional)", text: $opponent)
+                        .textInputAutocapitalization(.words)
+                    Toggle("Home game", isOn: $isHome)
+                        .tint(.teamAccent)
+                    LabeledContent("Jersey") {
+                        JerseyIndicator(color: store.team.jersey(isHome: isHome))
+                    }
+                }
+
+                Section {
+                    Button {
+                        start()
+                    } label: {
+                        Label("Start Game", systemImage: "play.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                } footer: {
+                    Text("Nothing here is required. **Start Game** begins scoring now; **Save** schedules it for later. You can edit any of this mid-game from Details.")
+                }
+            }
+            .navigationTitle("New Game")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                }
+            }
+        }
+    }
+
+    private func makeGame(started: Bool) -> Game {
+        let cleanLocation = location.trimmingCharacters(in: .whitespacesAndNewlines)
+        var game = Game(
+            date: date,
+            opponent: opponent.trimmingCharacters(in: .whitespacesAndNewlines),
+            league: league.trimmingCharacters(in: .whitespacesAndNewlines),
+            location: cleanLocation,
+            locationAddress: cleanLocation.isEmpty ? "" : locationAddress,
+            isHome: isHome,
+            periodFormat: periodFormat
+        )
+        game.hasStarted = started
+        return game
+    }
+
+    private func save() {
+        store.addGame(makeGame(started: false))
+        dismiss()
+    }
+
+    private func start() {
+        let game = makeGame(started: true)
         store.addGame(game)
-        path.append(.live(game.id))
+        onStartNow(game.id)
+        dismiss()
     }
 }
 
