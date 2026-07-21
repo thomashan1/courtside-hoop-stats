@@ -61,8 +61,8 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > • Bench players who aren't at the game so the roster stays uncluttered
 >
 > **GAME MANAGEMENT**
-> • Quarters, halves, or a no-periods pickup game — your league's format
-> • Quick Pickup Game: start scoring instantly, zero setup
+> • Quarters, halves, or a no-periods pickup game — pick your league's format
+> • New game in seconds: every field is optional, then Start Game or schedule it
 > • Enter the opponent's running score at each period break
 > • Editable, reorderable score log — fix any mistake, anytime
 > • Manage multiple teams; each keeps its own roster and games
@@ -115,29 +115,30 @@ themes, no user-generated content, no web access, no gambling, no contests). Res
 | **Privacy Policy URL** | **Required** | Host `docs/PRIVACY_POLICY.md` somewhere public (GitHub Pages, or the raw file URL). |
 | **Marketing URL** | Optional | — |
 
-> **Action:** you need a *reachable* HTTPS Privacy Policy URL. Easiest path:
-> enable GitHub Pages on the repo (once it's public) and link the rendered
+> The privacy policy is **written and ready** (`docs/PRIVACY_POLICY.md`, contact
+> **thomashan@icloud.com**) — it just needs to be reachable over HTTPS. Easiest
+> path: enable GitHub Pages on the repo (once it's public) and link the rendered
 > `PRIVACY_POLICY.md`, or paste its contents into a gist/page.
 
 ---
 
 ## 9. Screenshots
 
-**iPhone-only → you only need iPhone sizes.** As of 2026 App Store Connect
-accepts a single required size and scales it:
-
-- **6.9-inch** (iPhone 17 Pro Max / 16 Pro Max) — **required**, 1320 × 2868.
-- 6.5-inch / 6.1-inch — optional; the 6.9" set is reused if omitted.
-
-Generate them with the harness at the Max size:
+**iPhone-only → you only need iPhone sizes.** App Store Connect accepts a single
+required size and scales it for the smaller displays. We generate the store set
+at **1284 × 2778** — the largest of Apple's accepted **6.5" / 6.7"** buckets —
+by running the harness on a Plus/Max-class simulator:
 
 ```bash
-scripts/screenshots.sh "iPhone 17 Pro Max"
+scripts/screenshots.sh "iPhone 16 Plus"   # → full-device 1284 × 2778 frames
 ```
+
+- 1284 × 2778 (6.5"/6.7") — the set we upload.
+- Smaller sizes are optional; App Store Connect reuses this set if omitted.
 
 Suggested 4–6 to upload (hero first): **Live Scoring**, **Score pad**,
 **Game Summary**, **Games list**, **Roster**. (The committed `docs/img/*.png`
-are the 6.3" set used for the README — regenerate at Max size for the store.)
+are the README set; regenerate at the store size above for the listing.)
 
 App preview video: optional, skip for v1.0.
 
@@ -146,10 +147,11 @@ App preview video: optional, skip for v1.0.
 ## 10. Review notes (App Review Information field)
 
 > Single-user local app for tracking a youth basketball team's stats. No account
-> or login. To try it: on the Roster tab add a player or two (or it ships with a
-> sample team), tap "+" on the Games tab (or the ⚡️ Quick Pickup button) to start
-> a game, tap a player then a +2/+3/FT button to score, then "End Period" to
-> advance. All data is stored locally on device.
+> or login. To try it: on the Roster tab add a player or two, tap "+" on the
+> Games tab to open the New Game form (every field is optional) and tap "Start
+> Game", then tap a player and a +2/+3/FT button to score, and tap the period
+> boundary at the top of the score log to "End Period". All data is stored
+> locally on device.
 
 No demo account needed (there is no login).
 
@@ -161,11 +163,15 @@ No demo account needed (there is no login).
 - [x] Bundle ID registered (`com.thomashan.CourtsideHoopStats`)
 - [x] iPhone-only (`TARGETED_DEVICE_FAMILY = 1`)
 - [x] Encryption declaration set (`ITSAppUsesNonExemptEncryption = NO`)
-- [x] App icon present (1024×1024, no alpha)
-- [ ] **Build with a release Xcode** (App Store rejects beta-SDK binaries) — not the Xcode 27 beta
+- [x] App icon present (1024×1024, no alpha) — real art shipped, not a placeholder
+- [x] Privacy policy written (`docs/PRIVACY_POLICY.md`, contact thomashan@icloud.com)
+- [ ] ⛔ **BLOCKER — build on a release Xcode.** The dev Mac runs macOS 27 **beta**,
+  so only the **beta Xcode** runs, and Apple rejects beta-SDK binaries — this
+  blocks **both** App Store and TestFlight. Unblock by waiting for the macOS 27 /
+  Xcode 27 **GM (~Sept 2026)**, or archiving from a **release-macOS Mac / CI**.
 - [ ] Set the signing **Team** to your paid team + a Distribution provisioning profile
 - [ ] Bump build number, `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
-- [ ] Capture 6.9" screenshots (`scripts/screenshots.sh "iPhone 17 Pro Max"`)
+- [ ] Capture store screenshots at 1284 × 2778 (`scripts/screenshots.sh "iPhone 16 Plus"`)
 - [ ] Host the Privacy Policy at a public HTTPS URL and paste it in
 - [ ] Fill App Privacy = *Data Not Collected*; Age rating = 4+
 - [ ] One real game of use (validate with the actual courtside user) before release
