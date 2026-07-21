@@ -150,13 +150,6 @@ final class AppStore: ObservableObject {
         return team
     }
 
-    /// Rename a specific team (any team, not just the active one).
-    func renameTeam(id: UUID, to name: String) {
-        guard let i = teams.firstIndex(where: { $0.id == id }) else { return }
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty { teams[i].name = trimmed }
-    }
-
     /// Replace a team wholesale (used by the Settings team editor for live
     /// name/jersey edits, #27-followup). No-op if the id isn't found.
     func updateTeam(_ team: Team) {
@@ -174,10 +167,6 @@ final class AppStore: ObservableObject {
     }
 
     // MARK: - Roster (operates on the active team)
-
-    func renameTeam(_ name: String) {
-        team.name = name
-    }
 
     func addPlayer(name: String, number: String) {
         team.players.append(Player(name: name, number: number))
@@ -234,10 +223,6 @@ final class AppStore: ObservableObject {
     func updateGame(_ game: Game) {
         guard let index = games.firstIndex(where: { $0.id == game.id }) else { return }
         games[index] = game
-    }
-
-    func deleteGames(at offsets: IndexSet) {
-        games.remove(atOffsets: offsets)
     }
 
     func deleteGame(id: UUID) {
