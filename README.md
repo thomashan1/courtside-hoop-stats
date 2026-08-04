@@ -6,6 +6,9 @@ A native iOS app for tracking youth basketball stats **courtside** — fast,
 one-handed point entry to replace a manual spreadsheet. SwiftUI, iOS 26+, zero
 third-party dependencies, local storage (UserDefaults/JSON).
 
+The main motivation for the app was to help my wife replace her
+text-to-herself-during-the-game-scoring "system" 😂
+
 Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 
 ## Screenshots
