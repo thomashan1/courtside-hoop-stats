@@ -1,5 +1,7 @@
 # Courtside Hoop Stats
 
+## 🎉📱 [Now on the App Store!](https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094) 🏀🎉
+
 A native iOS app for tracking youth basketball stats **courtside** — fast,
 one-handed point entry to replace a manual spreadsheet. SwiftUI, iOS 26+, zero
 third-party dependencies, local storage (UserDefaults/JSON).
