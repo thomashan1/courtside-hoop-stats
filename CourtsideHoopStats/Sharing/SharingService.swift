@@ -33,11 +33,13 @@ enum SharingRole: String, Codable, CaseIterable, Identifiable {
 // MARK: - Service seam
 
 /// A prepared `CKShare` plus its container — the two things the system share
-/// sheet (`UICloudSharingController`) needs. Produced by the service in PR 2;
-/// the UI only presents it, so views never construct CloudKit types themselves.
-struct PreparedShare {
+/// sheet (`UICloudSharingController`) needs. Produced by the service; the UI
+/// only presents it, so views never construct CloudKit types themselves.
+struct PreparedShare: Identifiable {
     let share: CKShare
     let container: CKContainer
+
+    var id: String { share.recordID.recordName }
 }
 
 enum SharingError: LocalizedError {
