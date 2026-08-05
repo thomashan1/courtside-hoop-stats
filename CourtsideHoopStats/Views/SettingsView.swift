@@ -177,6 +177,8 @@ struct TeamDetailView: View {
     @State private var jersey: JerseyColor = .white
     @State private var confirmingDelete = false
     @State private var sharingError: String?
+    @State private var preparedShare: PreparedShare?
+    @State private var isPreparingShare = false
 
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -201,31 +203,42 @@ struct TeamDetailView: View {
                 Text("Away games use the other jersey — \(jersey.opposite.label).")
             }
 
+            // Live CloudKit sharing (#57) leads: it's the primary way to get a
+            // team to someone else. Export sits below as the offline/backup
+            // fallback. Hidden until a real sharing backend is injected — the
+            // Noop default reports `isAvailable == false`, so no half-built
+            // button ships. See docs/SHARING.md.
+            if let team, sharing.isAvailable {
+                Section {
+                    Button {
+                        shareTeam(team)
+                    } label: {
+                        HStack {
+                            Label("Share Team…", systemImage: "person.crop.circle.badge.plus")
+                            if isPreparingShare {
+                                Spacer()
+                                ProgressView()
+                            }
+                        }
+                    }
+                    .disabled(isPreparingShare)
+                } header: {
+                    Text("Share with Followers")
+                } footer: {
+                    Text("Invite family and friends by Apple Account to follow this team's games and stats. They'll need an iPhone signed into iCloud, and can view but not edit.\n\nUpdates arrive within seconds when you have signal. In a gym with no reception they'll catch up once you're back online.")
+                }
+            }
+
             if let team {
                 Section {
                     ShareLink(item: TeamPackage(team: team),
                               preview: SharePreview("\(team.name) roster")) {
                         Label("Export Team…", systemImage: "square.and.arrow.up")
                     }
-                } footer: {
-                    Text("Save or AirDrop this team and its roster as a file. Import it on another device from Settings ▸ Teams ▸ Import Team.")
-                }
-            }
-
-            // Live CloudKit sharing (#57). Hidden until a real sharing backend
-            // is injected — the Noop default reports `isAvailable == false`, so
-            // no half-built button ships. See docs/SHARING.md.
-            if let team, sharing.isAvailable {
-                Section {
-                    Button {
-                        shareTeam(team)
-                    } label: {
-                        Label("Share Team…", systemImage: "person.crop.circle.badge.plus")
-                    }
                 } header: {
-                    Text("Share with Followers")
+                    Text("Export a Backup")
                 } footer: {
-                    Text("Invite family and friends by Apple Account to follow this team's games and stats live. They'll need an iPhone signed into iCloud.")
+                    Text("Save or AirDrop this team and its roster as a file — a backup, or a copy someone else can import and edit as their own team. Import it from Settings ▸ Teams ▸ Import Team.")
                 }
             }
 
@@ -275,16 +288,25 @@ struct TeamDetailView: View {
         } message: {
             Text(sharingError ?? "")
         }
+        .sheet(item: $preparedShare) { prepared in
+            CloudSharingSheet(share: prepared.share,
+                              container: prepared.container,
+                              title: team?.name,
+                              onError: { sharingError = $0.localizedDescription })
+                .ignoresSafeArea()
+        }
     }
 
-    /// Begin sharing this team (#57). Prepares the `CKShare` off the main work;
-    /// PR 2 presents the returned share via the system share sheet.
+    /// Begin sharing this team (#57): mirror it to CloudKit, then hand the
+    /// resulting share to the system invite sheet. Talking to iCloud can take a
+    /// moment, so the button shows a spinner rather than appearing dead.
     private func shareTeam(_ team: Team) {
         let games = store.games.filter { ($0.teamID ?? team.id) == team.id }
+        isPreparingShare = true
         Task {
+            defer { isPreparingShare = false }
             do {
-                _ = try await sharing.prepareShare(for: team, games: games)
-                // PR 2: present the prepared share with UICloudSharingController.
+                preparedShare = try await sharing.prepareShare(for: team, games: games)
             } catch {
                 sharingError = error.localizedDescription
             }

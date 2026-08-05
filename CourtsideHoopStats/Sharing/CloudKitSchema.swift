@@ -46,13 +46,24 @@ enum CloudKitSchema {
 
     // MARK: - Team
 
-    static func record(for team: Team, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let record = CKRecord(recordType: teamRecordType,
-                              recordID: teamRecordID(team.id, in: zoneID))
+    /// Write a team's fields onto an existing record.
+    ///
+    /// Publishing **mutates a record fetched from the server** rather than
+    /// replacing it, because CloudKit keeps system fields — crucially the
+    /// `share` reference — on the record itself. Saving a freshly-built record
+    /// over a shared one risks dropping that association and silently
+    /// un-sharing the team.
+    static func apply(_ team: Team, to record: CKRecord) {
         record[Key.name] = team.name as CKRecordValue
         if let data = try? encoder.encode(team) {
             record[Key.payload] = data as CKRecordValue
         }
+    }
+
+    static func record(for team: Team, in zoneID: CKRecordZone.ID) -> CKRecord {
+        let record = CKRecord(recordType: teamRecordType,
+                              recordID: teamRecordID(team.id, in: zoneID))
+        apply(team, to: record)
         return record
     }
 
@@ -64,9 +75,9 @@ enum CloudKitSchema {
 
     // MARK: - Game
 
-    static func record(for game: Game, teamID: UUID, in zoneID: CKRecordZone.ID) -> CKRecord {
-        let record = CKRecord(recordType: gameRecordType,
-                              recordID: gameRecordID(game.id, in: zoneID))
+    /// Write a game's fields (and its parent links) onto an existing record.
+    /// See `apply(_:to:)` for why publishing mutates rather than replaces.
+    static func apply(_ game: Game, teamID: UUID, in zoneID: CKRecordZone.ID, to record: CKRecord) {
         if let data = try? encoder.encode(game) {
             record[Key.payload] = data as CKRecordValue
         }
@@ -75,9 +86,15 @@ enum CloudKitSchema {
         // cascade-delete with it. CloudKit requires `record.parent` itself to
         // use `.none`; the explicit `team` field carries the `.deleteSelf`
         // cascade.
-        let teamID = teamRecordID(teamID, in: zoneID)
-        record[Key.team] = CKRecord.Reference(recordID: teamID, action: .deleteSelf)
-        record.parent = CKRecord.Reference(recordID: teamID, action: .none)
+        let teamRecordID = teamRecordID(teamID, in: zoneID)
+        record[Key.team] = CKRecord.Reference(recordID: teamRecordID, action: .deleteSelf)
+        record.parent = CKRecord.Reference(recordID: teamRecordID, action: .none)
+    }
+
+    static func record(for game: Game, teamID: UUID, in zoneID: CKRecordZone.ID) -> CKRecord {
+        let record = CKRecord(recordType: gameRecordType,
+                              recordID: gameRecordID(game.id, in: zoneID))
+        apply(game, teamID: teamID, in: zoneID, to: record)
         return record
     }
 

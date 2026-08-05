@@ -211,9 +211,23 @@ below).
   - UI seam: a **Share Team** row in `TeamDetailView`, shown only when the
     injected service reports itself available (hidden under Noop, so no dead
     button ships).
-- **PR 2 — Live `CloudKitSharingService` + invite UI.** Needs the capability.
-  Custom zone, `CKShare` on the team root, `UICloudSharingController` share
-  sheet, publish-on-edit. Owner side only; device-tested.
+- **PR 2 — Live `CloudKitSharingService` + invite UI. ✅ shipped 2026-08-05.**
+  Custom zone per team, `CKShare` on the team root, `UICloudSharingController`
+  share sheet, publish-at-share-time. Owner side only.
+  - **Verified on device:** the share is created, the invite sheet opens with
+    the team name + app icon, and re-sharing reuses the existing share.
+  - **Not yet verified:** accepting on a *second* iCloud account. Nothing
+    consumes an accepted share yet, so that lands with PR 3.
+  - Permissions are deliberately pinned to **read-only, invite-only**
+    (`.allowReadOnly` + `.allowPrivate`, `publicPermission = .none`): there's no
+    co-tracker write path yet, and a public link would put a children's roster
+    behind a forwardable URL. This makes the sheet's "Sharing Options" a
+    single-choice menu — it becomes a real choice when co-trackers ship.
+  - Gotchas worth remembering: games carry a **parent reference** to their team,
+    so the team record must be saved **before** its games or CloudKit rejects
+    them ("Parent record … does not exist on the server"); and the share sheet
+    reads its title/icon from **system fields on the share record**, not from
+    the controller's delegate (the delegate only applies while creating one).
 - **PR 3 — Follower experience.** Accept-share entry point, read-only rendering
   of a followed team (views become read-only), the "Following" badge + honest
   "updated N ago" line.
