@@ -42,9 +42,20 @@ down for everything smaller.
 Upload the **6.9" set: 1320 × 2868**, captured on a Pro-Max-class simulator:
 
 ```bash
-scripts/screenshots.sh "iPhone 17 Pro Max"   # → 1320 × 2868, the App Store set
-scripts/screenshots.sh "iPhone 17"           # → the README set
+scripts/screenshots.sh "iPhone 17 Pro Max"   # → 1320 × 2868
 ```
+
+**One size for everything.** The committed `docs/img/*.png` *are* the App Store
+set — same files the README renders (at `width="240"`, so the extra resolution
+costs nothing visually) and the same files you upload. Don't regenerate the
+README at a smaller device size: that reintroduces two sets to keep in sync, and
+the smaller one is useless for the listing.
+
+Upload order, hero first: **live-scoring → score-pad → box-score-pdf →
+game-summary → games-list → roster**. (`teams.png` is README-only.)
+
+`live-scoring.png` is deliberately the **bench** capture (`11-bench`) — the live
+scoring screen with the "Not playing" strip open, so one image shows both.
 
 > ⚠️ Earlier revisions of this file called **1284 × 2778** the "6.9-inch" size.
 > It isn't — that's the **6.5"** bucket (iPhone 14 Plus class). App Store Connect
