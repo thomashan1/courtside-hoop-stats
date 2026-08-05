@@ -6,10 +6,11 @@
 >   and close it with "Closes #N" in the PR.
 > - **Cloud/design sessions:** log new ideas and feedback as GitHub issues.
 
-Open work is tracked on the Issues tab. As of 2026-07-21 (**v1-ready**) the
-notable open issues are **#15** (multi-user CloudKit sharing — deferred) and
-**#32** (iPad layout — deferred; the app ships iPhone-only). Everything below has
-shipped.
+Open work is tracked on the Issues tab, grouped into **milestones** per release.
+As of 2026-08-05 the app is **live on the App Store** and the **v1.1** milestone
+is merged (awaiting submission). The notable open issues are **#57** (multi-user
+CloudKit sharing — deferred; #15 was merged into it) and **#32** (iPad layout —
+deferred; the app ships iPhone-only). Everything below has shipped.
 
 ## Completed (historical log)
 
