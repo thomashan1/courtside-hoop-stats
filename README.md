@@ -38,9 +38,9 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
   later.
-- **Teams** — manage multiple teams in Settings, and **export/import** a team
-  (roster + games) to move it between devices or back it up. Roster and Games
-  follow the active team.
+- **Teams** — manage multiple teams in Settings, and **export/import** a team's
+  **roster** to move it between devices or back it up (games aren't included
+  yet). Roster and Games follow the active team.
 - **Summary** — final score, cumulative by-period linescore, and per-player stats
   including **FT%** (e.g. `5/6 (83%)`).
 - **Box score PDF** — export the summary as a clean one-page PDF and share it

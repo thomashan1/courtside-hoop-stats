@@ -18,9 +18,9 @@ replacing a manual Excel spreadsheet.
 during live games. **Speed, big tap targets, legibility, and error recovery** are
 the top UX priorities.
 
-**Team context:** Swish Warriors, youth league. Longer-term goal: App Store
-release. Second goal (designed, deferred): let two people (Thomas + Jean) see the
-same games/stats — see [`SHARING.md`](SHARING.md).
+**Team context:** Swish Warriors, youth league. Shipped to the App Store.
+Next goal (designed, deferred): let others see the same games/stats — co-trackers
+who can edit, and read-only followers — see [`SHARING.md`](SHARING.md) and #57.
 
 ---
 
@@ -178,14 +178,9 @@ beta-Xcode blocker is resolved (see `DISTRIBUTION.md`).
 
 ## 8. Queued work
 
-v1.0 is live on the App Store and the **v1.1** milestone (#56 `+`-button tap
-targets, #59 benched-scorer totals, #55 box-score PDF) is merged and awaiting
-submission. See GitHub Issues — releases are grouped by milestone, so
-`gh issue list --milestone v1.1 --state closed` yields the release notes.
-
-Remaining, both deferred: **#57** (multi-user CloudKit sharing — #15 was merged
-into it, since co-trackers and followers are the same `CKShare` mechanism at
-different permission levels) and **#32** (iPad layout).
+Tracked in GitHub Issues, grouped by milestone —
+`gh issue list --milestone vX.Y --state closed` for what shipped in a release,
+`gh issue list` for what's open. Not restated here; it rots.
 
 ### PDF export (#55, v1.1)
 

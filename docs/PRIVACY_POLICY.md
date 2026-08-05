@@ -44,10 +44,3 @@ those features are released, and this page will show a new "Last updated" date.
 ## Contact
 
 Questions about this policy? Contact: **thomashan@icloud.com**
-
----
-
-<sub>Note for the developer: fill in `[DATE]` on publish, and host this at a
-public URL (e.g. GitHub Pages) for the App Store "Privacy Policy URL" field.
-Revisit the "Children's privacy" and "Information you enter" sections when
-CloudKit/iCloud sharing ships, since data will then leave the device.</sub>
