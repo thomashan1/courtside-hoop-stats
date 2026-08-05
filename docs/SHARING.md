@@ -1,9 +1,13 @@
 # Multi-User Sharing — Design Notes
 
-**Status:** _Proposed / deferred_ (#57, formerly split across #15 and #57 —
-merged 2026-08-05 since both are the same `CKShare` mechanism at different
-permission levels; see below). Do not start until the local single-device app
-is stable and device-tested.
+**Status:** _In progress_ — implementation started 2026-08-05 on
+`feature/57-sharing-followers`, **followers (read-only) first**. #57 formerly
+split across #15 and #57 — merged 2026-08-05 since both are the same `CKShare`
+mechanism at different permission levels; see below.
+
+> **Visual design + iPhone mockups:** the share flow, follower live view, and
+> notification screens are mocked up in the design doc artifact (published
+> 2026-08-05). Scope is **Apple ecosystem only** — see the settled decisions.
 
 > **Now shipped — a manual, local-first precursor (#40).** Settings ▸ Teams can
 > **export** a team + roster to a `.json` file (ShareLink → AirDrop/Files) and
@@ -28,6 +32,64 @@ games, and stats. Two use cases, **one mechanism**:
 This is the "iCloud Shared Album" experience, applied to game data — a single
 share per team, where **each participant's permission level determines their
 role**.
+
+## Settled decisions (2026-08-05)
+
+Confirmed with Thomas after reviewing the design mockups:
+
+1. **Ship read-only followers first**, co-trackers as a fast follow-up.
+2. **Share the whole team** (roster + all its games) as one `CKShare` — not
+   per-game.
+3. **Apple ecosystem only.** `CKShare` requires every participant to have an
+   Apple Account signed into iCloud (exactly like a Shared Album). Non-Apple /
+   web followers are explicitly out of scope; reaching them would mean a public
+   web link + custom backend, which breaks the "zero dependencies, no server"
+   rule. Confirmed the interested followers are on iPhones.
+4. **Notifications: one per period end** (quarter/half), plus game start and
+   final. **Make the cadence configurable** if it's not much extra work
+   (per-basket / per-period / start-and-end-only) so followers can dial down
+   noise.
+
+### Invite mechanism (answer to "how do people get added?")
+
+The owner taps **Share Team** on a team → the standard iOS share sheet
+(`UICloudSharingController`) → adds people **by email or phone number** tied to
+their Apple Account (or opens the link to "anyone with the link"), sets each to
+**View only** (follower) or **Can edit** (co-tracker), and sends the link via
+Messages / Mail / AirDrop. The invitee taps the link, it opens in Courtside, and
+the shared team appears in their Games list. Same flow as sharing a Note or an
+Album.
+
+## Store decision: what backs persistence (answered 2026-08-05)
+
+**For the followers-first slice: keep the current `UserDefaults`/JSON store and
+add a lightweight one-way CloudKit publish on top — i.e. use _neither_ Core Data
+nor SwiftData yet.** Rationale:
+
+- Followers are **read-only**, so the owner is the *only* writer. There is **no
+  bidirectional sync and no conflict resolution** to handle — the hard part of
+  CloudKit — so we don't need `NSPersistentCloudKitContainer`'s automatic
+  merge machinery.
+- Keeping the local store means **zero migration of the live season** — the
+  shipping app's data is untouched. Sharing is purely additive.
+- The work is: on share / on each local edit to a shared team, mirror the
+  team + games + events into a CloudKit **custom zone** and hang a `CKShare` off
+  the team root record (child records share along with it). Followers accept the
+  share, fetch the shared zone, decode back into the **same Codable structs**,
+  and render read-only. A `CKDatabaseSubscription` drives push.
+
+**When we later add read-write co-trackers** (true bidirectional sync, real
+write-conflict surface), _then_ the store question bites — and the answer is
+**Core Data via `NSPersistentCloudKitContainer`, not SwiftData**:
+
+| | Core Data + CloudKit | SwiftData + CloudKit |
+|---|---|---|
+| Cross-**user** `CKShare` | **Mature, proven** — first-class `share(_:to:)`, `UICloudSharingController` integration, years in production behind Notes/Reminders. | Newer; automatic CloudKit historically covered a user's **own** devices (private DB) well, with cross-user **sharing** arriving later and rougher. |
+| Verdict | **Recommended** for the sharing-critical path. | Re-check current iOS 26/27 support before trusting it for sharing; nicer API, but not worth a sharing regression. |
+
+So: **neither now, Core Data if/when co-trackers need a synced store.** Verify
+SwiftData's current cross-user sharing maturity at that point in case it has
+caught up, but default to the proven path.
 
 ## Recommended approach: CloudKit sharing (`CKShare`)
 
@@ -132,15 +194,72 @@ annoying in practice.
   alone." Adding a viewer is a deliberate product scope change — record it there
   when this ships.
 
-## Open questions / decisions needed
+## Implementation plan (followers first)
 
-1. SwiftData vs `NSPersistentCloudKitContainer` — resolve via current Apple docs.
-2. Ship `.readOnly` followers first (simplest, no write conflicts), then
-   `.readWrite` co-trackers as a follow-up? (Recommended: yes — followers is
-   the lower-risk slice and already has real demand.)
-3. Share the whole dataset or per-game? (Recommended: whole dataset.)
-4. In-app copy that honestly frames "near-live, catches up offline."
-5. iCloud account requirement + the share invite/accept flow — permission
-   level (`.readWrite` vs `.readOnly`) is chosen by the owner at invite time.
-6. Push notification content/frequency for followers (every basket vs.
-   period-end summaries vs. game-start/end only) — avoid notification fatigue.
+Broken into small, reviewable PRs. Only the code compiles without the CloudKit
+capability; **runtime needs Thomas to enable the capability + device-test** (see
+below).
+
+- **PR 1 — Foundation (no live CloudKit; fully compile- + unit-testable).**
+  - A `TeamSharingService` protocol (the seam): `share(team:)`, `publish(team:games:)`,
+    `stopSharing(team:)`, `acceptedShares()`, plus a `SharingRole`
+    (`follower` / `coTracker`) and an availability flag.
+  - A `NoopSharingService` default so the app builds and runs exactly as today.
+  - `CloudKitSchema` — pure `Team`/`Game`/`GameEvent` ⇄ `CKRecord` mapping, with
+    round-trip **unit tests** (CKRecord instantiates offline, so this is testable
+    without an account).
+  - UI seam: a **Share Team** row in `TeamDetailView`, shown only when the
+    injected service reports itself available (hidden under Noop, so no dead
+    button ships).
+- **PR 2 — Live `CloudKitSharingService` + invite UI.** Needs the capability.
+  Custom zone, `CKShare` on the team root, `UICloudSharingController` share
+  sheet, publish-on-edit. Owner side only; device-tested.
+- **PR 3 — Follower experience.** Accept-share entry point, read-only rendering
+  of a followed team (views become read-only), the "Following" badge + honest
+  "updated N ago" line.
+- **PR 4 — Push.** `CKDatabaseSubscription`, remote-notification handling,
+  content per period end + start/final, with a **configurable cadence** setting.
+
+### ⚠️ Human-in-the-loop (only Thomas can do these)
+
+CloudKit can't be exercised by the CLI/simulator build alone:
+
+1. **Enable the capability in Xcode** ▸ target ▸ Signing & Capabilities ▸ add
+   **iCloud → CloudKit** (creates the `iCloud.com.thomashan.CourtsideHoopStats`
+   container + writes the entitlements file + registers it in the developer
+   portal), **Background Modes → Remote notifications**, and **Push
+   Notifications**. Doing this via the Xcode UI is what keeps the portal +
+   entitlements in sync; hand-editing `project.pbxproj` risks breaking signing.
+2. **Device-test with a second iCloud account** (a family member's phone or a
+   second device) to verify invite → accept → live update actually works
+   end-to-end. The simulator can't sign into a real shared CloudKit database
+   meaningfully for two accounts.
+
+## Migration notes
+
+Because followers-first keeps the existing store (see the store decision above),
+**there is no data migration for the shipping app** — sharing is additive. The
+notes below apply only if/when a synced Core Data store is introduced for
+co-trackers:
+
+- Keep the local-first behavior; layer sync on top (offline still works).
+- Persistence keys are already versioned (`chs.teams.v1`, `chs.games.v1`) — a
+  one-time import from existing `UserDefaults` data into the new store avoids
+  losing the current season.
+- Updates a documented assumption: `CLAUDE.md` says "single user operating
+  alone." Adding a viewer is a deliberate product scope change — record it there
+  when this ships.
+
+## Resolved (was: open questions)
+
+1. ~~SwiftData vs `NSPersistentCloudKitContainer`~~ → **Neither for followers**
+   (one-way publish on the existing store); **Core Data** if co-trackers later
+   need a synced store. See "Store decision" above.
+2. ~~Followers first?~~ → **Yes.**
+3. ~~Whole dataset or per-game?~~ → **Whole team, one share.**
+4. In-app copy that honestly frames "near-live, catches up offline." → still to
+   write (PR 3).
+5. ~~iCloud account requirement + invite/accept flow~~ → **Apple-only, invite by
+   email/phone via the share sheet; owner sets each role at invite.**
+6. ~~Push frequency~~ → **One per period end + start/final, cadence
+   configurable** (PR 4).

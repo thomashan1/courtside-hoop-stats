@@ -169,12 +169,14 @@ private struct TeamRef: Identifiable { let id: UUID }
 struct TeamDetailView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.teamSharingService) private var sharing
     let teamID: UUID
 
     // Staged edits (Cancel/Save), matching every other record editor.
     @State private var name = ""
     @State private var jersey: JerseyColor = .white
     @State private var confirmingDelete = false
+    @State private var sharingError: String?
 
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -207,6 +209,23 @@ struct TeamDetailView: View {
                     }
                 } footer: {
                     Text("Save or AirDrop this team and its roster as a file. Import it on another device from Settings ▸ Teams ▸ Import Team.")
+                }
+            }
+
+            // Live CloudKit sharing (#57). Hidden until a real sharing backend
+            // is injected — the Noop default reports `isAvailable == false`, so
+            // no half-built button ships. See docs/SHARING.md.
+            if let team, sharing.isAvailable {
+                Section {
+                    Button {
+                        shareTeam(team)
+                    } label: {
+                        Label("Share Team…", systemImage: "person.crop.circle.badge.plus")
+                    }
+                } header: {
+                    Text("Share with Followers")
+                } footer: {
+                    Text("Invite family and friends by Apple Account to follow this team's games and stats live. They'll need an iPhone signed into iCloud.")
                 }
             }
 
@@ -247,6 +266,28 @@ struct TeamDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This deletes the team and all of its games. This can't be undone.")
+        }
+        .alert("Couldn't Share", isPresented: Binding(
+            get: { sharingError != nil },
+            set: { if !$0 { sharingError = nil } }
+        )) {
+            Button("OK", role: .cancel) { sharingError = nil }
+        } message: {
+            Text(sharingError ?? "")
+        }
+    }
+
+    /// Begin sharing this team (#57). Prepares the `CKShare` off the main work;
+    /// PR 2 presents the returned share via the system share sheet.
+    private func shareTeam(_ team: Team) {
+        let games = store.games.filter { ($0.teamID ?? team.id) == team.id }
+        Task {
+            do {
+                _ = try await sharing.prepareShare(for: team, games: games)
+                // PR 2: present the prepared share with UICloudSharingController.
+            } catch {
+                sharingError = error.localizedDescription
+            }
         }
     }
 
