@@ -1,11 +1,11 @@
 # CLAUDE.md — Courtside Hoop Stats
 
-Project context for any Claude Code session (local or cloud). Read this first,
-then `docs/REQUIREMENTS.md` for the full product spec.
+Project context for any Claude Code session. Read this first, then
+`docs/REQUIREMENTS.md` for the full product spec.
 
-> **Backlog lives in GitHub Issues.** Local terminal session: work from
-> `gh issue list` — pick an issue, implement it, and close it with "Closes #N"
-> in the PR. Cloud/design sessions log new ideas & feedback as issues.
+> **Backlog lives in GitHub Issues.** Work from `gh issue list` — pick an issue,
+> implement it, and close it with "Closes #N" in the PR. Log new ideas and
+> feedback as issues as they come up.
 > Issues are grouped into **milestones** per release, so
 > `gh issue list --milestone v1.1 --state closed` gives the shipped list to turn
 > into App Store release notes.
@@ -159,20 +159,23 @@ the shipped list to turn into App Store release notes).
 
 ## Workflow & git
 
-- **Git is the source of truth** between Thomas's Mac and any cloud Claude session.
-- **Backlog = GitHub Issues.** Every feature/bug/idea is tracked as an issue. The
-  terminal works from `gh issue list`, implements one, and closes it with
-  "Closes #N" in the PR. Cloud sessions create issues from design discussion and
-  Thomas's feedback. (Requires `gh auth login` once on the Mac.)
-- **Change flow:** feature work lands via **PRs (auto-merge)**, not direct commits
-  to `main`. Thomas device-tests builds before they're considered shippable.
-- **Role split (current):** the cloud session is for **design discussion** and may
-  edit/push **Markdown docs only** (e.g. this file, `docs/*.md`). All **code**
-  (Swift, the Xcode project) is generated and pushed **only from the local
-  terminal** session.
-- **One driver at a time:** whoever is working commits and pushes; the other
-  pulls *before* starting. Avoid both editing `project.pbxproj` simultaneously.
-- A **local** Claude session can build/run in Xcode and verify compiles; a
-  **cloud** session cannot (no macOS toolchain) — prefer local for the build loop.
+- **All sessions run on Thomas's Mac** (dispatch in his Mac terminal), so every
+  session has the full toolchain: `xcodebuild`, the simulators, and `devicectl`
+  for installing to the phone. There is **no docs-only session type** — any
+  session can write Swift, build, test, and install.
+- **Backlog = GitHub Issues.** Every feature/bug/idea is tracked as an issue.
+  Work from `gh issue list`, implement one, close it with "Closes #N" in the PR.
+- **Change flow:** feature work lands via **PRs**, not direct commits to `main`.
+  Docs/metadata-only tweaks may go straight to `main`. Thomas device-tests builds
+  before they're considered shippable.
+- **⚠️ Never run two `xcodebuild` invocations at once.** They share the simulator
+  and DerivedData, and the UI-test runner dies at bootstrap ("Test crashed with
+  signal kill before establishing connection"), which reads as a real test
+  failure but isn't. This is the main hazard of running more than one session:
+  serialise the build loop, and if a subagent needs to build, give it a
+  **worktree** and don't build alongside it.
+- **One driver at a time** for the same files: whoever is working commits and
+  pushes; the other pulls *before* starting. Avoid concurrent `project.pbxproj`
+  edits.
 - Project uses Xcode 16+ file-system-synchronized groups, so new Swift files are
   picked up automatically — no `.xcodeproj` editing needed to add files.
