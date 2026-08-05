@@ -238,6 +238,87 @@ struct ModelsTests {
         #expect(stats[0].points == 2)      // ghost's 3 is ignored
     }
 
+    // MARK: - Game.stats(for:) and benched players (#59)
+
+    @Test func statsKeepBenchedPlayerWithEvents() {
+        // Bench someone who already scored: benching is presentation-only, so
+        // their row must survive or the table stops matching the scoreboard.
+        let scorer = player("Scorer")
+        let other = player("Other")
+        var game = Game(opponent: "Hawks")
+        game.events = [
+            event(scorer.id, .threePoint),
+            event(other.id, .twoPoint),
+        ]
+        game.benchedPlayerIDs = [scorer.id]
+        let stats = game.stats(for: [scorer, other])
+        #expect(stats.count == 2)
+        let scorerStats = try! #require(stats.first { $0.player.id == scorer.id })
+        #expect(scorerStats.points == 3)
+        // …and still sorted by points, benched or not: 3 > 2.
+        #expect(stats.first?.player.id == scorer.id)
+    }
+
+    @Test func statsKeepBenchedPlayerWithNonScoringEventsOnly() {
+        // A foul or a missed free throw is also proof the player was there.
+        let fouler = player("Fouler")
+        var game = Game(opponent: "Hawks")
+        game.events = [event(fouler.id, .foul), event(fouler.id, .ftMissed)]
+        game.benchedPlayerIDs = [fouler.id]
+        let stats = game.stats(for: [fouler])
+        #expect(stats.count == 1)
+        #expect(stats[0].points == 0)
+        #expect(stats[0].fouls == 1)
+        #expect(stats[0].ftAttempts == 1)
+    }
+
+    @Test func statsExcludeBenchedPlayerWithoutEvents() {
+        // The normal case benching is for: the player wasn't at the game.
+        let present = player("Present")
+        let absent = player("Absent")
+        var game = Game(opponent: "Hawks")
+        game.events = [event(present.id, .twoPoint)]
+        game.benchedPlayerIDs = [absent.id]
+        let stats = game.stats(for: [present, absent])
+        #expect(stats.count == 1)
+        #expect(stats[0].player.id == present.id)
+    }
+
+    @Test func statsUnaffectedWhenNobodyIsBenched() {
+        let a = player("A")
+        let b = player("B")
+        var game = Game(opponent: "Hawks")
+        game.events = [event(a.id, .twoPoint)]
+        let stats = game.stats(for: [a, b])
+        #expect(stats.count == 2)                      // b keeps a zero row
+        #expect(stats.first?.player.id == a.id)
+    }
+
+    @Test func statsPointsReconcileWithOurScoreAcrossBenching() {
+        // The regression that started #59: sum the table, get the scoreboard.
+        let a = player("A")
+        let b = player("B")
+        let c = player("C")
+        let roster = [a, b, c]
+        var game = Game(opponent: "Hawks")
+        game.events = [
+            event(a.id, .twoPoint),      // 2
+            event(a.id, .ftMade),        // 1
+            event(b.id, .threePoint),    // 3
+            event(c.id, .ftMissed),      // 0
+        ]
+        func tableTotal() -> Int { game.stats(for: roster).reduce(0) { $0 + $1.points } }
+        #expect(game.ourScore == 6)
+        #expect(tableTotal() == game.ourScore)
+
+        game.benchedPlayerIDs = [b.id]               // bench a scorer
+        #expect(game.ourScore == 6)                  // score is untouched…
+        #expect(tableTotal() == game.ourScore)       // …and so is the table
+
+        game.benchedPlayerIDs = [a.id, b.id, c.id]   // bench everyone
+        #expect(tableTotal() == game.ourScore)
+    }
+
     // MARK: - Lifecycle
 
     @Test func lifecycleReflectsState() {
