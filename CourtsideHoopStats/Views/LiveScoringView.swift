@@ -261,6 +261,10 @@ struct LiveScoringView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
                                     .background(Capsule().fill(Color.teamAccent.opacity(0.12)))
+                                    // Applied outside the background so the
+                                    // capsule keeps its size and only the hit
+                                    // area grows to the 44pt minimum (#56).
+                                    .minimumTapTarget()
                                 }
                                 .buttonStyle(.plain)
                             }

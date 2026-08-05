@@ -46,6 +46,24 @@ enum AppTextSize {
     }
 }
 
+// MARK: - Tap targets
+
+extension View {
+    /// Guarantees the HIG-minimum 44×44pt tap target for icon-only controls
+    /// (#56 — "+" occasionally not responding).
+    ///
+    /// A `Button` whose label is a bare `Image` is only as tappable as the
+    /// glyph itself — an SF Symbol at body size is roughly 17–22pt, so taps
+    /// that land a few points off-centre hit nothing at all. That reads as an
+    /// intermittently dead button rather than a mis-tap, which is exactly how
+    /// it was reported. `contentShape` is required as well: without it the hit
+    /// region stays the glyph's shape even once the frame is padded out.
+    func minimumTapTarget(_ side: CGFloat = 44) -> some View {
+        frame(minWidth: side, minHeight: side)
+            .contentShape(Rectangle())
+    }
+}
+
 // MARK: - Jersey color
 
 extension JerseyColor {

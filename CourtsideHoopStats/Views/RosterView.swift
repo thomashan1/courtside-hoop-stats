@@ -44,6 +44,7 @@ struct RosterView: View {
                             Button("Number") { store.sortPlayers(by: .number) }
                         } label: {
                             Label("Sort", systemImage: "arrow.up.arrow.down")
+                                .minimumTapTarget()
                         }
                     }
                 }
@@ -52,7 +53,9 @@ struct RosterView: View {
                         showingAdd = true
                     } label: {
                         Image(systemName: "plus")
+                            .minimumTapTarget()
                     }
+                    .accessibilityLabel("Add Player")
                 }
             }
             .sheet(isPresented: $showingAdd) {
