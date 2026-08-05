@@ -1,8 +1,17 @@
 # App Store Listing — Courtside Hoop Stats
 
-Copy-paste-ready metadata for the App Store Connect submission. Everything here
-reflects the app **as it actually ships today** (iPhone-only, tap-to-score, no
-foul tracking, no undo button). Edit tone to taste before submitting.
+Copy-paste-ready metadata for App Store Connect. Everything here reflects the
+app **as it actually ships today** (iPhone-only, tap-to-score, no foul tracking,
+no undo button). Edit tone to taste before submitting.
+
+> **v1.0 is live:**
+> <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
+> **v1.1 is merged and awaiting submission.**
+>
+> Only **promotional text** can be edited without a review. App name, subtitle,
+> **description, keywords, screenshots**, "What's New", and the support/privacy
+> URLs all require a **new version with a build attached** — so bundle metadata
+> changes with the v1.1 upload rather than treating them as a separate errand.
 
 ---
 
@@ -16,8 +25,8 @@ foul tracking, no undo button). Edit tone to taste before submitting.
 | **SKU** (your internal ref) | `courtside-hoop-stats-01` |
 | **Primary category** | Sports |
 | **Secondary category** | (optional — leave blank, or *Utilities*) |
-| **Version** | `1.0` (`MARKETING_VERSION`) |
-| **Build** | `1` (`CURRENT_PROJECT_VERSION` — bump each upload) |
+| **Version** | `1.1` (`MARKETING_VERSION` — Apple closes a version's train once approved, so each release needs a *new* version, not just a build) |
+| **Build** | `17` (`CURRENT_PROJECT_VERSION` — bump each upload) |
 | **Age rating** | **4+** (see §7) |
 | **Price** | Free |
 | **Availability** | All countries, or just your region |
@@ -70,6 +79,7 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > **AFTER THE GAME**
 > • Period-by-period linescore and final result
 > • Per-player stat table: points, 2PT, 3PT, and free-throw shooting
+> • Share a one-page PDF box score straight to the team's group chat
 > • Notes for scouting and observations
 >
 > **YOUR DATA STAYS YOURS**
@@ -77,7 +87,18 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 >
 > Perfect for youth leagues, rec teams, and any parent who wants real stats without the hassle.
 
-## 5. What's New (release notes for v1.0)
+## 5. What's New
+
+**v1.1** (pending submission — generated from the milestone:
+`gh issue list --milestone v1.1 --state closed`):
+
+> • Share a game as a PDF box score — tap the share icon on any finished game to
+> preview a clean one-page recap, then send it to the team's group chat.
+> • Players who didn't play are now listed as DNP.
+> • Fixed the "+" button occasionally not responding.
+> • Fixed player totals when someone is benched after scoring.
+
+**v1.0** (shipped):
 
 > First release. Fast two-tap courtside scoring, editable score log, multi-team
 > rosters, quarter/half/pickup formats, and a per-player + period-by-period game
@@ -165,13 +186,20 @@ No demo account needed (there is no login).
 - [x] Encryption declaration set (`ITSAppUsesNonExemptEncryption = NO`)
 - [x] App icon present (1024×1024, no alpha) — real art shipped, not a placeholder
 - [x] Privacy policy written (`docs/PRIVACY_POLICY.md`, contact thomashan@icloud.com)
-- [ ] ⛔ **BLOCKER — build on a release Xcode.** The dev Mac runs macOS 27 **beta**,
-  so only the **beta Xcode** runs, and Apple rejects beta-SDK binaries — this
-  blocks **both** App Store and TestFlight. Unblock by waiting for the macOS 27 /
-  Xcode 27 **GM (~Sept 2026)**, or archiving from a **release-macOS Mac / CI**.
-- [ ] Set the signing **Team** to your paid team + a Distribution provisioning profile
-- [ ] Bump build number, `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
-- [ ] Capture store screenshots at 1284 × 2778 (`scripts/screenshots.sh "iPhone 14 Plus"`)
-- [ ] Host the Privacy Policy at a public HTTPS URL and paste it in
-- [ ] Fill App Privacy = *Data Not Collected*; Age rating = 4+
+- [x] ~~Blocker: build on a release Xcode~~ — resolved; v1.0 was submitted and approved
+- [x] Signing **Team** set to the paid team + Distribution profile
+- [x] Host the Privacy Policy at a public HTTPS URL
+- [x] App Privacy = *Data Not Collected*; Age rating = 4+
+- [x] v1.0 approved and live
+
+### Per-release checklist (v1.1 onward)
+
+- [ ] Bump **`MARKETING_VERSION`** (not just the build) — a closed train rejects
+  uploads with `ITMS-90186` / `ITMS-90062`
+- [ ] `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
+- [ ] Re-capture store screenshots if the UI changed
+  (`scripts/screenshots.sh "iPhone 14 Plus"`)
+- [ ] Update **What's New** from the milestone's closed issues
+- [ ] Choose **Manual release**; skip phased release at this user count
+- [ ] Submit **Tue/Wed morning** — roughly half the queue wait of a weekend
 - [ ] One real game of use (validate with the actual courtside user) before release

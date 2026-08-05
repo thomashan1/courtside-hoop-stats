@@ -1,19 +1,25 @@
 # Distribution Guide — Courtside Hoop Stats
 
-How to get the app onto Jean's phone now, and onto the App Store eventually.
+How to get the app onto Jean's phone, and how to ship updates to the App Store.
+
+> ✅ **The app is live:**
+> <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
 > **The one prerequisite for both:** the **Apple Developer Program — $99/year**
 > (enroll at [developer.apple.com](https://developer.apple.com)). It's the only
 > cost, and it unlocks both TestFlight *and* the App Store. Approval usually
 > takes a day or two.
 
-> ⛔ **Current hard blocker (both TestFlight *and* App Store):** the dev Mac runs
-> **macOS 27 beta**, so only the **beta Xcode** runs on it, and Apple **rejects
-> beta-SDK binaries for upload** — that stops TestFlight *and* App Store, not just
-> the public listing. Unblock by waiting for the macOS 27 / Xcode 27 **GM
-> (~Sept 2026)**, or by archiving from a **release-macOS Mac / CI**. The
-> **development-signed install straight to a device** (Path A stopgap below) is
-> unaffected and still works today.
+> **Historical note:** this guide used to carry a hard blocker — the dev Mac ran
+> **macOS 27 beta**, so only the beta Xcode ran, and Apple rejects beta-SDK
+> binaries. That is **resolved**; v1.0 was submitted and approved. Kept here only
+> so the old advice isn't mistaken for current state.
+
+> **Update cadence.** An update typically clears review in **~1 day** — the queue
+> is the long pole, the review itself is ~90 minutes. Submitting **Tue/Wed
+> morning** roughly halves the wait vs. the weekend. Prefer **Manual release** so
+> approval and go-live are separate decisions. Skip **phased release** at this
+> user count: it only applies to auto-update users and starts at 1% on day one.
 
 ---
 
@@ -77,11 +83,10 @@ Same $99 program, plus prep. Steps:
 
 ## Gotchas / to-do before App Store
 
-- **Release Xcode, not beta — the current blocker.** Apple rejects builds made
-  with beta tools for *any* upload (TestFlight or App Store). The dev Mac is on
-  macOS 27 beta, which only runs the beta Xcode, so no upload works from it today.
-  Use the macOS 27 / Xcode 27 **GM** or a release-macOS Mac / CI. (See the blocker
-  callout at the top.)
+- **Bump the version, not just the build.** Apple **closes a version's train**
+  once it's approved: 1.0 cannot accept another build, and uploading one fails
+  with `ITMS-90186 Invalid Pre-Release Train` / `ITMS-90062`. Raise
+  `MARKETING_VERSION` for each release (currently **1.1**, build 17).
 - **Privacy policy must be hosted** at a public URL. The policy is already written
   (`docs/PRIVACY_POLICY.md`, contact thomashan@icloud.com) — it just needs
   hosting. Easiest: enable GitHub Pages on this repo and point it at that file (or

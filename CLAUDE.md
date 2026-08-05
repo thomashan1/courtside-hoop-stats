@@ -6,6 +6,9 @@ then `docs/REQUIREMENTS.md` for the full product spec.
 > **Backlog lives in GitHub Issues.** Local terminal session: work from
 > `gh issue list` — pick an issue, implement it, and close it with "Closes #N"
 > in the PR. Cloud/design sessions log new ideas & feedback as issues.
+> Issues are grouped into **milestones** per release, so
+> `gh issue list --milestone v1.1 --state closed` gives the shipped list to turn
+> into App Store release notes.
 > (`docs/TERMINAL_TODO.md` is retired — it's now just a pointer + a log of
 > already-completed work.)
 
@@ -17,13 +20,20 @@ UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
-## Current status (2026-07-21) — **v1-ready**
+## Current status (2026-08-05) — **live on the App Store** 🎉
 
-- **Shipping to one device; App-Store-ready metadata is drafted.** All four
-  screens are live and device-tested on Thomas's iPhone 17 Pro: **Roster, Games,
-  Live Scoring, Game Summary**, plus multi-team management in Settings. Builds
-  clean (0 warnings); a UI-test screenshot harness verifies the main flows
-  (`scripts/screenshots.sh`).
+- **v1.0 is approved and public:**
+  <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
+  The old "beta macOS ⇒ beta Xcode ⇒ rejected binary" blocker is **resolved** —
+  submitting works. Development-signed installs straight to a device still work
+  for day-to-day testing (see the device-install flow).
+- **v1.1 is complete in git and awaiting submission.** Version bumped to
+  **1.1 (build 17)** — Apple closes a version's train once approved, so 1.0
+  couldn't take another build. Milestone `v1.1` = #56, #59, #55, all merged.
+- All four screens are live and device-tested on Thomas's iPhone 17 Pro:
+  **Roster, Games, Live Scoring, Game Summary**, plus multi-team management in
+  Settings. Builds clean (0 warnings); a UI-test screenshot harness verifies the
+  main flows (`scripts/screenshots.sh`).
 - **iPhone-only (#7 resolved):** `TARGETED_DEVICE_FAMILY = 1`. No iPad layout;
   #32 (iPad) remains open/deferred.
 - **Real app icon** shipped (basketball + stat bars on blue) — no longer a
@@ -43,16 +53,26 @@ tap targets, and error recovery are the top UX priorities.**
   ShareLink (AirDrop / Files) — Export in a team's detail, Import from the Teams
   list in Settings. Roster-only in v1; a manual, local-first precursor to
   CloudKit sharing.
+- **Box score PDF (#55, v1.1):** Game Summary → share icon → a preview of a
+  one-page PDF, with Share in the preview's own toolbar. Print-specific layout
+  in `GameSummaryPDF.swift` (*not* a capture of the summary screen), first names
+  disambiguated only on collision (`Jake` → `Jake L.` → `Jake Moore`), NBA-style
+  **DNP** rows, filename naming both teams, and a tappable App Store link in the
+  footer. `ImageRenderer` emits glyphs rather than annotations, so that
+  hyperlink is attached afterwards via PDFKit.
 - **Also live:** multiple teams (#20), edit-a-finished-game (#8), score-log
   reorder + movable dividers (#9), location autocomplete (#13) + address, game
   start time, consistency pass (Cancel/Save editors, delete confirms — see
   `docs/UI_GUIDELINES.md`), `.pickup` format (#34/#35).
-- **App Store blocker:** the current Mac runs macOS 27 **beta**, so only the beta
-  Xcode runs, and Apple rejects beta-built binaries — this blocks **both** App
-  Store and TestFlight. Paths: wait for the macOS 27 / Xcode 27 **GM (~Sept
-  2026)**, or archive from a release-macOS Mac / CI. Development-signed install
-  straight to a device still works.
-- **Deferred:** multi-user sharing (#15, CloudKit — see `docs/SHARING.md`).
+- **Recent fixes (v1.1):** the `+` button occasionally not responding (#56 —
+  icon-only buttons were smaller than the 44pt minimum; use
+  `.minimumTapTarget()`), and benching a player who had already scored making
+  the stats table disagree with the final score (#59 — `Game.stats(for:)` now
+  takes the **full roster** and does the benching itself; pass the whole roster,
+  not a pre-filtered list).
+- **Deferred:** multi-user sharing (#57, CloudKit `CKShare` — see
+  `docs/SHARING.md`). Note #15 was **merged into #57**: co-trackers and
+  followers are the same mechanism at different participant permission levels.
 
 ## Naming (settled)
 
@@ -70,8 +90,13 @@ tap targets, and error recovery are the top UX priorities.**
 - Test device: **iPhone 17 Pro**. Signing via free **Personal Team** (works).
 - **End user (Thomas's wife):** on **iOS 26 now**, will move to iOS 27 at GM in
   **September 2026**. → Do not require iOS 27 before then.
-- Note: App Store submission (post-retirement goal) will need a *release* Xcode,
-  not the beta — irrelevant for now.
+- **Simulators:** there is **no "iPhone 17 Pro" simulator** installed, despite
+  that being the default in `scripts/screenshots.sh`. Use **"iPhone 17"** for
+  `xcodebuild` destinations, or pass a name to the script.
+- **Don't run two `xcodebuild` invocations at once.** Concurrent runs share the
+  simulator and DerivedData, and the UI-test runner dies at bootstrap ("Test
+  crashed with signal kill before establishing connection") — which looks like a
+  real test failure but isn't. Run them serially.
 
 ## Design direction (from WWDC 26 + HIG research)
 
@@ -102,12 +127,24 @@ tap targets, and error recovery are the top UX priorities.**
 
 ## Next steps
 
-The backlog now lives in **GitHub Issues** — see `gh issue list` (or the repo's
-Issues tab). With the v1 feature set shipped, the notable open items are
-**#15** (multi-user CloudKit sharing — deferred; see `docs/SHARING.md`) and
-**#32** (iPad layout — deferred, app is iPhone-only). The remaining gate to an
-actual App Store submission is the beta-macOS build blocker described above, not
-a feature gap.
+The backlog lives in **GitHub Issues** — see `gh issue list` — and releases are
+grouped by **milestone** (`gh issue list --milestone v1.1 --state closed` gives
+the shipped list to turn into App Store release notes).
+
+1. **Submit v1.1.** The code is merged and the version is bumped; it just needs
+   an archive + upload. Description, keywords, screenshots and "What's New" all
+   require a new version *with a build attached* — only **promotional text** is
+   editable without review, so metadata edits ride along with this submission.
+   Practical notes: updates typically clear review in **~1 day** (the queue, not
+   the review, is the long pole); submitting **Tue/Wed morning** roughly halves
+   the wait; choose **Manual release** so approval and go-live are decoupled.
+2. **#57 — multi-user sharing** (CloudKit `CKShare`; `docs/SHARING.md`). The big
+   one, and the largest architectural change the app would take: persistence
+   moves off `UserDefaults`/JSON. Ship **read-only followers first** (no write
+   conflicts, and there's real demand — two friends asked to follow games), then
+   read-write co-trackers. Budget a longer review runway: new entitlements plus
+   a changed privacy declaration is the profile that draws a rejection.
+3. **#32 — iPad layout.** Deferred; the app is iPhone-only.
 
 ## MVP defaults chosen for the spec's open questions
 

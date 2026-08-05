@@ -2,8 +2,10 @@
 
 > Onboarding reference for any Claude Code session. Kept in sync with the
 > implemented app — update this file as features change.
-> Reflects the **v1-ready** app (2026-07-21): iPhone-only, multi-team, New Game
-> form, first-name displays, FT%, and team export/import.
+> Reflects the app **live on the App Store** (2026-08-05): iPhone-only,
+> multi-team, New Game form, first-name displays, FT%, team export/import, and
+> the v1.1 box-score PDF export.
+> <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
 ---
 
@@ -167,16 +169,32 @@ ViewModel layer yet.
 
 ## 7. Out of scope / deferred
 
-Game timer/shot clock · opponent player tracking · CSV/PDF export · season
+Game timer/shot clock · opponent player tracking · CSV export · season
 summary/archiving · push · watchOS · **iPad layout** (#32, iPhone-only ships).
-**CloudKit sharing** is designed but deferred (`SHARING.md`); manual team
-export/import is the local-first stopgap. **App Store**: metadata is drafted
-(`APP_STORE_LISTING.md`) and the icon + privacy policy are ready — the only
-remaining blocker is building on a **release** Xcode (the dev Mac is on beta
-macOS; see `DISTRIBUTION.md`).
+**PDF export shipped** in v1.1 (#55 — see §PDF export below). **CloudKit
+sharing** is designed but deferred (`SHARING.md`); manual team export/import is
+the local-first stopgap. **App Store**: v1.0 is approved and live; the old
+beta-Xcode blocker is resolved (see `DISTRIBUTION.md`).
 
 ## 8. Queued work
 
-The v1 feature set has shipped. See [`TERMINAL_TODO.md`](TERMINAL_TODO.md) and
-GitHub Issues for what's left — notably **#15** (CloudKit sharing) and **#32**
-(iPad), both deferred.
+v1.0 is live on the App Store and the **v1.1** milestone (#56 `+`-button tap
+targets, #59 benched-scorer totals, #55 box-score PDF) is merged and awaiting
+submission. See GitHub Issues — releases are grouped by milestone, so
+`gh issue list --milestone v1.1 --state closed` yields the release notes.
+
+Remaining, both deferred: **#57** (multi-user CloudKit sharing — #15 was merged
+into it, since co-trackers and followers are the same `CKShare` mechanism at
+different permission levels) and **#32** (iPad layout).
+
+### PDF export (#55, v1.1)
+
+Game Summary → share icon → a preview of a one-page box score, with Share in the
+preview's toolbar. `GameSummaryPDF.swift` holds a **print-specific layout**, not
+a capture of the summary screen — but it derives every number from the same
+model methods the screen uses (`Game.stats(for:)`,
+`Game.periodBreakdownCumulative()`), so the two can't disagree. Page is sized to
+its content with a US Letter minimum, so a normal game is exactly one page and a
+long roster grows rather than clipping. The footer's App Store link is a PDFKit
+**link annotation** added after rendering, because `ImageRenderer` emits glyphs
+rather than annotations.
