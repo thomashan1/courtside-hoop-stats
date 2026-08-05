@@ -48,6 +48,52 @@ struct Player: Identifiable, Codable, Hashable {
     var firstName: String {
         String(name.split(separator: " ").first ?? "")
     }
+
+    /// Everything after the first name, e.g. "Ava Mitchell" -> "Mitchell".
+    /// Empty when the roster only records one word.
+    var lastName: String {
+        name.split(separator: " ").dropFirst().joined(separator: " ")
+    }
+}
+
+// MARK: - Display names
+
+enum PlayerDisplayName {
+    /// Maps each player to the shortest name that still identifies them.
+    ///
+    /// Displays use first names for fast, unambiguous tapping (#42) — but that
+    /// breaks down the moment a roster has two Jakes. Escalates only as far as
+    /// it has to: `Jake` → `Jake M.` → `Jake Moore`, and only for the players
+    /// actually in conflict. Everyone else keeps a bare first name.
+    static func map(for players: [Player]) -> [UUID: String] {
+        var names: [UUID: String] = [:]
+
+        for (_, group) in Dictionary(grouping: players, by: { $0.firstName.lowercased() }) {
+            guard group.count > 1 else {
+                if let only = group.first { names[only.id] = only.firstName }
+                continue
+            }
+
+            // A last initial is enough only if the initials themselves differ
+            // and every player in the group actually has a last name.
+            let initials = group.map { $0.lastName.prefix(1).uppercased() }
+            let initialsSuffice = !initials.contains("") && Set(initials).count == group.count
+
+            for player in group {
+                let last = player.lastName
+                if last.isEmpty {
+                    // Nothing more to go on — the jersey number disambiguates.
+                    names[player.id] = player.firstName
+                } else if initialsSuffice {
+                    names[player.id] = "\(player.firstName) \(last.prefix(1).uppercased())."
+                } else {
+                    names[player.id] = "\(player.firstName) \(last)"
+                }
+            }
+        }
+
+        return names
+    }
 }
 
 // MARK: - Events

@@ -42,6 +42,14 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
         snap(app, "02-game-summary")
 
+        // 2a) Box-score PDF preview (#55) — the share sheet is opened from here,
+        // so the preview is the last screen we can capture deterministically.
+        app.buttons["Box Score PDF"].tap()
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 10))
+        snap(app, "14-box-score-pdf")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+
         // 2b) Edit a finished game in the scoring view (#8): the Summary's
         // "Edit Scores" button opens the same two-tap Live Scoring UI.
         app.buttons["Edit Scores"].tap()

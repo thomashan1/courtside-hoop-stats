@@ -10,6 +10,11 @@ struct GameSummaryView: View {
     /// Presents the full scoring view to edit a finished game's events (#8).
     @State private var isEditingScores = false
     @State private var showDetails = false
+    /// The rendered box-score PDF backing the Share button (#55). Regenerated
+    /// whenever the game is loaded or edited so it never shares stale scores.
+    @State private var pdfURL: URL?
+    /// Presents the PDF preview, from which it can be shared.
+    @State private var showingPDF = false
 
     /// Final-score digits scale with Dynamic Type (capped so they can't overflow
     /// the row), matching the live scoreboard's behavior (issue #12).
@@ -32,6 +37,20 @@ struct GameSummaryView: View {
         .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            // Box score as a PDF (#55). Opens a preview — sharing happens from
+            // there, so you see what's going out before it goes. The file is
+            // rendered up front (it's one page, so this is cheap); the button is
+            // omitted rather than disabled if rendering ever fails.
+            if pdfURL != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingPDF = true
+                    } label: {
+                        Label("Box Score PDF", systemImage: "square.and.arrow.up")
+                            .minimumTapTarget()
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showDetails = true
@@ -48,6 +67,11 @@ struct GameSummaryView: View {
             }
         }
         .onAppear(perform: loadGameIfNeeded)
+        .sheet(isPresented: $showingPDF) {
+            if let pdfURL {
+                GameSummaryPDFPreview(url: pdfURL, shareTitle: shareTitle)
+            }
+        }
         .sheet(isPresented: $showDetails) {
             // Details + notes editor (Cancel/Save). Format is locked — the game
             // is played, so its periods are fixed.
@@ -182,6 +206,7 @@ struct GameSummaryView: View {
         if game.id != gameID, let loaded = store.game(id: gameID) {
             game = loaded
         }
+        regeneratePDF()
     }
 
     /// Reload from the store after the edit sheet closes so score edits made in
@@ -190,5 +215,18 @@ struct GameSummaryView: View {
         if let loaded = store.game(id: gameID) {
             game = loaded
         }
+        regeneratePDF()
+    }
+
+    /// Title shown on the preview screen and in the share sheet.
+    private var shareTitle: String {
+        GameSummaryPDF.title(for: game, teamName: store.team.name)
+    }
+
+    private func regeneratePDF() {
+        // The full roster — the PDF lists benched players as DNP rows itself.
+        pdfURL = GameSummaryPDF.render(game: game,
+                                       teamName: store.team.name,
+                                       roster: store.team.players)
     }
 }
