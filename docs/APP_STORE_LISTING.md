@@ -25,8 +25,8 @@ no undo button). Edit tone to taste before submitting.
 | **SKU** (your internal ref) | `courtside-hoop-stats-01` |
 | **Primary category** | Sports |
 | **Secondary category** | (optional — leave blank, or *Utilities*) |
-| **Version** | `1.1` (`MARKETING_VERSION` — Apple closes a version's train once approved, so each release needs a *new* version, not just a build) |
-| **Build** | `17` (`CURRENT_PROJECT_VERSION` — bump each upload) |
+| **Version** | `MARKETING_VERSION` in `project.pbxproj` (Apple closes a version's train once approved, so each release needs a *new* version, not just a build) |
+| **Build** | `CURRENT_PROJECT_VERSION` — bump each upload |
 | **Age rating** | **4+** (see §7) |
 | **Price** | Free |
 | **Availability** | All countries, or just your region |
@@ -146,10 +146,12 @@ themes, no user-generated content, no web access, no gambling, no contests). Res
 | **Privacy Policy URL** | **Required** | Host `docs/PRIVACY_POLICY.md` somewhere public (GitHub Pages, or the raw file URL). |
 | **Marketing URL** | Optional | — |
 
-> The privacy policy is **written and ready** (`docs/PRIVACY_POLICY.md`, contact
-> **thomashan@icloud.com**) — it just needs to be reachable over HTTPS. Easiest
-> path: enable GitHub Pages on the repo (once it's public) and link the rendered
-> `PRIVACY_POLICY.md`, or paste its contents into a gist/page.
+> The privacy policy is written, hosted, and accepted — v1.0 could not have been
+> approved otherwise (`docs/PRIVACY_POLICY.md`, contact **thomashan@icloud.com**).
+>
+> ⚠️ **The live Support URL and Privacy Policy URL are not recorded anywhere in
+> this repo.** They're needed at every resubmission and can only be read out of
+> App Store Connect — paste the real values into the table above.
 
 ---
 
@@ -167,10 +169,11 @@ submission. Capture on an iPhone 14 Plus-class simulator; see
 
 Suggested 5–6 to upload (hero first): **Live Scoring**, **Score pad**,
 **Game Summary**, **Box score PDF** (the v1.1 headline), **Games list**,
-**Roster**. (The committed `docs/img/*.png` are the README set at iPhone 17
-size; regenerate at the store size above for the listing.)
+**Roster**. (The committed `docs/img/*.png` **are** this upload set, captured at the store
+size — see [`SCREENSHOTS.md`](SCREENSHOTS.md). Don't regenerate a second,
+smaller README-only set; that drift is what caused an upload to be rejected.)
 
-App preview video: optional, skip for v1.0.
+App preview video: optional, still skipped.
 
 ---
 
