@@ -155,17 +155,15 @@ themes, no user-generated content, no web access, no gambling, no contests). Res
 
 ## 9. Screenshots
 
-**iPhone-only → you only need iPhone sizes**, and only the **largest** display:
-App Store Connect scales it down for everything smaller. Generate the store set
-at **1320 × 2868 (6.9")** on a Pro-Max-class simulator:
+**iPhone-only.** This listing uses the **6.5" bucket: `1284 × 2778`** — that's
+what App Store Connect asks for here, because the slot was created at the 1.0
+submission. Capture on an iPhone 14 Plus-class simulator; see
+[`SCREENSHOTS.md`](SCREENSHOTS.md) for the exact command (drive it by simulator
+**ID**, the name alone can fail to resolve).
 
-```bash
-scripts/screenshots.sh "iPhone 17 Pro Max"   # → full-device 1320 × 2868 frames
-```
-
-- **1320 × 2868 (6.9")** — the set we upload.
-- 1284 × 2778 is the **6.5"** bucket, accepted as a fallback but not the target.
-  (Earlier revisions of these docs mislabelled it "6.9" — it isn't.)
+- **1284 × 2778 (6.5")** — what this listing takes.
+- 1320 × 2868 (6.9") is what a *new* listing would want, but don't upload it into
+  a 6.5" slot; it's rejected on dimensions.
 
 Suggested 5–6 to upload (hero first): **Live Scoring**, **Score pad**,
 **Game Summary**, **Box score PDF** (the v1.1 headline), **Games list**,
