@@ -25,9 +25,9 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 |---|---|---|
 | <img src="docs/img/games-list.png" width="240"> | <img src="docs/img/roster.png" width="240"> | <img src="docs/img/teams.png" width="240"> |
 
-| Box score PDF — preview, then share to the group chat |
-|---|
-| <img src="docs/img/box-score-pdf.png" width="240"> |
+| Box score PDF — preview, then share to the group chat | Bench whoever isn't at the game |
+|---|---|
+| <img src="docs/img/box-score-pdf.png" width="240"> | <img src="docs/img/bench.png" width="240"> |
 
 ## What it does
 

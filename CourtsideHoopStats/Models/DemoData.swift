@@ -140,6 +140,10 @@ enum DemoData {
             3: PeriodEndScore(ourRunningTotal: 35, opponentRunningTotal: 30),
             4: PeriodEndScore(ourRunningTotal: 48, opponentRunningTotal: 41),
         ]
+        // Wesley (index 9) missed this game. He has no events, so benching him
+        // costs no points — and it makes the demo realistic: a real roster
+        // usually has an absentee. It's also what puts a **DNP** row in the
+        // box-score PDF and the README screenshot (#55).
         return Game(
             date: refDate,
             opponent: "Lakeside Lightning",
@@ -151,6 +155,7 @@ enum DemoData {
             events: events,
             periodEndScores: periodEnds,
             notes: "Great defensive third quarter. Watch #8 on the press next time.",
+            benchedPlayerIDs: [p[9].id],
             isComplete: true,
             hasStarted: true
         )

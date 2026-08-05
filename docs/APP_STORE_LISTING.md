@@ -38,8 +38,12 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-> Tap a player, tap the basket — the team score adds itself. The fastest way to
-> keep youth-basketball stats from the sideline, one-handed.
+> New in 1.1: share any finished game as a one-page PDF box score — straight to
+> the team group chat, no spreadsheet, no screenshots of a scrolling table.
+
+_(151 chars. Previous: "Tap a player, tap the basket — the team score adds
+itself. The fastest way to keep youth-basketball stats from the sideline,
+one-handed." — worth restoring once 1.1 is no longer new.)_
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
@@ -89,14 +93,20 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 
 ## 5. What's New
 
-**v1.1** (pending submission — generated from the milestone:
-`gh issue list --milestone v1.1 --state closed`):
+**v1.1** (pending submission — 374 chars):
 
-> • Share a game as a PDF box score — tap the share icon on any finished game to
-> preview a clean one-page recap, then send it to the team's group chat.
-> • Players who didn't play are now listed as DNP.
-> • Fixed the "+" button occasionally not responding.
-> • Fixed player totals when someone is benched after scoring.
+> NEW: Share the box score as a PDF.
+>
+> Finish a game, tap share, and preview a clean one-page recap — final score,
+> period by period, and every player's line. Send it to the team group chat,
+> print it, or save it to Files. Players who sat out are listed as DNP.
+>
+> Also: the "+" button no longer misses a tap, and a player benched after
+> scoring keeps their points in the box score.
+
+Regenerate for future releases from the milestone:
+`gh issue list --milestone vX.Y --state closed`. Write what the user *sees* —
+"player totals when someone is benched" says nothing to them.
 
 **v1.0** (shipped):
 
@@ -145,21 +155,22 @@ themes, no user-generated content, no web access, no gambling, no contests). Res
 
 ## 9. Screenshots
 
-**iPhone-only → you only need iPhone sizes.** App Store Connect accepts a single
-required size and scales it for the smaller displays. We generate the store set
-at **1284 × 2778** — the largest of Apple's accepted **6.5" / 6.7"** buckets —
-by running the harness on a Plus/Max-class simulator:
+**iPhone-only → you only need iPhone sizes**, and only the **largest** display:
+App Store Connect scales it down for everything smaller. Generate the store set
+at **1320 × 2868 (6.9")** on a Pro-Max-class simulator:
 
 ```bash
-scripts/screenshots.sh "iPhone 14 Plus"   # → full-device 1284 × 2778 frames
+scripts/screenshots.sh "iPhone 17 Pro Max"   # → full-device 1320 × 2868 frames
 ```
 
-- 1284 × 2778 (6.5"/6.7") — the set we upload.
-- Smaller sizes are optional; App Store Connect reuses this set if omitted.
+- **1320 × 2868 (6.9")** — the set we upload.
+- 1284 × 2778 is the **6.5"** bucket, accepted as a fallback but not the target.
+  (Earlier revisions of these docs mislabelled it "6.9" — it isn't.)
 
-Suggested 4–6 to upload (hero first): **Live Scoring**, **Score pad**,
-**Game Summary**, **Games list**, **Roster**. (The committed `docs/img/*.png`
-are the README set; regenerate at the store size above for the listing.)
+Suggested 5–6 to upload (hero first): **Live Scoring**, **Score pad**,
+**Game Summary**, **Box score PDF** (the v1.1 headline), **Games list**,
+**Roster**. (The committed `docs/img/*.png` are the README set at iPhone 17
+size; regenerate at the store size above for the listing.)
 
 App preview video: optional, skip for v1.0.
 
