@@ -35,9 +35,19 @@ full set).
 
 ## App Store sizes
 
-The app is **iPhone-only**, so only iPhone screenshots are needed. We upload the
-**1284 × 2778** set (the largest of Apple's accepted **6.5" / 6.7"** buckets),
-captured by running the harness on a Plus/Max-class simulator (e.g.
-`scripts/screenshots.sh "iPhone 14 Plus"`). App Store Connect scales that set down
-for smaller displays, so a single size covers the listing. The shots are already
-full-device frames — no cropping needed.
+The app is **iPhone-only**, so only iPhone screenshots are needed, and since
+2025 Apple only wants the **largest** display in the family — it scales that set
+down for everything smaller.
+
+Upload the **6.9" set: 1320 × 2868**, captured on a Pro-Max-class simulator:
+
+```bash
+scripts/screenshots.sh "iPhone 17 Pro Max"   # → 1320 × 2868, the App Store set
+scripts/screenshots.sh "iPhone 17"           # → the README set
+```
+
+> ⚠️ Earlier revisions of this file called **1284 × 2778** the "6.9-inch" size.
+> It isn't — that's the **6.5"** bucket (iPhone 14 Plus class). App Store Connect
+> still accepts it as a fallback class, but 6.9" is the one to upload.
+
+The shots are already full-device frames — no cropping needed.
