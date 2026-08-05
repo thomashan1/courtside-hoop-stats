@@ -136,15 +136,13 @@ the shipped list to turn into App Store release notes).
    an archive + upload. Description, keywords, screenshots and "What's New" all
    require a new version *with a build attached* — only **promotional text** is
    editable without review, so metadata edits ride along with this submission.
-   Practical notes: updates typically clear review in **~1 day** (the queue, not
-   the review, is the long pole); submitting **Tue/Wed morning** roughly halves
-   the wait; choose **Manual release** so approval and go-live are decoupled.
 2. **#57 — multi-user sharing** (CloudKit `CKShare`; `docs/SHARING.md`). The big
    one, and the largest architectural change the app would take: persistence
    moves off `UserDefaults`/JSON. Ship **read-only followers first** (no write
    conflicts, and there's real demand — two friends asked to follow games), then
-   read-write co-trackers. Budget a longer review runway: new entitlements plus
-   a changed privacy declaration is the profile that draws a rejection.
+   read-write co-trackers. New entitlements plus a changed privacy declaration
+   is the profile that draws a rejection, so expect more review friction here
+   than a normal update.
 3. **#32 — iPad layout.** Deferred; the app is iPhone-only.
 
 ## MVP defaults chosen for the spec's open questions

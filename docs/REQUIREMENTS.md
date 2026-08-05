@@ -173,8 +173,9 @@ Game timer/shot clock · opponent player tracking · CSV export · season
 summary/archiving · push · watchOS · **iPad layout** (#32, iPhone-only ships).
 **PDF export shipped** in v1.1 (#55 — see §PDF export below). **CloudKit
 sharing** is designed but deferred (`SHARING.md`); manual team export/import is
-the local-first stopgap. **App Store**: v1.0 is approved and live; the old
-beta-Xcode blocker is resolved (see `DISTRIBUTION.md`).
+the local-first stopgap. **App Store**: v1.0 is approved and live; see
+[`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) for listing copy and the
+per-release checklist.
 
 ## 8. Queued work
 

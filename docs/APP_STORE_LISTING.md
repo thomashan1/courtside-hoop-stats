@@ -140,20 +140,16 @@ themes, no user-generated content, no web access, no gambling, no contests). Res
 
 ## 8. URLs
 
-| Field | Required? | Value |
-|---|---|---|
-| **Support URL** | **Required** | e.g. the GitHub repo, or a one-page site. `https://github.com/thomashan1/courtside-hoop-stats` |
-| **Privacy Policy URL** | **Required** | Host `docs/PRIVACY_POLICY.md` somewhere public (GitHub Pages, or the raw file URL). |
-| **Marketing URL** | Optional | — |
+Both are **required by Apple** and already set in App Store Connect, where they
+persist across releases — you don't re-enter them each submission.
 
-> The privacy policy is written, hosted, and accepted — v1.0 could not have been
-> approved otherwise (`docs/PRIVACY_POLICY.md`, contact **thomashan@icloud.com**).
->
-> ⚠️ **The live Support URL and Privacy Policy URL are not recorded anywhere in
-> this repo.** They're needed at every resubmission and can only be read out of
-> App Store Connect — paste the real values into the table above.
+| Field | What it is |
+|---|---|
+| **Privacy Policy URL** | The "Privacy Policy" link on the App Store page. Serves `docs/PRIVACY_POLICY.md`. |
+| **Support URL** | The "App Support" link on the App Store page — the repo. |
+| **Marketing URL** | Optional; unused. |
 
----
+Only change them if the repo moves. They can't be edited without a new version.
 
 ## 9. Screenshots
 
@@ -206,12 +202,15 @@ No demo account needed (there is no login).
 
 ### Per-release checklist (v1.1 onward)
 
+**Upload:** `Product ▸ Archive` in Xcode, then in the Organizer
+`Distribute App ▸ App Store Connect ▸ Upload`. Organizer re-signs for
+distribution, so a development-signed archive is fine. Processing takes roughly
+15–30 minutes before the build is selectable in App Store Connect.
+
 - [ ] Bump **`MARKETING_VERSION`** (not just the build) — a closed train rejects
   uploads with `ITMS-90186` / `ITMS-90062`
 - [ ] `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
 - [ ] Re-capture store screenshots if the UI changed
   (`scripts/screenshots.sh "iPhone 14 Plus"`)
 - [ ] Update **What's New** from the milestone's closed issues
-- [ ] Choose **Manual release**; skip phased release at this user count
-- [ ] Submit **Tue/Wed morning** — roughly half the queue wait of a weekend
 - [ ] One real game of use (validate with the actual courtside user) before release
