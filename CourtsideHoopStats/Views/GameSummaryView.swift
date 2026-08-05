@@ -125,16 +125,14 @@ struct GameSummaryView: View {
 
     // MARK: - Player stats table
 
-    /// Players who were at the game (benched players excluded from stats).
-    private var playingPlayers: [Player] {
-        store.team.players.filter { !game.benchedPlayerIDs.contains($0.id) }
-    }
-
     private var statsSection: some View {
         Section("Player Stats") {
             // Shared table (#8) — the same component used in Live Scoring.
             // It's the horizontally-scrollable Grid version that also fixes #12.
-            PlayerStatsTable(stats: game.stats(for: playingPlayers))
+            // Pass the whole roster: `stats(for:)` drops benched players itself,
+            // but keeps any who actually scored so the points column still adds
+            // up to the final score (#59).
+            PlayerStatsTable(stats: game.stats(for: store.team.players))
         }
     }
 

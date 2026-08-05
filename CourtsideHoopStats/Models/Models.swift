@@ -330,6 +330,23 @@ struct Game: Identifiable, Codable {
     }
 
     /// Aggregated stats per player, sorted by points descending.
+    ///
+    /// Pass the **full team roster** — this method applies the bench filter
+    /// itself, because bench state (`benchedPlayerIDs`) lives on the game and
+    /// deciding who shows up in the table is a call only the game can make
+    /// without losing points (#59).
+    ///
+    /// Benching means "wasn't at the game", so a benched player is normally
+    /// left out of the table. The exception: anyone with at least one recorded
+    /// event evidently *was* there. Their row always stays, whatever the bench
+    /// state — otherwise their points would vanish from the table while still
+    /// counting toward `ourScore`, and the points column would no longer add up
+    /// to the scoreboard (the bug in #59, most glaring in the box-score PDF's
+    /// TEAM totals row). Benching stays purely presentational: it never edits or
+    /// discards events.
+    ///
+    /// Events belonging to a player who isn't on the roster at all (deleted
+    /// player, imported game) are still ignored — there's no name to show.
     func stats(for players: [Player]) -> [PlayerStats] {
         var map: [UUID: PlayerStats] = [:]
         for player in players { map[player.id] = PlayerStats(player: player) }
@@ -353,7 +370,13 @@ struct Game: Identifiable, Codable {
             }
             map[event.playerID] = stats
         }
-        return players.compactMap { map[$0.id] }.sorted { $0.points > $1.points }
+        // "Was at the game" = appears anywhere in the log, including a foul or a
+        // missed free throw (both are things only a present player can do).
+        let playersWithEvents = Set(events.map(\.playerID))
+        return players
+            .filter { !benchedPlayerIDs.contains($0.id) || playersWithEvents.contains($0.id) }
+            .compactMap { map[$0.id] }
+            .sorted { $0.points > $1.points }
     }
 }
 
