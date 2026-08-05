@@ -1,8 +1,9 @@
 # Multi-User Sharing — Design Notes
 
-**Status:** _Proposed / deferred_ (#15). Do not start until the local
-single-device app is stable and device-tested. Tracked in
-[`TERMINAL_TODO.md`](TERMINAL_TODO.md).
+**Status:** _Proposed / deferred_ (#57, formerly split across #15 and #57 —
+merged 2026-08-05 since both are the same `CKShare` mechanism at different
+permission levels; see below). Do not start until the local single-device app
+is stable and device-tested.
 
 > **Now shipped — a manual, local-first precursor (#40).** Settings ▸ Teams can
 > **export** a team + roster to a `.json` file (ShareLink → AirDrop/Files) and
@@ -14,12 +15,19 @@ single-device app is stable and device-tested. Tracked in
 
 ## Goal
 
-Let more than one person see the same team's roster, games, and stats — starting
-with **two people** (Thomas + his wife). Ideal experience: while one person
-tracks a game courtside, the other can watch the score and stats update
-**near-live** on their own iPhone, signed in with their **own iCloud account**.
+Let more than one person see — and, for some, edit — the same team's roster,
+games, and stats. Two use cases, **one mechanism**:
 
-This is the "iCloud Shared Album" experience, applied to game data.
+1. **Co-trackers** (Thomas + Jean): both can enter/edit scores for the same
+   team, e.g. while one runs the app courtside, the other can jump in too.
+2. **Followers** (friends/family — e.g. Thomas following Jean's team, or
+   grandparents following Nicholas's games): read-only, get **push notified**
+   whenever there's game activity, similar to subscribing to a shared calendar
+   or an iCloud Shared Album.
+
+This is the "iCloud Shared Album" experience, applied to game data — a single
+share per team, where **each participant's permission level determines their
+role**.
 
 ## Recommended approach: CloudKit sharing (`CKShare`)
 
@@ -80,19 +88,39 @@ Events are effectively **append-only** (undo = remove-last), and aggregates are
 derived, not stored. Append-only data merges cleanly under CloudKit's
 last-writer-wins semantics, so the conflict surface is small.
 
-### Recommended sharing model (start simple)
+### Recommended sharing model: `CKShare` participant permissions
 
-- **Single writer, multiple viewers.** The tracker (game owner) edits; the
-  other person is **read-only**. This sidesteps almost all write-conflict
-  complexity and matches the real use (one person runs the app courtside).
-- Revisit "both can edit" only if a genuine need appears.
+`CKShare` natively supports per-participant permission levels — no custom role
+system needed:
+
+- **`.readWrite` participants** = co-trackers/admins (Jean invites Thomas as
+  `.readWrite`; both can record scores for the same team). This *does*
+  introduce write conflicts (two people editing the same game at once) that
+  the single-writer model avoided — see caveat below.
+- **`.readOnly` participants** = followers. They get the CloudKit push
+  subscription (near-live updates, catch-up-on-reconnect semantics per the
+  connectivity caveat above) but cannot edit.
+
+The share owner (whoever creates the team) invites participants and assigns
+each a permission level via the standard `UICloudSharingController` share
+sheet — same flow as sharing an Album or a Note.
+
+**Write-conflict note:** with two `.readWrite` participants possibly recording
+the *same* game concurrently (e.g. both open the Live Scoring screen for
+today's game), CloudKit's last-writer-wins can drop an event if both add a
+basket in the same instant. Realistic mitigation: this is a rare, low-stakes
+collision (worst case, re-tap the missed basket) rather than something to
+solve with real conflict resolution up front. Revisit only if it proves
+annoying in practice.
 
 ### Scope of a share
 
-- **Whole dataset** (team roster + all games) as one shared container is simplest
-  for a couple following one team — share once, done.
-- Per-game shares are more granular but more UI/overhead. Prefer whole-dataset to
-  start.
+- **Whole dataset** (team roster + all games) as one shared container is
+  simplest — share the team once, done. A follower or co-tracker gets
+  everything for that team, not per-game granularity.
+- Someone can be a **follower on one team and a co-tracker on another** (e.g.
+  Thomas: `.readWrite` on his own team, `.readOnly` following Jean's) — this
+  falls out naturally since each team has its own independent `CKShare`.
 
 ## Migration notes
 
@@ -107,7 +135,12 @@ last-writer-wins semantics, so the conflict surface is small.
 ## Open questions / decisions needed
 
 1. SwiftData vs `NSPersistentCloudKitContainer` — resolve via current Apple docs.
-2. Viewer strictly read-only to start? (Recommended: yes.)
+2. Ship `.readOnly` followers first (simplest, no write conflicts), then
+   `.readWrite` co-trackers as a follow-up? (Recommended: yes — followers is
+   the lower-risk slice and already has real demand.)
 3. Share the whole dataset or per-game? (Recommended: whole dataset.)
 4. In-app copy that honestly frames "near-live, catches up offline."
-5. iCloud account requirement + the share invite/accept flow (how the wife joins).
+5. iCloud account requirement + the share invite/accept flow — permission
+   level (`.readWrite` vs `.readOnly`) is chosen by the owner at invite time.
+6. Push notification content/frequency for followers (every basket vs.
+   period-end summaries vs. game-start/end only) — avoid notification fatigue.
