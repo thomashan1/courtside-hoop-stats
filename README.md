@@ -25,6 +25,10 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 |---|---|---|
 | <img src="docs/img/games-list.png" width="240"> | <img src="docs/img/roster.png" width="240"> | <img src="docs/img/teams.png" width="240"> |
 
+| Box score PDF — preview, then share to the group chat |
+|---|
+| <img src="docs/img/box-score-pdf.png" width="240"> |
+
 ## What it does
 
 - **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗).
@@ -39,6 +43,10 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
   follow the active team.
 - **Summary** — final score, cumulative by-period linescore, and per-player stats
   including **FT%** (e.g. `5/6 (83%)`).
+- **Box score PDF** — export the summary as a clean one-page PDF and share it
+  (AirDrop / Messages / Files). Preview it first, so you see exactly what lands
+  in the parents' group chat. Players who didn't play are listed **DNP**,
+  NBA-style. Rendered on device; nothing is uploaded.
 
 ## Build
 
