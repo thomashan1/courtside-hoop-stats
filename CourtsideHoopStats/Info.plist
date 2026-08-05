@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Required for the app to accept CloudKit share invitations (#57).
+	     Without it, tapping a share link does not open the app and
+	     userDidAcceptCloudKitShareWith is never called — a silent failure
+	     that only shows up when a real invitee taps a real link. -->
+	<key>CKSharingSupported</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

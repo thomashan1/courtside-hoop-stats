@@ -152,7 +152,10 @@ struct EventLogRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            JerseyBadge(number: player?.number ?? "?", size: 24)
+            // Same size as the stats table's badge: on the Game Summary both
+            // sections are visible at once, and two sizes of the same bubble
+            // reads as a mistake.
+            JerseyBadge(number: player?.number ?? "?", size: 26)
 
             Text(player?.firstName ?? "Unknown")
                 .font(.subheadline)

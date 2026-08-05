@@ -46,6 +46,10 @@ struct PlayerStatsTable: View {
                 }
             }
             .padding(.vertical, 2)
+            // Matches the inset the Score Log's row cards apply, so the jersey
+            // bubbles in both sections line up down the Game Summary instead of
+            // sitting 10pt apart.
+            .padding(.horizontal, 10)
         }
     }
 }

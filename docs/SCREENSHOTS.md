@@ -7,8 +7,11 @@ from the real UI.
 ## How it works
 
 - **`CourtsideHoopStatsUITests`** (UI-test target) drives the app through its
-  main screens and captures a full-device screenshot at each
-  (`ScreenshotUITests.swift`).
+  main screens and captures a full-device screenshot at each.
+  - `ScreenshotUITests.swift` — the owner's app (games, scoring, summary, PDF…).
+  - `FollowingScreenshotTests.swift` — the follower's read-only view (#57). Split
+    out because it's the only flow that depends on a seeded **followed** team
+    (`DemoData.makeFollowedTeam()`) rather than the user's own team.
 - The app seeds **deterministic demo data** when launched with the
   `-uiTestSeedDemo` argument (`DemoData.swift`, `#if DEBUG` only). This never
   touches real persisted data — mutations are held in memory for the run.
@@ -17,15 +20,28 @@ from the real UI.
 
 ## Run it
 
+**Drive by simulator ID, not name.** The script takes a name, but a bare name
+routinely fails to resolve — `xcodebuild` then dumps its whole destination list
+and exits, leaving the previous run's PNGs in place, so it looks like it worked.
+Get the UDID from `xcrun simctl list devices available`.
+
 ```bash
-scripts/screenshots.sh                 # iPhone 17 Pro (default — README shots)
-scripts/screenshots.sh "iPhone 14 Plus" # App Store size → 1284 × 2778 frames
+# 6.5" / 1284 × 2778 — the size this listing uses. iPhone 14 Plus.
+xcodebuild test -project CourtsideHoopStats.xcodeproj -scheme CourtsideHoopStats \
+  -destination 'platform=iOS Simulator,id=<iPhone 14 Plus UDID>' \
+  -only-testing:CourtsideHoopStatsUITests -resultBundlePath /tmp/shots.xcresult
+xcrun xcresulttool export attachments --path /tmp/shots.xcresult --output-path /tmp/att
+# then copy /tmp/att files to screenshots/ using manifest.json's
+# suggestedHumanReadableName, as scripts/screenshots.sh does
 ```
+
+⚠️ There is **no "iPhone 17 Pro" simulator installed**, despite it being the
+script's default. Pass a device that exists.
 
 PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
 `NN-name.png` — e.g. `01-games-list`, `02-game-summary`, `03-live-scoring`,
-`04-roster`, `12-score-pad`, `13-new-game` (see `ScreenshotUITests.swift` for the
-full set).
+`04-roster`, `12-score-pad`, `13-new-game`, `20-following-list`,
+`21-following-game` (see the two test files for the full set).
 
 ## Adding a screen
 
@@ -66,8 +82,27 @@ the README renders (at `width="240"`, so resolution costs nothing visually).
 Don't keep a second, smaller README-only set; that drift is what caused the
 confusion above.
 
-Upload order, hero first: **live-scoring → score-pad → box-score-pdf →
-game-summary → games-list → roster**. (`teams.png` is README-only.)
+`docs/img/` is **numbered in README display order**, so the files sort the way
+they're presented and nothing goes untracked:
+
+| File | README section | Captured from |
+|---|---|---|
+| `01-live-scoring.png` | Scoring courtside | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
+| `02-score-pad.png` | Scoring courtside | `12-score-pad` |
+| `03-score-log.png` | Scoring courtside | `07-score-log-editor` |
+| `04-new-game.png` | Starting a game | `13-new-game` |
+| `05-location.png` | Starting a game | `06-location-autocomplete` |
+| `06-game-summary.png` | After the game | `02-game-summary` |
+| `07-box-score-pdf.png` | After the game | `14-box-score-pdf` |
+| `08-games-list.png` | Your team | `01-games-list` |
+| `09-roster.png` | Your team | `04-roster` |
+| `10-teams.png` | Your team | `08-settings-teams` |
+| `11-following.png` | Following | `20-following-list` — teams shared with you |
+| `12-following-game.png` | Following | `21-following-game` — a follower watching a game |
+| `app-icon.png` | header | not a screenshot; unnumbered |
+
+Renumber the whole set if the README order changes — the prefix *is* the order,
+so a stale number is worse than none.
 
 `live-scoring.png` is deliberately the **bench** capture (`11-bench`) — the live
 scoring screen with the "Not playing" strip open, so one image shows both.

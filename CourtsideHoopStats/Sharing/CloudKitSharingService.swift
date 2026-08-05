@@ -80,6 +80,102 @@ final class CloudKitSharingService: TeamSharingService {
         _ = try await database.modifyRecordZones(saving: [], deleting: [zoneID(for: team)])
     }
 
+    // MARK: - Follower side
+
+    func acceptShare(_ metadata: CKShare.Metadata) async throws {
+        try await requireAccount()
+        _ = try await container.accept(metadata)
+    }
+
+    func fetchFollowedTeams() async throws -> [FollowedTeam] {
+        try await requireAccount()
+        let database = container.sharedCloudDatabase
+
+        // Each accepted share arrives as its own zone in the shared database.
+        let zones = try await database.allRecordZones()
+        var followed: [FollowedTeam] = []
+
+        for zone in zones {
+            // Zone *changes* rather than a query: a query would need the record
+            // type indexed as queryable in the CloudKit schema, while change
+            // fetching works on any zone as-is.
+            let changes = try await database.recordZoneChanges(inZoneWith: zone.zoneID, since: nil)
+
+            var team: Team?
+            var games: [Game] = []
+            for (_, result) in changes.modificationResultsByID {
+                guard let record = try? result.get().record else { continue }
+                if let decoded = CloudKitSchema.team(from: record) {
+                    team = decoded
+                } else if let decoded = CloudKitSchema.game(from: record) {
+                    games.append(decoded)
+                }
+            }
+
+            // A zone with no team record is one we can't render — skip it
+            // rather than surfacing a nameless placeholder.
+            guard let team else { continue }
+            followed.append(FollowedTeam(team: team,
+                                         games: games,
+                                         zoneName: zone.zoneID.zoneName,
+                                         ownerName: zone.zoneID.ownerName,
+                                         updatedAt: Date()))
+        }
+
+        return followed.sorted { $0.team.name < $1.team.name }
+    }
+
+    func isSharing(_ team: Team) async throws -> Bool {
+        try await requireAccount()
+        return try await share(for: team) != nil
+    }
+
+    /// The team's share, if it has one. Nil when the zone, the record, or the
+    /// share is missing — all of which mean "not shared".
+    private func share(for team: Team) async throws -> CKShare? {
+        let zoneID = zoneID(for: team)
+        guard try await zoneExists(zoneID) else { return nil }
+        let teamRecordID = CloudKitSchema.teamRecordID(team.id, in: zoneID)
+        guard let record = try await existingRecord(teamRecordID) else { return nil }
+        return try await existingShare(on: record)
+    }
+
+    func participants(for team: Team) async throws -> [SharedParticipant] {
+        try await requireAccount()
+        guard let share = try await share(for: team) else { return [] }
+
+        return share.participants.enumerated().map { index, participant in
+            let identity = participant.userIdentity
+            let contact = identity.lookupInfo?.emailAddress
+                ?? identity.lookupInfo?.phoneNumber
+                ?? ""
+
+            // iCloud withholds name components until an invite is accepted, so
+            // fall back to whatever contact the invite went to rather than
+            // showing a blank row.
+            let formatted = identity.nameComponents.map {
+                PersonNameComponentsFormatter.localizedString(from: $0, style: .default)
+            } ?? ""
+            let name = formatted.isEmpty ? (contact.isEmpty ? "Invited person" : contact)
+                                         : formatted
+
+            // Identity has to be stable across refreshes or SwiftUI re-creates
+            // every row; the position is the last resort when CloudKit gives us
+            // neither a user record nor a contact.
+            let id = identity.userRecordID?.recordName
+                ?? (contact.isEmpty ? "participant-\(index)" : contact)
+
+            return SharedParticipant(
+                id: id,
+                name: name,
+                // Don't repeat the contact underneath when it *is* the name.
+                contact: formatted.isEmpty ? "" : contact,
+                isOwner: participant.role == .owner,
+                hasAccepted: participant.acceptanceStatus == .accepted
+            )
+        }
+    }
+
     /// Set the title and icon the system share sheet shows for this share.
     ///
     /// These live as system fields **on the share record**, not on the app

@@ -32,6 +32,25 @@ enum SharingRole: String, Codable, CaseIterable, Identifiable {
 
 // MARK: - Service seam
 
+/// Someone a team is shared with (#57), flattened out of `CKShare.Participant`
+/// so views don't touch CloudKit types.
+struct SharedParticipant: Identifiable {
+    let id: String
+    /// Best available name — falls back to the email/phone when iCloud gives
+    /// us no name components, which is common before an invite is accepted.
+    let name: String
+    /// Email or phone the invite went to; empty when unknown.
+    let contact: String
+    let isOwner: Bool
+    /// False while an invite is still outstanding.
+    let hasAccepted: Bool
+
+    var statusLabel: String {
+        if isOwner { return "Owner" }
+        return hasAccepted ? "Following" : "Invited"
+    }
+}
+
 /// A prepared `CKShare` plus its container — the two things the system share
 /// sheet (`UICloudSharingController`) needs. Produced by the service; the UI
 /// only presents it, so views never construct CloudKit types themselves.
@@ -82,6 +101,26 @@ protocol TeamSharingService {
 
     /// Stop sharing a team (delete its `CKShare`). The local copy is untouched.
     func stopSharing(_ team: Team) async throws
+
+    // MARK: Follower side
+
+    /// Accept an invitation the user tapped. Called with the metadata iOS hands
+    /// the app when someone opens a share link.
+    func acceptShare(_ metadata: CKShare.Metadata) async throws
+
+    /// Every team currently shared *with* this user, as read-only snapshots.
+    func fetchFollowedTeams() async throws -> [FollowedTeam]
+
+    /// Who a team you own is shared with. Empty when it isn't shared.
+    func participants(for team: Team) async throws -> [SharedParticipant]
+
+    /// Whether this team currently has a share in CloudKit.
+    ///
+    /// The authority is CloudKit, not local state: a team can have been shared
+    /// from an earlier version of the app, on another device, or before the app
+    /// started tracking it — and a team that only *looks* unshared silently
+    /// stops publishing to its followers.
+    func isSharing(_ team: Team) async throws -> Bool
 }
 
 /// Default service: sharing is not wired up. Everything reports unavailable and
@@ -98,6 +137,12 @@ struct NoopSharingService: TeamSharingService {
     func stopSharing(_ team: Team) async throws {
         throw SharingError.unavailable
     }
+    func acceptShare(_ metadata: CKShare.Metadata) async throws {
+        throw SharingError.unavailable
+    }
+    func fetchFollowedTeams() async throws -> [FollowedTeam] { [] }
+    func participants(for team: Team) async throws -> [SharedParticipant] { [] }
+    func isSharing(_ team: Team) async throws -> Bool { false }
 }
 
 // MARK: - Environment injection
