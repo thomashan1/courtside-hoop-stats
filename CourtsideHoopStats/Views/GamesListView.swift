@@ -84,18 +84,9 @@ struct GamesListView: View {
                         showingNewGame = true
                     } label: {
                         Image(systemName: "plus")
+                            .minimumTapTarget()
                     }
                     .accessibilityLabel("New Game")
-                    #if DEBUG
-                    // Easter egg: long-press to drop in a random finished game
-                    // with realistic stats, for exercising the UI.
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: 0.7).onEnded { _ in
-                            store.addGame(DemoData.randomGame(team: store.team))
-                            UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        }
-                    )
-                    #endif
                 }
             }
         }
