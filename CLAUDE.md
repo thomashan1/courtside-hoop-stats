@@ -9,8 +9,6 @@ Project context for any Claude Code session. Read this first, then
 > Issues are grouped into **milestones** per release, so
 > `gh issue list --milestone v1.1 --state closed` gives the shipped list to turn
 > into App Store release notes.
-> (`docs/TERMINAL_TODO.md` is retired — it's now just a pointer + a log of
-> already-completed work.)
 
 ## What this is
 
@@ -120,10 +118,13 @@ tap targets, and error recovery are the top UX priorities.**
    the code simple and lets us use Liquid Glass directly (no `if #available`
    fallbacks). → `IPHONEOS_DEPLOYMENT_TARGET` is set to 26.0 (Debug + Release). ✅ done.
 2. **Visual direction: adaptive.** Follow the system light/dark appearance (NO
-   forced dark mode) so it stays readable in a bright gym. Grass-green as the
-   accent color. Liquid Glass only in the chrome (nav bar, tab bar, floating
-   controls); content — player cards, scoreboard, stat tables — stays solid and
-   high-contrast for courtside legibility.
+   forced dark mode) so it stays readable in a bright gym. The accent is
+   **Swish Warriors blue** — `#1E5FCF` on light, `#5B9CF5` on dark
+   (`Color.teamAccent`), with a fixed navy scoreboard banner. (An early plan
+   said grass-green; the app has been blue since the theme pass.) Liquid Glass
+   only in the chrome (nav bar, tab bar, floating controls); content — player
+   cards, scoreboard, stat tables — stays solid and high-contrast for courtside
+   legibility.
 
 ## Next steps
 
