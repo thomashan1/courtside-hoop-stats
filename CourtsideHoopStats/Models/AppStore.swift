@@ -26,10 +26,28 @@ final class AppStore: ObservableObject {
     /// In-app text-size step (index into `AppTextSize.steps`); applied app-wide
     /// as a Dynamic Type floor. 0 = default.
     @Published var textSizeIndex: Int { didSet { save() } }
+    /// Teams shared *with* this user, read-only (#57). Cached so a follower in
+    /// a gym with no signal still sees the last known score. Kept out of
+    /// `teams` so they can never be edited — see `FollowedTeam`.
+    @Published var followedTeams: [FollowedTeam] { didSet { save() } }
+    /// Teams this user has shared *out* (#57). Tracked locally so an edit knows
+    /// whether it needs publishing without asking CloudKit on every keystroke.
+    @Published var sharedTeamIDs: Set<UUID> { didSet { save() } }
 
     private let teamsKey = "chs.teams.v1"        // multi-team blob
     private let gamesKey = "chs.games.v1"
     private let textSizeKey = "chs.textSizeIndex.v1"
+    private let followedKey = "chs.followedTeams.v1"
+    private let sharedKey = "chs.sharedTeams.v1"
+
+    /// Backend for publishing local edits to followers. Injected at app launch;
+    /// nil in tests and previews, which disables publishing entirely.
+    var sharingService: (any TeamSharingService)?
+    private var publishTask: Task<Void, Never>?
+    /// How long to wait after the last edit before pushing. Live scoring writes
+    /// on every basket, so publishing per-mutation would hammer CloudKit; this
+    /// coalesces a flurry of taps into one upload.
+    private let publishDebounce: Duration = .seconds(3)
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -48,6 +66,8 @@ final class AppStore: ObservableObject {
                 var g = $0; g.teamID = demoTeam.id; return g
             }
             textSizeIndex = 0
+            followedTeams = [DemoData.makeFollowedTeam()]
+            sharedTeamIDs = []
             ephemeral = true
             return
         }
@@ -57,6 +77,20 @@ final class AppStore: ObservableObject {
         // Returns 0 (the default step) when unset. Set before the team branch so
         // all stored properties are initialized before `persistTeams()` runs.
         textSizeIndex = UserDefaults.standard.integer(forKey: textSizeKey)
+
+        if let data = UserDefaults.standard.data(forKey: followedKey),
+           let saved = try? decoder.decode([FollowedTeam].self, from: data) {
+            followedTeams = saved
+        } else {
+            followedTeams = []
+        }
+
+        if let data = UserDefaults.standard.data(forKey: sharedKey),
+           let saved = try? decoder.decode(Set<UUID>.self, from: data) {
+            sharedTeamIDs = saved
+        } else {
+            sharedTeamIDs = []
+        }
 
         // Teams: load the saved collection, else start with one empty team.
         if let data = UserDefaults.standard.data(forKey: teamsKey),
@@ -86,6 +120,92 @@ final class AppStore: ObservableObject {
         persistTeams()
         persistGames()
         UserDefaults.standard.set(textSizeIndex, forKey: textSizeKey)
+        if let data = try? encoder.encode(followedTeams) {
+            UserDefaults.standard.set(data, forKey: followedKey)
+        }
+        if let data = try? encoder.encode(sharedTeamIDs) {
+            UserDefaults.standard.set(data, forKey: sharedKey)
+        }
+        schedulePublish()
+    }
+
+    // MARK: - Publishing to followers (#57)
+
+    /// Note that a team is now shared, so later edits get published.
+    func markShared(_ teamID: UUID) {
+        sharedTeamIDs.insert(teamID)
+    }
+
+    /// Ask CloudKit which of my teams are actually shared, and publish those.
+    ///
+    /// Local state can't be trusted on its own: a team shared from an earlier
+    /// build (or another device) isn't in `sharedTeamIDs`, so it would silently
+    /// never publish — its followers would sit on whatever was uploaded the day
+    /// it was shared. Publishing on discovery also pushes everything recorded
+    /// while the app didn't realise it was sharing.
+    @MainActor
+    func syncSharedState() async {
+        guard let service = sharingService, service.isAvailable else { return }
+
+        for team in teams {
+            guard let shared = try? await service.isSharing(team) else { continue }
+            let knownShared = sharedTeamIDs.contains(team.id)
+
+            if shared {
+                if !knownShared { sharedTeamIDs.insert(team.id) }
+                // Catch followers up on anything recorded while we weren't
+                // publishing, whether or not the flag was already set.
+                let teamGames = games.filter { ($0.teamID ?? team.id) == team.id }
+                try? await service.publish(team: team, games: teamGames)
+            } else if knownShared {
+                sharedTeamIDs.remove(team.id)
+            }
+        }
+    }
+
+    func markNotShared(_ teamID: UUID) {
+        sharedTeamIDs.remove(teamID)
+    }
+
+    func isShared(_ teamID: UUID) -> Bool {
+        sharedTeamIDs.contains(teamID)
+    }
+
+    /// Push shared teams to CloudKit a beat after the last edit.
+    ///
+    /// Debounced rather than immediate: scoring a game writes on every basket,
+    /// and publishing per-tap would upload the whole game dozens of times in a
+    /// quarter. Each new edit cancels the pending upload and restarts the timer,
+    /// so a burst of taps costs one upload.
+    private func schedulePublish() {
+        guard let service = sharingService, !sharedTeamIDs.isEmpty else { return }
+
+        publishTask?.cancel()
+        publishTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: self?.publishDebounce ?? .seconds(3))
+            guard !Task.isCancelled, let self else { return }
+            await self.publishSharedTeams(using: service)
+        }
+    }
+
+    @MainActor
+    private func publishSharedTeams(using service: any TeamSharingService) async {
+        for id in sharedTeamIDs {
+            guard let team = teams.first(where: { $0.id == id }) else { continue }
+            let teamGames = games.filter { ($0.teamID ?? id) == id }
+            do {
+                try await service.publish(team: team, games: teamGames)
+            } catch SharingError.notShared {
+                // The share is gone (owner stopped sharing, or it was removed on
+                // another device). Stop trying, rather than recreating a zone
+                // the user deliberately deleted.
+                markNotShared(id)
+            } catch {
+                // Offline or a transient CloudKit failure. The next edit
+                // reschedules, and a full publish is sent then — nothing to
+                // reconcile, because we always upload current state.
+            }
+        }
     }
 
     private func persistTeams() {

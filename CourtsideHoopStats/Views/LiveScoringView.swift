@@ -183,6 +183,12 @@ struct LiveScoringView: View {
             }
             .accessibilityLabel("Back")
             Spacer()
+            // Only when this team is actually shared — a reassurance that
+            // family are watching, and a way to check who without leaving the
+            // game (#57).
+            if store.isShared(store.team.id) {
+                FollowersBadge(team: store.team)
+            }
             Button { showDetails = true } label: { Image(systemName: "info.circle") }
                 .accessibilityLabel("Details")
         }
@@ -449,6 +455,10 @@ private struct PlayerCard: View {
     /// Single tap opens the big point pad for this player (#33, Jean's feedback).
     let onTap: () -> Void
 
+    /// Grows with Dynamic Type alongside the name — a fixed badge next to
+    /// scaling text leaves the card looking lopsided at large sizes.
+    @ScaledMetric private var badgeSize: CGFloat = 36
+
     /// Compact identity for accessibility, e.g. "Ava #4".
     private var idLabel: String {
         let number = player.number.isEmpty ? "" : "#\(player.number)"
@@ -459,14 +469,17 @@ private struct PlayerCard: View {
         // Single row: bigger jersey bubble (easy to see/tap) + first name.
         Button(action: onTap) {
             HStack(spacing: 8) {
-                JerseyBadge(number: player.number, size: 36)
+                JerseyBadge(number: player.number, size: badgeSize)
                 Text(player.firstName)
                     .font(.headline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(.primary)
             }
-            .frame(maxWidth: .infinity)
+            // Leading, not centred: centred content pushes each badge to a
+            // different x depending on name length, so badges never line up
+            // down the column. Large text makes the raggedness obvious.
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 9)
             .padding(.horizontal, 8)
             .background(
@@ -485,9 +498,14 @@ private struct PlayerCard: View {
 /// records it and dismisses; benching is a secondary action here.
 struct ScorePadSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let player: Player
     let onScore: (EventType) -> Void
     let onBench: () -> Void
+
+    /// Brief 🎉 after a three. Kept to the score pad — a moment, not a label —
+    /// so it stays a reward instead of becoming wallpaper in the score log.
+    @State private var celebrating = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -521,12 +539,33 @@ struct ScorePadSheet: View {
         .padding()
         .presentationDetents([.height(360)])
         .presentationDragIndicator(.visible)
+        .overlay {
+            if celebrating {
+                Text("🎉")
+                    .font(.system(size: 130))
+                    .shadow(radius: 12)
+                    .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    .allowsHitTesting(false)
+            }
+        }
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: celebrating)
     }
 
     private func padButton(_ label: String, _ type: EventType) -> some View {
         Button {
+            // Record first: the celebration must never be able to lose a point
+            // if the sheet is dismissed early.
             onScore(type)
-            dismiss()
+
+            guard type == .threePoint, !reduceMotion else {
+                dismiss()
+                return
+            }
+            celebrating = true
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                dismiss()
+            }
         } label: {
             Text(label)
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
@@ -611,6 +650,22 @@ struct EndPeriodSheet: View {
     let onConfirm: (Int) -> Void
 
     @State private var opponentTotalText = ""
+    /// Opens straight onto the number pad — ending a period is a one-field
+    /// task, so the keyboard should already be up with the cursor in place.
+    @FocusState private var opponentFieldFocused: Bool
+
+    /// Shows the running total to beat, so an empty field still tells you where
+    /// the opponent was — the field wants a *cumulative* score, not this
+    /// period's points.
+    private var opponentPlaceholder: String {
+        previousOpponentTotal > 0 ? "Was \(previousOpponentTotal)" : "Opponent running total"
+    }
+
+    private var opponentFooter: String {
+        let base = "Enter the opponent's cumulative score so far (their total on the scoreboard, not just this period)."
+        guard previousOpponentTotal > 0 else { return base }
+        return base + " They had \(previousOpponentTotal) at the last break — leave this blank if they haven't scored since."
+    }
 
     var body: some View {
         NavigationStack {
@@ -619,12 +674,16 @@ struct EndPeriodSheet: View {
                     LabeledContent("Our score (auto)") {
                         Text("\(ourScore)").bold().monospacedDigit()
                     }
-                    TextField("Opponent running total", text: $opponentTotalText)
+                    // Starts empty so you can just type — pre-filling meant
+                    // clearing the old number first, mid-game, one-handed.
+                    TextField(opponentPlaceholder, text: $opponentTotalText)
                         .keyboardType(.numberPad)
+                        .focused($opponentFieldFocused)
+                        .submitLabel(.done)
                 } header: {
                     Text("End of \(periodLabel)")
                 } footer: {
-                    Text("Enter the opponent's cumulative score so far (their total on the scoreboard, not just this period).")
+                    Text(opponentFooter)
                 }
             }
             .navigationTitle(isFinalPeriod ? "Finish Game" : "End \(periodLabel)")
@@ -640,8 +699,15 @@ struct EndPeriodSheet: View {
                     }
                 }
             }
-            .onAppear {
-                opponentTotalText = previousOpponentTotal > 0 ? "\(previousOpponentTotal)" : ""
+            .task {
+                // Deliberately blank: leaving it empty confirms the previous
+                // total (see the Next Period action), so the common "they
+                // scored, type the new number" case is a single entry.
+                opponentTotalText = ""
+                // A beat after the sheet settles — focusing while it's still
+                // presenting is dropped, and the keyboard never appears.
+                try? await Task.sleep(for: .milliseconds(350))
+                opponentFieldFocused = true
             }
         }
     }

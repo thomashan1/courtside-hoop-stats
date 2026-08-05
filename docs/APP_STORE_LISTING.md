@@ -4,9 +4,8 @@ Copy-paste-ready metadata for App Store Connect. Everything here reflects the
 app **as it actually ships today** (iPhone-only, tap-to-score, no foul tracking,
 no undo button). Edit tone to taste before submitting.
 
-> **v1.0 is live:**
+> **Live on the App Store:**
 > <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
-> **v1.1 is merged and awaiting submission.**
 >
 > Only **promotional text** can be edited without a review. App name, subtitle,
 > **description, keywords, screenshots**, "What's New", and the support/privacy
@@ -38,12 +37,15 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-> New in 1.1: share any finished game as a one-page PDF box score — straight to
-> the team group chat, no spreadsheet, no screenshots of a scrolling table.
+> New: share your team so family can follow the game live from their own iPhone
+> — view-only, no account to make, just like a shared photo album.
 
-_(151 chars. Previous: "Tap a player, tap the basket — the team score adds
-itself. The fastest way to keep youth-basketball stats from the sideline,
-one-handed." — worth restoring once 1.1 is no longer new.)_
+_(158 chars.)_
+
+Editable anytime without review, so it should lead with whatever is newest.
+The evergreen fallback, for when nothing is new: "Tap a player, tap the basket —
+the team score adds itself. The fastest way to keep youth-basketball stats from
+the sideline, one-handed."
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
@@ -86,45 +88,55 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > • Share a one-page PDF box score straight to the team's group chat
 > • Notes for scouting and observations
 >
+> **LET FAMILY FOLLOW ALONG**
+> • Share a team so grandparents, friends, or the other parent can watch
+> • Invite them from the normal share sheet, like an iCloud Shared Album
+> • They get a view-only screen — the score and stats, nothing they can change
+> • Updates arrive in seconds with signal, and catch up after a dead-zone gym
+>
 > **YOUR DATA STAYS YOURS**
-> No account. No ads. No tracking. Everything is stored on your device.
+> No sign-up. No ads. No tracking. Your games live on your device — and if you
+> choose to share a team, it goes through your own iCloud to the people you
+> invite, and nowhere else.
 >
 > Perfect for youth leagues, rec teams, and any parent who wants real stats without the hassle.
 
 ## 5. What's New
 
-**v1.1** (pending submission — 374 chars):
+Write what the user *sees* — "player totals when someone is benched" says
+nothing to them. Regenerate each release from the milestone:
+`gh issue list --milestone vX.Y --state closed`.
 
-> NEW: Share the box score as a PDF.
+**v1.2** (in progress):
+
+> NEW: Let family follow your games.
 >
-> Finish a game, tap share, and preview a clean one-page recap — final score,
-> period by period, and every player's line. Send it to the team group chat,
-> print it, or save it to Files. Players who sat out are listed as DNP.
->
-> Also: the "+" button no longer misses a tap, and a player benched after
-> scoring keeps their points in the box score.
-
-Regenerate for future releases from the milestone:
-`gh issue list --milestone vX.Y --state closed`. Write what the user *sees* —
-"player totals when someone is benched" says nothing to them.
-
-**v1.0** (shipped):
-
-> First release. Fast two-tap courtside scoring, editable score log, multi-team
-> rosters, quarter/half/pickup formats, and a per-player + period-by-period game
-> summary.
+> Share a team and invite grandparents, friends, or the other parent from the
+> normal share sheet — just like a shared photo album. They get a view-only
+> screen with the live score and player stats on their own iPhone, and can't
+> change anything. Updates arrive in seconds when you have signal, and catch up
+> once you're out of a dead-zone gym.
 
 ---
 
 ## 6. App Privacy (the "nutrition label" questionnaire)
 
-The app collects **nothing** and has no backend, so answer the App Store Connect
-privacy questions as:
+The app collects **nothing** and has no backend of ours, so answer the App Store
+Connect privacy questions as:
 
 - **Do you or your third-party partners collect data from this app?** → **No**
 
-That yields a "**Data Not Collected**" label. (No account, no analytics SDK, no
-ads, no network calls — all storage is local UserDefaults/JSON.)
+That yields a "**Data Not Collected**" label. No account, no analytics SDK, no
+ads. Storage is local UserDefaults/JSON.
+
+⚠️ **Re-check this now that sharing exists.** A shared team's roster and games
+are written to **the user's own iCloud** (CloudKit private/shared database).
+Apple's questionnaire is about data *we* collect, and data that stays inside a
+user's own iCloud is not collection by the developer — so "No" should still be
+right. But a **changed privacy answer plus new iCloud entitlements is the
+profile that draws review scrutiny**, so re-read the questions against the
+sharing feature before submitting rather than answering from memory, and expect
+more friction than a routine update.
 
 **Export compliance / encryption:** already declared in the target —
 `ITSAppUsesNonExemptEncryption = NO`. App Store Connect will not ask again.
@@ -163,11 +175,14 @@ submission. Capture on an iPhone 14 Plus-class simulator; see
 - 1320 × 2868 (6.9") is what a *new* listing would want, but don't upload it into
   a 6.5" slot; it's rejected on dimensions.
 
-Suggested 5–6 to upload (hero first): **Live Scoring**, **Score pad**,
-**Game Summary**, **Box score PDF** (the v1.1 headline), **Games list**,
-**Roster**. (The committed `docs/img/*.png` **are** this upload set, captured at the store
-size — see [`SCREENSHOTS.md`](SCREENSHOTS.md). Don't regenerate a second,
-smaller README-only set; that drift is what caused an upload to be rejected.)
+The committed `docs/img/*.png` **are** this upload set, captured at the store
+size and **numbered in display order** — see [`SCREENSHOTS.md`](SCREENSHOTS.md).
+Don't regenerate a second, smaller README-only set; that drift is what caused an
+upload to be rejected.
+
+Upload hero-first: `01-live-scoring` → `02-score-pad` → `07-box-score-pdf` →
+`11-following` (the headline for this release) → `06-game-summary` →
+`08-games-list`.
 
 App preview video: optional, still skipped.
 

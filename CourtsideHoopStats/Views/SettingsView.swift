@@ -179,6 +179,7 @@ struct TeamDetailView: View {
     @State private var sharingError: String?
     @State private var preparedShare: PreparedShare?
     @State private var isPreparingShare = false
+    @State private var showingFollowers = false
 
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -222,6 +223,15 @@ struct TeamDetailView: View {
                         }
                     }
                     .disabled(isPreparingShare)
+
+                    // Always offered, never gated on local state: "who did I
+                    // share this with?" should be answerable at any time, and
+                    // the sheet says plainly when nobody is following yet.
+                    Button {
+                        showingFollowers = true
+                    } label: {
+                        Label("See Who's Following", systemImage: "person.2")
+                    }
                 } header: {
                     Text("Share with Followers")
                 } footer: {
@@ -288,6 +298,9 @@ struct TeamDetailView: View {
         } message: {
             Text(sharingError ?? "")
         }
+        .sheet(isPresented: $showingFollowers) {
+            if let team { FollowersView(team: team) }
+        }
         .sheet(item: $preparedShare) { prepared in
             CloudSharingSheet(share: prepared.share,
                               container: prepared.container,
@@ -307,6 +320,8 @@ struct TeamDetailView: View {
             defer { isPreparingShare = false }
             do {
                 preparedShare = try await sharing.prepareShare(for: team, games: games)
+                // From here on, edits to this team publish to its followers.
+                store.markShared(team.id)
             } catch {
                 sharingError = error.localizedDescription
             }

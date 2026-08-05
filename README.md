@@ -17,17 +17,44 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
   <img src="docs/img/app-icon.png" width="96" alt="Courtside Hoop Stats app icon">
 </p>
 
-| Live scoring (absentees benched) | Tap to score | Game summary |
-|---|---|---|
-| <img src="docs/img/live-scoring.png" width="240"> | <img src="docs/img/score-pad.png" width="240"> | <img src="docs/img/game-summary.png" width="240"> |
+### Scoring courtside
 
-| Games | Roster | Teams (Settings) |
-|---|---|---|
-| <img src="docs/img/games-list.png" width="240"> | <img src="docs/img/roster.png" width="240"> | <img src="docs/img/teams.png" width="240"> |
+The main event: two taps per basket, big targets, and the score log always
+visible. Absent players are benched so the grid stays uncluttered.
 
-| Box score PDF — preview, then share to the group chat |
-|---|
-| <img src="docs/img/box-score-pdf.png" width="240"> |
+| 1. Live scoring | 2. Tap a player, then the basket | 3. Fix anything, anytime |
+|---|---|---|
+| <img src="docs/img/01-live-scoring.png" width="240"> | <img src="docs/img/02-score-pad.png" width="240"> | <img src="docs/img/03-score-log.png" width="240"> |
+
+### Starting a game
+
+Every field is optional — **Start Game** to score right now, or **Save** to
+schedule it. Locations autocomplete from Maps and from gyms you've used before.
+
+| 4. New game | 5. Location autocomplete |
+|---|---|
+| <img src="docs/img/04-new-game.png" width="240"> | <img src="docs/img/05-location.png" width="240"> |
+
+### After the game
+
+| 6. Game summary | 7. Box score PDF — preview, then send to the group chat |
+|---|---|
+| <img src="docs/img/06-game-summary.png" width="240"> | <img src="docs/img/07-box-score-pdf.png" width="240"> |
+
+### Your team
+
+| 8. Games | 9. Roster | 10. Teams (Settings) |
+|---|---|---|
+| <img src="docs/img/08-games-list.png" width="240"> | <img src="docs/img/09-roster.png" width="240"> | <img src="docs/img/10-teams.png" width="240"> |
+
+### Following a shared team
+
+What a **follower** sees — the same scores and stats, with no way to change
+anything. The tab appears only once a team has actually been shared with you.
+
+| 11. Teams you follow | 12. Watching a game |
+|---|---|
+| <img src="docs/img/11-following.png" width="240"> | <img src="docs/img/12-following-game.png" width="240"> |
 
 ## What it does
 
@@ -38,9 +65,16 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
   later.
-- **Teams** — manage multiple teams in Settings, and **export/import** a team's
-  **roster** to move it between devices or back it up (games aren't included
-  yet). Roster and Games follow the active team.
+- **Teams** — manage multiple teams in Settings, and **export a backup** of a
+  team's **roster** to move it between devices or keep a copy (games aren't
+  included). Roster and Games follow the active team.
+- **Share with followers** — let family and friends watch a team's games and
+  stats from their own iPhone. Invite them by Apple Account from the standard
+  iOS share sheet (Messages / Mail / AirDrop), exactly like an iCloud Shared
+  Album; they get a **read-only** view in a **Following** tab and can't change
+  anything. Built on CloudKit, so there's no account to create and no server.
+  Updates land within seconds when you have signal — and in a gym with no
+  reception, they catch up once you're back online.
 - **Summary** — final score, cumulative by-period linescore, and per-player stats
   including **FT%** (e.g. `5/6 (83%)`).
 - **Box score PDF** — export the summary as a clean one-page PDF and share it

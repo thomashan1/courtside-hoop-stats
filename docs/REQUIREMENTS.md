@@ -1,10 +1,8 @@
 # Courtside Hoop Stats — Requirements & Architecture Reference
 
-> Onboarding reference for any Claude Code session. Kept in sync with the
-> implemented app — update this file as features change.
-> Reflects the app **live on the App Store** (2026-08-05): iPhone-only,
-> multi-team, New Game form, first-name displays, FT%, team export/import, and
-> the v1.1 box-score PDF export.
+> Onboarding reference for any Claude Code session. Describes the app as it is
+> now — update this file as features change, rather than appending history.
+> **Live on the App Store:**
 > <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
 ---
@@ -53,10 +51,14 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ### 3.2 Settings (Settings tab)
 - **Text Size:** in-app `A− / A+` control (with live "Aa" preview) + **Reset to Default**. Applied app-wide as a Dynamic Type *floor* (`.dynamicTypeSize(step...)`), persisted, and still honors a larger device text size.
 - **Teams:** list of teams (add / select active / open a team's detail). A team's
-  detail offers **Export Team…** (`ShareLink` → a `.json` file for AirDrop/Files);
-  the Teams list offers **Import Team…** (`fileImporter`) to add a team + roster
-  from such a file. Export/import is **roster-only** in v1 (games excluded) — a
-  local-first precursor to CloudKit sharing (`TeamTransfer.swift`, #40).
+  detail offers, in order:
+  - **Share with Followers** — CloudKit `CKShare`; invite people by Apple Account
+    from the system share sheet so they can watch this team read-only. See §3.9.
+  - **Export a Backup** (`ShareLink` → a `.json` file for AirDrop/Files); the
+    Teams list offers **Import Team…** (`fileImporter`) to add a team + roster
+    from such a file. Roster-only — games excluded (`TeamTransfer.swift`, #40).
+    Distinct from sharing: a copy you own and can edit, needs no iCloud, works
+    offline, and is the only real backup.
 
 ### 3.3 Games list (Games tab)
 - Two sections: **Upcoming** (scheduled, soonest first) and **Games** (in-progress + completed, newest first).
@@ -97,6 +99,41 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ### 3.8 Design / accessibility
 - **Adaptive** light/dark (no forced dark mode). **Swish Warriors blue** accent (`#1E5FCF` light / `#5B9CF5` dark); navy scoreboard. Liquid Glass confined to chrome.
 - Dynamic Type respected; live scoring scales; in-app Text Size control.
+
+### 3.9 Box score PDF (#55)
+
+Game Summary → share icon → a preview of a one-page box score, with Share in the
+preview's toolbar. `GameSummaryPDF.swift` holds a **print-specific layout**, not
+a capture of the summary screen — but it derives every number from the same
+model methods the screen uses (`Game.stats(for:)`,
+`Game.periodBreakdownCumulative()`), so the two can't disagree. Page is sized to
+its content with a US Letter minimum, so a normal game is exactly one page and a
+long roster grows rather than clipping. Players who didn't play are listed
+**DNP**. The footer's App Store link is a PDFKit **link annotation** added after
+rendering, because `ImageRenderer` emits glyphs rather than annotations.
+
+### 3.10 Sharing & Following (#57)
+- **Owner:** Settings ▸ Teams ▸ ⓘ ▸ **Share with Followers** creates a CloudKit
+  `CKShare` for that team and opens the system invite sheet. Invitees are added
+  by the email/phone on their Apple Account and the link goes out via Messages /
+  Mail / AirDrop. Re-sharing reuses the existing share rather than making a
+  second one.
+- **Permissions:** **read-only, invite-only.** No "Can edit" (co-tracker writes
+  aren't implemented) and no public link (a forwardable URL to a children's
+  roster is the wrong default).
+- **Follower:** a **Following tab** appears only when a team is actually shared
+  with you. It lists each followed team's games with scores and a **Live** flag,
+  opening to a read-only detail (scoreboard, player stats, per-period
+  breakdown). No scoring or editing anywhere in it.
+- **Liveness:** honest rather than "live" — updates land in seconds with signal,
+  and catch up in a burst after a dead-zone gym. Every followed team shows an
+  "Updated N ago" line.
+- **Storage:** followed teams are cached in `AppStore.followedTeams`, held
+  **separately from `teams`** so read-only data never reaches an editor, and
+  persisted so a follower with no signal still sees the last known score.
+- Requires an Apple Account on an Apple device; Android/web followers are out of
+  scope. Full detail, gotchas, and single-device testing notes in
+  [`SHARING.md`](SHARING.md).
 
 ---
 
@@ -170,27 +207,19 @@ ViewModel layer yet.
 ## 7. Out of scope / deferred
 
 Game timer/shot clock · opponent player tracking · CSV export · season
-summary/archiving · push · watchOS · **iPad layout** (#32, iPhone-only ships).
-**PDF export shipped** in v1.1 (#55 — see §PDF export below). **CloudKit
-sharing** is designed but deferred (`SHARING.md`); manual team export/import is
-the local-first stopgap. **App Store**: v1.0 is approved and live; see
-[`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) for listing copy and the
-per-release checklist.
+summary/archiving · watchOS · **iPad layout** (#32, iPhone-only ships).
+
+**Sharing:** read-only followers ship in v1.2 (§3.9). Still to come:
+**co-trackers** (read-write participants, which is where a synced Core Data
+store becomes necessary), **push notifications** for followers, and
+**publish-on-edit** so a followed game updates continuously rather than at share
+time. See [`SHARING.md`](SHARING.md).
+
+**App Store**: live; see [`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) for
+listing copy and the per-release checklist.
 
 ## 8. Queued work
 
 Tracked in GitHub Issues, grouped by milestone —
 `gh issue list --milestone vX.Y --state closed` for what shipped in a release,
 `gh issue list` for what's open. Not restated here; it rots.
-
-### PDF export (#55, v1.1)
-
-Game Summary → share icon → a preview of a one-page box score, with Share in the
-preview's toolbar. `GameSummaryPDF.swift` holds a **print-specific layout**, not
-a capture of the summary screen — but it derives every number from the same
-model methods the screen uses (`Game.stats(for:)`,
-`Game.periodBreakdownCumulative()`), so the two can't disagree. Page is sized to
-its content with a US Letter minimum, so a normal game is exactly one page and a
-long roster grows rather than clipping. The footer's App Store link is a PDFKit
-**link annotation** added after rendering, because `ImageRenderer` emits glyphs
-rather than annotations.

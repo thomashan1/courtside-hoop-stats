@@ -15,13 +15,18 @@ struct GamesListView: View {
     /// Presents the New Game form (#44 — every field optional; Start or Save).
     @State private var showingNewGame = false
 
+    /// Games being scored right now. Listed first — a game in progress is the
+    /// only thing you'd open the app mid-game to reach.
+    private var live: [Game] {
+        store.activeTeamGames.filter { $0.lifecycle == .inProgress }.sorted { $0.date > $1.date }
+    }
     /// Pre-entered games not yet started, soonest first (active team only).
     private var scheduled: [Game] {
         store.activeTeamGames.filter { $0.lifecycle == .scheduled }.sorted { $0.date < $1.date }
     }
-    /// In-progress and completed games, most recent first (active team only).
-    private var played: [Game] {
-        store.activeTeamGames.filter { $0.lifecycle != .scheduled }.sorted { $0.date > $1.date }
+    /// Finished games, most recent first (active team only).
+    private var finished: [Game] {
+        store.activeTeamGames.filter { $0.lifecycle == .complete }.sorted { $0.date > $1.date }
     }
 
     var body: some View {
@@ -35,22 +40,31 @@ struct GamesListView: View {
                     }
                 }
 
+                // Live first: mid-game, this is the row you're reaching for.
+                if !live.isEmpty {
+                    Section("Playing Now") {
+                        ForEach(live) { row($0) }
+                            .onDelete { offsets in
+                                // Has a score already — confirm before losing it.
+                                if let i = offsets.first { pendingDelete = live[i] }
+                            }
+                    }
+                }
+
                 if !scheduled.isEmpty {
-                    Section("Upcoming") {
+                    Section("Coming Up") {
                         ForEach(scheduled) { row($0) }
                             .onDelete { delete(scheduled, $0) }
                     }
                 }
 
-                if !played.isEmpty {
-                    Section {
-                        ForEach(played) { row($0) }
+                if !finished.isEmpty {
+                    Section("Final Scores") {
+                        ForEach(finished) { row($0) }
                             .onDelete { offsets in
                                 // Played games have recorded scores — confirm.
-                                if let i = offsets.first { pendingDelete = played[i] }
+                                if let i = offsets.first { pendingDelete = finished[i] }
                             }
-                    } header: {
-                        if !scheduled.isEmpty { Text("Games") }
                     }
                 }
             }
@@ -149,8 +163,9 @@ struct NewGameSheet: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    DatePicker("Date & Time", selection: $date,
-                               displayedComponents: [.date, .hourAndMinute])
+                    LabeledContent("Date & Time") {
+                        GameDatePicker(selection: $date)
+                    }
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",

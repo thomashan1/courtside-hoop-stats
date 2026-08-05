@@ -18,59 +18,61 @@ UserDefaults/JSON persistence. Primary user is one
 person (the tracker) operating the phone alone during live games — **speed, big
 tap targets, and error recovery are the top UX priorities.**
 
-## Current status (2026-08-05) — **live on the App Store** 🎉
+## Status
 
-- **v1.0 is approved and public:**
-  <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
-  The old "beta macOS ⇒ beta Xcode ⇒ rejected binary" blocker is **resolved** —
-  submitting works. Development-signed installs straight to a device still work
-  for day-to-day testing (see the device-install flow).
-- **v1.1 is complete in git and awaiting submission.** Version bumped to
-  **1.1 (build 17)** — Apple closes a version's train once approved, so 1.0
-  couldn't take another build. Milestone `v1.1` = #56, #59, #55, all merged.
-- All four screens are live and device-tested on Thomas's iPhone 17 Pro:
-  **Roster, Games, Live Scoring, Game Summary**, plus multi-team management in
-  Settings. Builds clean (0 warnings); a UI-test screenshot harness verifies the
-  main flows (`scripts/screenshots.sh`).
-- **iPhone-only (#7 resolved):** `TARGETED_DEVICE_FAMILY = 1`. No iPad layout;
-  #32 (iPad) remains open/deferred.
-- **Real app icon** shipped (basketball + stat bars on blue) — no longer a
-  placeholder.
-- **Live scoring (Jean's feedback).** Tap a player → a big point pad
-  (+2 / +3 / FT✓ / FT✗); no floating action bar, no long-press, no undo/redo.
-  The Score Log is on top (oldest-first, sticky period headers, auto-scroll);
-  players sit in the bottom thumb zone. Nav + tab bars are hidden while scoring
-  for space. Bench absent players; edit/reorder any entry.
-- **New Game form (#44):** tap **+** → a form where **every field is optional**.
-  **Start Game** begins scoring immediately; **Save** schedules it for later.
-  Period format (quarters / halves / pickup) is chosen at creation. The old ⚡️
-  "Quick Pickup" lightning button was removed.
-- **Displays:** in-game and Game Summary show **first names only**; the Roster
-  keeps full names (#42). The stats table shows **FT%** (e.g. `5/6 (83%)`, #41).
-- **Team export / import (#40):** share a team + roster as a `.json` file via
-  ShareLink (AirDrop / Files) — Export in a team's detail, Import from the Teams
-  list in Settings. Roster-only in v1; a manual, local-first precursor to
-  CloudKit sharing.
-- **Box score PDF (#55, v1.1):** Game Summary → share icon → a preview of a
-  one-page PDF, with Share in the preview's own toolbar. Print-specific layout
-  in `GameSummaryPDF.swift` (*not* a capture of the summary screen), first names
-  disambiguated only on collision (`Jake` → `Jake L.` → `Jake Moore`), NBA-style
-  **DNP** rows, filename naming both teams, and a tappable App Store link in the
-  footer. `ImageRenderer` emits glyphs rather than annotations, so that
-  hyperlink is attached afterwards via PDFKit.
-- **Also live:** multiple teams (#20), edit-a-finished-game (#8), score-log
-  reorder + movable dividers (#9), location autocomplete (#13) + address, game
-  start time, consistency pass (Cancel/Save editors, delete confirms — see
-  `docs/UI_GUIDELINES.md`), `.pickup` format (#34/#35).
-- **Recent fixes (v1.1):** the `+` button occasionally not responding (#56 —
-  icon-only buttons were smaller than the 44pt minimum; use
-  `.minimumTapTarget()`), and benching a player who had already scored making
-  the stats table disagree with the final score (#59 — `Game.stats(for:)` now
-  takes the **full roster** and does the benching itself; pass the whole roster,
-  not a pre-filtered list).
-- **Deferred:** multi-user sharing (#57, CloudKit `CKShare` — see
-  `docs/SHARING.md`). Note #15 was **merged into #57**: co-trackers and
-  followers are the same mechanism at different participant permission levels.
+**Live on the App Store:**
+<https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
+
+Releases are grouped by GitHub milestone — `gh issue list --milestone v1.2` for
+what's in flight, `--state closed` for what shipped. **v1.2 is in progress:
+read-only followers (#57).**
+
+Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
+(`scripts/screenshots.sh`). **iPhone-only** (`TARGETED_DEVICE_FAMILY = 1`); #32
+(iPad) is open and deferred.
+
+## What's built
+
+- **Live scoring.** Tap a player → a big point pad (+2 / +3 / FT✓ / FT✗). No
+  floating action bar, no long-press, no undo/redo. The Score Log sits on top
+  (oldest-first, sticky period headers, auto-scroll) and players sit in the
+  bottom thumb zone; nav + tab bars hide while scoring. Bench absent players;
+  edit or reorder any entry.
+- **Games.** Tap **+** for a New Game form where **every field is optional**.
+  **Start Game** begins scoring immediately; **Save** schedules it. Period
+  format (quarters / halves / pickup) is chosen at creation.
+- **Game Summary.** Final score, cumulative by-period linescore, per-player
+  stats with **FT%** (`5/6 (83%)`), editable opponent totals, editable log.
+- **Box score PDF.** Game Summary → share icon → a preview of a one-page PDF.
+  Print-specific layout in `GameSummaryPDF.swift` (*not* a screen capture),
+  NBA-style **DNP** rows, and a tappable App Store link attached via PDFKit
+  because `ImageRenderer` emits glyphs rather than annotations.
+- **Teams.** Multiple teams, managed in Settings; Roster and Games follow the
+  active team. **Export a Backup** writes a team + roster to `.json`
+  (AirDrop/Files) and Import reads one back — roster-only, and distinct from
+  sharing: a copy you own, no iCloud needed, and the only real backup.
+- **Sharing & Following (#57).** A team owner can share a team via CloudKit
+  `CKShare`; invitees are added by Apple Account from the system share sheet and
+  get a **read-only** view in a **Following** tab that appears only when
+  something is shared with them. Invite-only, no public link. See
+  `docs/SHARING.md` for the architecture, four hard-won gotchas, and how to test
+  it with a single device.
+- **Displays.** In-game and Game Summary show **first names only**, escalating
+  only on collision (`Jake` → `Jake L.` → `Jake Moore`); the Roster keeps full
+  names.
+- **Also live:** edit-a-finished-game, score-log reorder + movable dividers,
+  location autocomplete + address, game start time, and a consistency pass
+  (Cancel/Save editors, delete confirms — see `docs/UI_GUIDELINES.md`).
+
+## Traps worth knowing
+
+- **Icon-only buttons need `.minimumTapTarget()`** — below 44pt they
+  intermittently miss taps.
+- **`Game.stats(for:)` takes the full roster** and applies benching itself.
+  Passing a pre-filtered list makes the stats table disagree with the final
+  score.
+- Models use **migration-safe optional `Codable` fields**: a `try?` decode
+  failure wipes saved data, so new fields must be optional or defaulted.
 
 ## Naming (settled)
 

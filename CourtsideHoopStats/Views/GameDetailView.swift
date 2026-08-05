@@ -140,8 +140,9 @@ struct EditGameSheet: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    DatePicker("Date & Time", selection: $date,
-                               displayedComponents: [.date, .hourAndMinute])
+                    LabeledContent("Date & Time") {
+                        GameDatePicker(selection: $date)
+                    }
                     SuggestingTextField(title: "League / Tournament",
                                         text: $league, suggestions: store.knownLeagues)
                     LocationField(title: "Location / Gym",

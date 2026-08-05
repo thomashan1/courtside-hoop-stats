@@ -107,6 +107,85 @@ enum DemoData {
          scheduledGame()]
     }
 
+    /// A team shared *with* the demo user, for the Following tab (#57).
+    ///
+    /// Uses the **same Swish Warriors roster** as every other screenshot, so the
+    /// demo reads as one consistent team across the whole app — and, like the
+    /// owner-side games, leans on **Nicholas (#77) hitting threes** as the
+    /// standout. The narrative works: this is a grandparent following the team
+    /// Jean is tracking.
+    ///
+    /// Carries its own game scripts rather than reusing `finishedGame` /
+    /// `inProgressGame` so the two sides of the app don't show identical games.
+    static func makeFollowedTeam() -> FollowedTeam {
+        let team = makeTeam()
+        let p = team.players   // index 8 = Nicholas H. (#77)
+
+        // Live, partway through Q3. Quarter sums: 10, 9, then 7 so far = 26.
+        var liveEvents: [GameEvent] = []
+        for (index, type, period): (Int, EventType, Int) in [
+            // Q1 = 10 — Nicholas opens with back-to-back threes.
+            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1), (7, .twoPoint, 1),
+            // Q2 = 9
+            (8, .threePoint, 2), (4, .twoPoint, 2), (8, .ftMade, 2), (1, .threePoint, 2),
+            // Q3 so far = 7
+            (8, .threePoint, 3), (6, .twoPoint, 3), (8, .twoPoint, 3),
+        ] {
+            liveEvents.append(GameEvent(playerID: p[index].id, type: type, period: period))
+        }
+        let live = Game(
+            date: refDate.addingTimeInterval(7 * 86_400),
+            opponent: "Harbor Sharks",
+            league: "Metro Youth League",
+            location: "Bayview Middle School",
+            isHome: false,
+            periodFormat: .quarters,
+            events: liveEvents,
+            periodEndScores: [1: PeriodEndScore(ourRunningTotal: 10, opponentRunningTotal: 8),
+                              2: PeriodEndScore(ourRunningTotal: 19, opponentRunningTotal: 17)],
+            isComplete: false,
+            hasStarted: true
+        )
+
+        // The week before: a 28–24 win, Nicholas with five threes for 18.
+        var pastEvents: [GameEvent] = []
+        for (index, type, period): (Int, EventType, Int) in [
+            // Q1 = 8
+            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1),
+            // Q2 = 7
+            (8, .threePoint, 2), (4, .twoPoint, 2), (1, .twoPoint, 2),
+            // Q3 = 6
+            (8, .threePoint, 3), (8, .ftMade, 3), (7, .twoPoint, 3),
+            // Q4 = 7
+            (8, .threePoint, 4), (6, .twoPoint, 4), (8, .ftMade, 4), (8, .ftMade, 4),
+        ] {
+            pastEvents.append(GameEvent(playerID: p[index].id, type: type, period: period))
+        }
+        let past = Game(
+            date: refDate,
+            opponent: "Valley Vipers",
+            league: "Metro Youth League",
+            location: "Valley Fieldhouse",
+            isHome: true,
+            periodFormat: .quarters,
+            events: pastEvents,
+            periodEndScores: [1: PeriodEndScore(ourRunningTotal: 8, opponentRunningTotal: 6),
+                              2: PeriodEndScore(ourRunningTotal: 15, opponentRunningTotal: 13),
+                              3: PeriodEndScore(ourRunningTotal: 21, opponentRunningTotal: 19),
+                              4: PeriodEndScore(ourRunningTotal: 28, opponentRunningTotal: 24)],
+            isComplete: true,
+            hasStarted: true
+        )
+
+        return FollowedTeam(
+            team: team,
+            games: [live, past],
+            zoneName: "team-demo",
+            ownerName: "_demoOwner_",
+            updatedAt: Date().addingTimeInterval(-12)
+        )
+    }
+
     // MARK: - Finished game (48–41 win) with a full four-quarter breakdown.
 
     private static func finishedGame(team: Team) -> Game {
