@@ -17,7 +17,7 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
   <img src="docs/img/app-icon.png" width="96" alt="Courtside Hoop Stats app icon">
 </p>
 
-| Live scoring | Tap to score | Game summary |
+| Live scoring (absentees benched) | Tap to score | Game summary |
 |---|---|---|
 | <img src="docs/img/live-scoring.png" width="240"> | <img src="docs/img/score-pad.png" width="240"> | <img src="docs/img/game-summary.png" width="240"> |
 
@@ -25,9 +25,9 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 |---|---|---|
 | <img src="docs/img/games-list.png" width="240"> | <img src="docs/img/roster.png" width="240"> | <img src="docs/img/teams.png" width="240"> |
 
-| Box score PDF — preview, then share to the group chat | Bench whoever isn't at the game |
-|---|---|
-| <img src="docs/img/box-score-pdf.png" width="240"> | <img src="docs/img/bench.png" width="240"> |
+| Box score PDF — preview, then share to the group chat |
+|---|
+| <img src="docs/img/box-score-pdf.png" width="240"> |
 
 ## What it does
 
