@@ -70,6 +70,26 @@ enum DemoData {
         refDate.addingTimeInterval(Double(days) * 86_400 + hour * 3_600)
     }
 
+    // MARK: - Sharing (screenshots only)
+
+    /// The demo team is presented as **shared with two people**, so the owner-side
+    /// sharing markers (#93) actually appear in screenshots: the "Shared with 2
+    /// followers" subtitle on Games, the followers button, and the "Shared" tag
+    /// in Settings ▸ Teams. Without this the seed looks unshared and none of
+    /// that UI is reachable.
+    static func makeParticipants() -> [SharedParticipant] {
+        [
+            SharedParticipant(id: "demo-owner", name: "You", contact: "",
+                              isOwner: true, hasAccepted: true),
+            SharedParticipant(id: "demo-1", name: "Grandma Chen",
+                              contact: "gchen@example.com",
+                              isOwner: false, hasAccepted: true),
+            SharedParticipant(id: "demo-2", name: "Coach Ramirez",
+                              contact: "coach.ramirez@example.com",
+                              isOwner: false, hasAccepted: false),
+        ]
+    }
+
     // MARK: - Random test game (easter egg: long-press "+" on the Games list)
 
     private static let opponents = [

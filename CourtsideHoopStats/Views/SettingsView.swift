@@ -101,6 +101,7 @@ struct SettingsView: View {
             ForEach(store.teams) { team in
                 TeamRow(team: team,
                         isActive: team.id == store.activeTeamID,
+                        isShared: store.isShared(team.id),
                         onEdit: { editingTeam = TeamRef(id: team.id) },
                         onSelect: { store.setActiveTeam(team.id) })
                 .swipeActions(edge: .trailing) {
@@ -170,6 +171,9 @@ private struct TeamRef: Identifiable { let id: UUID }
 private struct TeamRow: View {
     let team: Team
     let isActive: Bool
+    /// Whether this team is shared with followers. Read from the store rather
+    /// than fetched, so a list of teams costs no network calls.
+    let isShared: Bool
     let onEdit: () -> Void
     let onSelect: () -> Void
 
@@ -180,9 +184,20 @@ private struct TeamRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(team.name).foregroundStyle(.primary)
-                Text("^[\(team.players.count) player](inflect: true)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+
+                // Sharing is invisible from here otherwise: you'd have to open
+                // each team in turn to find out which ones other people can
+                // see. That matters more than most settings, because the thing
+                // being shared is a roster of children's names (#93).
+                HStack(spacing: 6) {
+                    Text("^[\(team.players.count) player](inflect: true)")
+                    if isShared {
+                        Label("Shared", systemImage: "person.2.fill")
+                            .foregroundStyle(Color.teamAccent)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 12)
@@ -198,6 +213,10 @@ private struct TeamRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
+        // A List infers the separator inset from the row's contents, and the
+        // "Shared" tag moved that inference — the divider jumped inward to
+        // start under the tag instead of under the team name. Pin it.
+        .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
     }

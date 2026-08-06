@@ -36,7 +36,27 @@ final class ScreenshotUITests: XCTestCase {
         // 1) Games list — all three sections, and a win, a loss and a tie so
         // every result badge appears in one shot.
         XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+
+        // The owner-side sharing marker (#93). This is what separates the Games
+        // tab from the Following tab at a glance, so it has to actually be
+        // there — and it has to read as prose. `.navigationSubtitle` takes a
+        // plain String, so `^[…](inflect:)` markup renders literally rather
+        // than pluralising, which is exactly how it shipped the first time.
+        XCTAssertTrue(app.staticTexts["Shared with 2 followers"].waitForExistence(timeout: 5),
+                      "Games tab should say who the team is shared with")
+        XCTAssertFalse(app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS[c] 'inflect'")).firstMatch.exists,
+                       "Inflection markup leaked into the UI unrendered")
+
         snap(app, "01-games-list")
+
+        // 1b) Followers — reachable from Games, not just from a live game.
+        app.buttons["Shared with 2 followers"].tap()
+        XCTAssertTrue(app.navigationBars["Followers"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Grandma Chen"].waitForExistence(timeout: 5))
+        snap(app, "16-followers")
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
         // 1a) A game played in halves, which also happens to be the tie. Two
         // things worth a look that the quarters games can't show: the linescore
@@ -133,6 +153,13 @@ final class ScreenshotUITests: XCTestCase {
         // 4b) Settings → team management (#20).
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Teams"].waitForExistence(timeout: 10))
+        // Exactly one team is shared, so exactly one row is tagged. A service
+        // that reports every team as shared put the tag on both — which is a
+        // lie about who can see a roster of children's names, so it's asserted
+        // rather than eyeballed (#93).
+        XCTAssertEqual(app.staticTexts.matching(identifier: "Shared").count, 1,
+                       "Only the shared team should carry a Shared tag")
+
         snap(app, "08-settings-teams")
 
         // 4c) Team detail — name + jersey editing lives here now. Tapping a row

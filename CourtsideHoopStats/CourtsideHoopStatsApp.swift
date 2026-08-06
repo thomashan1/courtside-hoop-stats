@@ -10,14 +10,27 @@ struct CourtsideHoopStatsApp: App {
     @StateObject private var store: AppStore
     /// Live CloudKit sharing (#57). Swapping this for `NoopSharingService()`
     /// hides every sharing affordance and returns the app to local-only.
-    private let sharing: CloudKitSharingService
+    /// Held as the protocol so the screenshot harness can substitute its own.
+    private let sharing: any TeamSharingService
 
     /// Wired up here rather than in a `.task` so the store can publish from the
     /// very first launch tick — a task-based hand-off races `ContentView`'s own
     /// startup work, which silently skipped the first sync.
     init() {
-        let service = CloudKitSharingService()
         let appStore = AppStore()
+        #if DEBUG
+        // The screenshot harness runs offline against seeded data, so it gets a
+        // stand-in service. Without it the seeded team reports zero followers
+        // and every sharing screen captures in its empty state.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
+            let demo = DemoSharingService(sharedTeamID: appStore.team.id)
+            appStore.sharingService = demo
+            sharing = demo
+            _store = StateObject(wrappedValue: appStore)
+            return
+        }
+        #endif
+        let service = CloudKitSharingService()
         appStore.sharingService = service
         sharing = service
         _store = StateObject(wrappedValue: appStore)
