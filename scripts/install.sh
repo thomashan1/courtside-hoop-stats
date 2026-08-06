@@ -32,9 +32,15 @@ case "$TARGET" in
   *) echo "usage: $0 [thomas|jean|all]" >&2; exit 2 ;;
 esac
 
-# Which of the requested devices are actually reachable right now. `tunnelState`
-# is the honest signal — `devicectl list devices` shows paired-but-absent phones
-# too, so pairing alone says nothing about whether one is in the house.
+# Which of the requested devices are actually reachable right now.
+#
+# `transportType` is the signal, not `tunnelState`: a phone sitting on the home
+# Wi-Fi reports `localNetwork` with `tunnelState: disconnected`, because the
+# tunnel is only established when something actually talks to it. Gating on
+# `tunnelState == connected` skipped both phones while they were both home.
+# When a phone is genuinely away, `transportType` is null.
+#
+# Pairing alone says nothing — `devicectl` lists paired-but-absent phones too.
 xcrun devicectl list devices --json-output "$TMPDIR_DEV/devices.json" >/dev/null 2>&1 || true
 
 reachable() {
@@ -46,7 +52,10 @@ except Exception:
     sys.exit(1)
 for d in devices:
     if d.get("identifier") == sys.argv[2]:
-        sys.exit(0 if d["connectionProperties"].get("tunnelState") == "connected" else 1)
+        props = d.get("connectionProperties", {})
+        reachable = (props.get("transportType") is not None
+                     or props.get("tunnelState") == "connected")
+        sys.exit(0 if reachable else 1)
 sys.exit(1)
 PY
 }
