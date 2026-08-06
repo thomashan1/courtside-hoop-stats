@@ -181,8 +181,8 @@ Don't regenerate a second, smaller README-only set; that drift is what caused an
 upload to be rejected.
 
 Upload hero-first: `01-game-live-scoring` → `02-game-score-pad` →
-`06-game-summary-share-pdf` → `10-following-teams` (the headline for this
-release) → `05-game-summary` → `07-team-games`.
+`06-game-summary-share-pdf` → `10-following` (the headline for this
+release) → `05-game-summary` → `07-games`.
 
 App preview video: optional, still skipped.
 

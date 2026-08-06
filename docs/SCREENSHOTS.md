@@ -94,10 +94,10 @@ the image is used and the directory sorts the way the README reads.
 | `04-new-game.png` | Starting a game | `13-new-game` |
 | `05-game-summary.png` | After the game | `02-game-summary` |
 | `06-game-summary-share-pdf.png` | After the game | `14-box-score-pdf` |
-| `07-team-games.png` | Your team | `01-games-list` |
-| `08-team-roster.png` | Your team | `04-roster` |
-| `09-team-settings.png` | Your team | `08-settings-teams` — the Teams list in Settings |
-| `10-following-teams.png` | Following a shared team | `20-following-list` — teams shared with you |
+| `07-games.png` | Your team | `01-games-list` |
+| `08-roster.png` | Your team | `04-roster` |
+| `09-settings.png` | Your team | `08-settings-teams` — the Teams list in Settings |
+| `10-following.png` | Following a shared team | `20-following-list` — teams shared with you |
 | `11-following-game.png` | Following a shared team | `21-following-game` — a follower watching a game |
 | `app-icon.png` | header | not a screenshot; unnumbered |
 
