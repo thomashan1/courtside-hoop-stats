@@ -99,7 +99,7 @@ when someone has shared a team with you (§3.10).
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt). *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 
 ### 3.7 Game Summary (completed games)
-- Final score + W/L/T; period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
+- Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
 - Player stats table (sorted by points), first names: PTS, 2P, 3P, and **FT** shown made/attempts with a whole-percent **FT%** when there's ≥1 attempt (e.g. `5/6 (83%)`).
 - Players benched for the game are listed below the scorers as **DNP** rather
   than dropped — a roster that silently loses people reads as a bug, and zeroes
@@ -135,8 +135,11 @@ rendering, because `ImageRenderer` emits glyphs rather than annotations.
   roster is the wrong default).
 - **Follower:** a **Following tab** appears only when a team is actually shared
   with you. It lists each followed team's games with scores and a **Live** flag,
-  opening to a read-only detail (scoreboard, player stats, per-period
-  breakdown). No scoring or editing anywhere in it.
+  opening to a read-only detail (score card, player stats, per-period
+  breakdown). No scoring or editing anywhere in it. The detail leads with the
+  **same `GameScoreCard` the Game Summary uses**, not Live Scoring's navy
+  banner: a scheduled game shows dashes and its tip-off time, a live one the
+  current period in place of a result, a finished one WIN/LOSS/TIE and "Final".
 - **Liveness:** honest rather than "live" — updates land in seconds with signal,
   and catch up in a burst after a dead-zone gym. Every followed team shows an
   "Updated N ago" line. An open live game re-fetches every 20s on its own.
