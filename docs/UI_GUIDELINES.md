@@ -36,7 +36,19 @@ offers:
 - **Details** (ⓘ) → `EditGameSheet` for metadata + notes.
 - **Edit Scores** → the Live Scoring surface for events/periods.
 
-## 4. Preferences are not records
+## 4. Read-only means no edit path exists
+
+A follower's screens don't hide editing behind a flag — they're built without it.
+`FollowingView` is its own view rather than `GamesListView` with `isReadOnly`,
+because a flag leaves an edit path one missed check away from appearing.
+
+Presentational components *are* shared (`GameRowView`, `PlayerStatsTable`,
+`PeriodBreakdownGrid`, `EventLogView` in display-only mode), so a follower's
+numbers can't drift from the owner's. Where a shared component has an editable
+mode, disarm it twice: pass the flag **and** a constant binding, so there's
+nothing to write back to even if the flag were wrong.
+
+## 5. Preferences are not records
 
 Only true app preferences (**Text Size**) edit live with no Save button — the
 Settings-app model. Anything that is *data* uses pattern 1.

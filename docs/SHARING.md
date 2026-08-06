@@ -247,10 +247,6 @@ whole-game last-writer-wins plus Live Scoring's stale local copy can lose data
 *silently and retroactively, during a live game* — exactly when the user can't
 stop and debug. Followers could never lose data; co-trackers can.
 
-### Also not built
-
-- **Co-tracker write conflicts** — see above; the only remaining gap.
-
 ## Related
 
 - **Export a Backup (#40)** still earns its place next to sharing: it's a
@@ -258,5 +254,5 @@ stop and debug. Followers could never lose data; co-trackers can.
   iCloud account, works offline, and is the only real backup — sharing is a
   mirror, so deleting a team removes it from followers too. See
   `Models/TeamTransfer.swift`.
-- Adding followers changes a documented assumption: `CLAUDE.md` described a
-  single user operating alone.
+- The app is no longer single-user: a team's games can be watched by anyone the
+  owner invites, though only the owner can record them.

@@ -17,7 +17,7 @@ during live games. **Speed, big tap targets, legibility, and error recovery** ar
 the top UX priorities.
 
 **Team context:** Swish Warriors, youth league. Shipped to the App Store.
-Next goal (designed, deferred): let others see the same games/stats — co-trackers
+Others can follow a team read-only (§3.10). Next: co-trackers
 who can edit, and read-only followers — see [`SHARING.md`](SHARING.md) and #57.
 
 ---
@@ -31,7 +31,7 @@ who can edit, and read-only followers — see [`SHARING.md`](SHARING.md) and #57
 | Language / UI | Swift / SwiftUI |
 | Persistence | UserDefaults + JSON (Codable) |
 | Dependencies | None (zero third-party) |
-| Sync | None. Manual **team export/import** via a shared `.json` file (roster-only). CloudKit `CKShare` still planned/deferred (see `SHARING.md`). |
+| Sync | **CloudKit `CKShare`** for read-only followers (§3.10, `SHARING.md`). The owner's local store stays the source of truth and is mirrored up; nothing syncs back. Manual **team export/import** via a `.json` file remains, as a backup and an offline copy. |
 | Dev env | Xcode 27 beta (iOS 27 SDK); test device iPhone 17 Pro |
 
 New stored `Codable` fields are added as **optionals** so existing saved data
@@ -40,6 +40,9 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ---
 
 ## 3. Features (current)
+
+**Tabs:** Games · Roster · Settings, plus a **Following** tab that appears only
+when someone has shared a team with you (§3.10).
 
 ### 3.1 Roster (Roster tab)
 - Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
@@ -61,8 +64,12 @@ still decodes (a `try?` decode failure would wipe the user's games).
     offline, and is the only real backup.
 
 ### 3.3 Games list (Games tab)
-- Two sections: **Upcoming** (scheduled, soonest first) and **Games** (in-progress + completed, newest first).
-- Row shows opponent, date, location, and a state indicator: **Scheduled** badge / **In Progress** badge / final score + **W/L/T** badge.
+- Three sections, live first (mid-game it's the row you're reaching for):
+  **Playing Now**, **Coming Up** (soonest first), **Final Scores** (newest first).
+- Row shows opponent, date + start time with the **weekday** ("Tue, Aug 4 at
+  11:40 AM" — the year is dropped in-season), location, and a state indicator:
+  **Scheduled** badge / **In Progress** badge / final score + **W/L/T** badge.
+  The date outranks the gym name when the two compete for width.
 - Routing by lifecycle: scheduled → **Game Detail**; in-progress → **Live Scoring**; complete → **Game Summary**.
 - Swipe-to-delete.
 
@@ -94,6 +101,11 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T; period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
 - Player stats table (sorted by points), first names: PTS, 2P, 3P, and **FT** shown made/attempts with a whole-percent **FT%** when there's ≥1 attempt (e.g. `5/6 (83%)`).
+- Players benched for the game are listed below the scorers as **DNP** rather
+  than dropped — a roster that silently loses people reads as a bug, and zeroes
+  would wrongly say "played, didn't score". A benched player who *did* record
+  something keeps a normal row (#59). Shared by the summary, the follower's
+  view, and the PDF via `Game.didNotPlay(from:)`.
 - **Editable event log** (same component as Live Scoring). Notes field. Metadata (date, home/away, league, location, format).
 
 ### 3.8 Design / accessibility
@@ -213,7 +225,7 @@ ViewModel layer yet.
 Game timer/shot clock · opponent player tracking · CSV export · season
 summary/archiving · watchOS · **iPad layout** (#32, iPhone-only ships).
 
-**Sharing:** read-only followers ship in v1.2 (§3.9). Still to come:
+**Sharing:** read-only followers ship in v1.2 (§3.10). Still to come:
 **co-trackers** (read-write participants, which is where a synced Core Data
 store becomes necessary), **push notifications** for followers, and
 **publish-on-edit** so a followed game updates continuously rather than at share
