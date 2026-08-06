@@ -173,6 +173,11 @@ private struct FollowedGameView: View {
     let followedID: String
     let gameID: UUID
 
+    /// The rendered box score (#91). Regenerated whenever the game changes, so
+    /// a follower never shares a score that's already moved on.
+    @State private var pdfURL: URL?
+    @State private var showingPDF = false
+
     /// How often a live game re-fetches while you're watching it. Long enough
     /// not to drain a phone sitting on the bleachers, short enough that the
     /// score doesn't feel stale. Until push notifications land, this is what
@@ -220,6 +225,33 @@ private struct FollowedGameView: View {
                             ? (followed?.updatedAt.updatedLabel ?? "") : "")
         .navigationBarTitleDisplayMode(.inline)
         .scoreToast($flash)
+        .toolbar {
+            // A follower has as much reason to send the box score to family as
+            // the tracker does. Finished games only, matching the owner: the
+            // page is a box score — it stamps FINAL and a win/loss result, so
+            // rendering a game still in progress would state an outcome that
+            // hasn't happened.
+            if let game, game.lifecycle == .complete, let pdfURL {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingPDF = true
+                    } label: {
+                        Label("Box Score PDF", systemImage: "square.and.arrow.up")
+                            .minimumTapTarget()
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showingPDF) {
+            if let pdfURL, let game {
+                GameSummaryPDFPreview(url: pdfURL,
+                                      shareTitle: GameSummaryPDF.title(for: game,
+                                                                       teamName: teamName))
+            }
+        }
+        .onChange(of: game?.events.count) { _, _ in regeneratePDF() }
+        .onChange(of: game?.lifecycle) { _, _ in regeneratePDF() }
+        .task { regeneratePDF() }
         .refreshable { await refresh() }
         .onChange(of: game?.events.count) { _, _ in flashNewestScore() }
         .task(id: game?.lifecycle) {
@@ -256,6 +288,16 @@ private struct FollowedGameView: View {
                            label: event.type.scoreLogLabel,
                            teamScore: game.ourScore,
                            opponentScore: game.opponentScore)
+    }
+
+    /// Renders from the followed team's own roster — never `store.team`, which
+    /// is a different team entirely.
+    private func regeneratePDF() {
+        guard let game, game.lifecycle == .complete else {
+            pdfURL = nil
+            return
+        }
+        pdfURL = GameSummaryPDF.render(game: game, teamName: teamName, roster: roster)
     }
 
     private func refresh() async {
