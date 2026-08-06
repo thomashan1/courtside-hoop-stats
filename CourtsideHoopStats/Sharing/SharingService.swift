@@ -111,6 +111,11 @@ protocol TeamSharingService {
     /// Every team currently shared *with* this user, as read-only snapshots.
     func fetchFollowedTeams() async throws -> [FollowedTeam]
 
+    /// Ask CloudKit to notify this device when anything in the shared database
+    /// changes, so a follower doesn't have to open the app to find out.
+    /// Idempotent — safe to call on every launch.
+    func subscribeToFollowedTeamChanges() async throws
+
     /// Who a team you own is shared with. Empty when it isn't shared.
     func participants(for team: Team) async throws -> [SharedParticipant]
 
@@ -149,6 +154,7 @@ struct NoopSharingService: TeamSharingService {
     func participants(for team: Team) async throws -> [SharedParticipant] { [] }
     func isSharing(_ team: Team) async throws -> Bool { false }
     func shareURL(for team: Team) async throws -> URL? { nil }
+    func subscribeToFollowedTeamChanges() async throws {}
 }
 
 // MARK: - Environment injection

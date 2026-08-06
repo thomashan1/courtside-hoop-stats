@@ -127,7 +127,11 @@ rendering, because `ImageRenderer` emits glyphs rather than annotations.
   breakdown). No scoring or editing anywhere in it.
 - **Liveness:** honest rather than "live" — updates land in seconds with signal,
   and catch up in a burst after a dead-zone gym. Every followed team shows an
-  "Updated N ago" line.
+  "Updated N ago" line. An open live game re-fetches every 20s on its own.
+- **Notifications:** game start, each period end, and the final score, with a
+  cadence setting (every score / each period / start and final / off) in
+  Settings. CloudKit wakes the app silently; the app fetches and posts a local
+  notification carrying the real score.
 - **Storage:** followed teams are cached in `AppStore.followedTeams`, held
   **separately from `teams`** so read-only data never reaches an editor, and
   persisted so a follower with no signal still sees the last known score.

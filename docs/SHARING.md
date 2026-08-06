@@ -93,6 +93,8 @@ conflict surface is small.
 | `Sharing/ShareAcceptance.swift` | Scene delegate that catches share invitations. |
 | `Sharing/FollowedTeam.swift` | A followed team's read-only snapshot. |
 | `Views/FollowingView.swift` | The follower's read-only UI. |
+| `Sharing/FollowerAlerts.swift` | Decides what's worth notifying about. Pure and heavily tested. |
+| `Sharing/FollowerNotifier.swift` | Posts those alerts; owns the permission request. |
 
 Swapping `NoopSharingService` in for the live service at the app root hides every
 sharing affordance and returns the app to local-only.
@@ -112,6 +114,36 @@ sharing affordance and returns the app to local-only.
   empty tab.
 - **Followed teams are cached** to `UserDefaults`, so a follower opening the app
   in a dead-zone gym still sees the last known score.
+
+## Notifications
+
+A follower is notified when a game **starts**, at each **period end**, and at the
+**final score**. The cadence is configurable — every score / each period / start
+and final only / off — because notification fatigue is the real failure mode: a
+grandparent pinged on every basket mutes the app and then misses the final.
+
+**Why the app posts its own notifications.** CloudKit's push can't carry a score;
+it only says "something in the shared database changed". So a
+`CKDatabaseSubscription` wakes the app silently, the app fetches, compares
+against the snapshot the follower last saw, and posts a **local** notification
+with the real numbers in it. That round trip is why the wording lives in
+`FollowerAlerts.swift` rather than in a push payload.
+
+Two behaviours worth keeping:
+
+- **The first fetch never notifies.** A freshly accepted share has nothing to
+  compare against, so every game looks new — announcing a whole season at once
+  is the worst possible first impression.
+- **A final supersedes the period end that lands with it.** A game usually ends
+  and closes its last period in the same publish; two notifications for one
+  moment is noise.
+
+Alert ids are derived from the event (`period-<game>-<n>`), so a repeated fetch
+replaces its own notification instead of stacking duplicates.
+
+Permission is requested only once a team is *actually* shared with you — a
+prompt on first launch has no context and gets declined. Declining still leaves
+the silent wake working, so the Following tab stays current either way.
 
 ## Gotchas
 
@@ -182,12 +214,7 @@ What it needs beyond today's code:
 
 ### Also not built
 
-- **Push notifications for followers.** Planned: one per period end, plus game
-  start and final, with a **configurable cadence** so followers can dial it
-  down. The entitlements (Push Notifications, Background Modes → remote
-  notifications) are already in place.
-- **Publish-on-edit.** Data is currently pushed when a team is shared, not
-  continuously as the owner scores.
+- **Co-tracker write conflicts** — see above; the only remaining gap.
 
 ## Related
 

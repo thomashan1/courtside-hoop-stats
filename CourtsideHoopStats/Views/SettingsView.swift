@@ -51,6 +51,22 @@ struct SettingsView: View {
                 } footer: {
                     Text("Makes text throughout the app larger. Also follows your device's text size if that's set higher.")
                 }
+
+                // Only meaningful once you're following someone — an owner
+                // scoring their own game has nothing to be notified about.
+                if !store.followedTeams.isEmpty {
+                    Section {
+                        Picker("Notify me", selection: $store.alertCadence) {
+                            ForEach(FollowerAlertCadence.allCases) { cadence in
+                                Text(cadence.label).tag(cadence)
+                            }
+                        }
+                    } header: {
+                        Text("Following Notifications")
+                    } footer: {
+                        Text(store.alertCadence.detail)
+                    }
+                }
             }
             .navigationTitle("Settings")
             .alert("New Team", isPresented: $showAddTeam) {

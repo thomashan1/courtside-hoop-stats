@@ -152,7 +152,7 @@ struct FollowingView: View {
         isRefreshing = true
         defer { isRefreshing = false }
         do {
-            store.followedTeams = try await sharing.fetchFollowedTeams()
+            await store.applyFollowedTeams(try await sharing.fetchFollowedTeams())
         } catch {
             // Keep showing the cached snapshot; only report if we have nothing.
             if store.followedTeams.isEmpty {
@@ -233,7 +233,7 @@ private struct FollowedGameView: View {
         guard sharing.isAvailable else { return }
         guard let teams = try? await sharing.fetchFollowedTeams() else { return }
         // Don't wipe a good cache on a transient failure returning nothing.
-        if !teams.isEmpty { store.followedTeams = teams }
+        if !teams.isEmpty { await store.applyFollowedTeams(teams) }
     }
 
     private func content(for game: Game) -> some View {

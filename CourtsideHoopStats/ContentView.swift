@@ -26,6 +26,14 @@ struct ContentView: View {
         // Apply the in-app Text Size as a Dynamic Type floor for the whole app.
         .dynamicTypeSize(AppTextSize.floor(for: store.textSizeIndex)...)
         .task { await discoverFollowedTeams() }
+        // CloudKit woke us: re-fetch, which posts any alerts worth posting.
+        .onReceive(NotificationCenter.default.publisher(for: .sharedDataChanged)) { note in
+            let completion = note.object as? (UIBackgroundFetchResult) -> Void
+            Task {
+                let refreshed = await refreshFollowedTeams()
+                completion?(refreshed ? .newData : .noData)
+            }
+        }
     }
 
     /// Look for teams shared with this user at launch (#57).
@@ -49,8 +57,23 @@ struct ContentView: View {
         // Don't clobber a good cache with an empty result — a transient auth or
         // network hiccup shouldn't make someone's followed teams vanish.
         if !teams.isEmpty || store.followedTeams.isEmpty {
-            store.followedTeams = teams
+            await store.applyFollowedTeams(teams)
         }
+
+        guard !teams.isEmpty else { return }
+        // Only once something is actually shared with you: a permission prompt
+        // on first launch has no context, and gets declined.
+        await FollowerNotifier.shared.requestAuthorizationIfNeeded()
+        try? await sharing.subscribeToFollowedTeamChanges()
+    }
+
+    @discardableResult
+    private func refreshFollowedTeams() async -> Bool {
+        guard sharing.isAvailable,
+              let teams = try? await sharing.fetchFollowedTeams(),
+              !teams.isEmpty else { return false }
+        await store.applyFollowedTeams(teams)
+        return true
     }
 }
 
