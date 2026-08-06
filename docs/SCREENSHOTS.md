@@ -35,8 +35,11 @@ xcrun xcresulttool export attachments --path /tmp/shots.xcresult --output-path /
 # suggestedHumanReadableName, as scripts/screenshots.sh does
 ```
 
-⚠️ There is **no "iPhone 17 Pro" simulator installed**, despite it being the
-script's default. Pass a device that exists.
+The script defaults to **iPhone 17e** and resolves the name to a UDID before
+running. A name that matches no installed simulator now fails loudly with the
+list of what *is* installed — previously `xcodebuild` printed the destination
+list, exited, and the script's `>/dev/null` swallowed it, leaving the previous
+run's PNGs in place and looking like a successful capture.
 
 PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
 `NN-name.png` — e.g. `01-games-list`, `02-game-summary`, `03-live-scoring`,
@@ -65,7 +68,8 @@ xcodebuild test -project CourtsideHoopStats.xcodeproj -scheme CourtsideHoopStats
   -only-testing:CourtsideHoopStatsUITests -resultBundlePath /tmp/shots.xcresult
 # then export attachments as scripts/screenshots.sh does
 
-scripts/screenshots.sh "iPhone 17 Pro Max"   # 6.9" / 1320 x 2868, if ever needed
+scripts/screenshots.sh "iPhone 14 Plus"      # 6.5" / 1284 x 2778 — this listing
+
 ```
 
 > ⚠️ Two traps, both hit for real:

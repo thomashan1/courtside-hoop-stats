@@ -231,7 +231,7 @@ private struct FollowedGameView: View {
             // page is a box score — it stamps FINAL and a win/loss result, so
             // rendering a game still in progress would state an outcome that
             // hasn't happened.
-            if let game, game.lifecycle == .complete, let pdfURL {
+            if let game, game.lifecycle == .complete, pdfURL != nil {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingPDF = true

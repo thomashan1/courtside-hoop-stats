@@ -84,7 +84,14 @@ final class AppStore: ObservableObject {
             games = DemoData.makeGames(team: demoTeam).map {
                 var g = $0; g.teamID = demoTeam.id; return g
             }
-            textSizeIndex = 0
+            // `-uiTestTextSizeIndex N` seeds the in-app Text Size so a UI test
+            // can exercise accessibility sizes. The OS-level
+            // `-UIPreferredContentSizeCategoryName` argument does not reach a
+            // SwiftUI app whose root applies its own `.dynamicTypeSize` floor,
+            // and this is the control a user would actually reach for anyway.
+            // `UserDefaults` picks up `-key value` launch arguments directly, so
+            // the value arrives already parsed; 0 when absent.
+            textSizeIndex = UserDefaults.standard.integer(forKey: "uiTestTextSizeIndex")
             followedTeams = [DemoData.makeFollowedTeam()]
             sharedTeamIDs = []
             alertCadence = .periodEnd

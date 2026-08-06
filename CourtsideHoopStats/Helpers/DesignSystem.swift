@@ -64,6 +64,33 @@ extension View {
     }
 }
 
+// MARK: - Status badges
+
+/// The one badge style: coloured text on a wash of the same colour.
+///
+/// The alternative — white text on a solid fill — reads well in a mock-up and
+/// fails in practice. `teamAccent` is deliberately lighter on dark (`#5B9CF5`),
+/// so white on it lands at 2.80:1, under even the 3:1 large-text floor; the
+/// same is true of grey. Tinting the capsule instead keeps the colour as the
+/// signal and lets the *text* carry the contrast, which holds in both themes.
+///
+/// Shared so a game's status reads identically wherever it appears — the Games
+/// list, a summary card, a follower's screen (#93).
+struct StatusBadge: View {
+    let text: String
+    let color: Color
+    var compact = false
+
+    var body: some View {
+        Text(text)
+            .font(compact ? .caption2 : .caption).bold()
+            .foregroundStyle(color)
+            .padding(.horizontal, compact ? 8 : 10)
+            .padding(.vertical, compact ? 3 : 4)
+            .background(Capsule().fill(color.opacity(0.18)))
+    }
+}
+
 // MARK: - Jersey color
 
 extension JerseyColor {

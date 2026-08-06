@@ -73,7 +73,7 @@ struct GameScoreCard: View {
                 switch game.result {
                 case .win:  return ("WIN", .teamAccent)
                 case .loss: return ("LOSS", .red)
-                case .tie:  return ("TIE", .gray)
+                case .tie:  return ("TIE", .secondary)
                 }
             case .inProgress:
                 // The period stands in for the result there isn't one of yet.
@@ -83,15 +83,10 @@ struct GameScoreCard: View {
                         : game.periodFormat.periodLabel(game.currentPeriod),
                         .teamAccent)
             case .scheduled:
-                return ("SCHEDULED", .gray)
+                return ("SCHEDULED", .secondary)
             }
         }()
-        return Text(text)
-            .font(.caption).bold()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(color))
+        return StatusBadge(text: text, color: color)
     }
 
     /// One line under the badge saying what the scores mean — for a game not

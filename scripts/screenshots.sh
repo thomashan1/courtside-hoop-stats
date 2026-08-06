@@ -7,16 +7,28 @@
 #   scripts/screenshots.sh "iPhone 17 Pro Max" # App Store 6.9" size
 set -euo pipefail
 
-SIM="${1:-iPhone 17 Pro}"
+SIM="${1:-iPhone 17e}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 RESULT="$(mktemp -d)/screenshots.xcresult"
 OUT="$ROOT/screenshots"
 
-echo "▶︎ Running screenshot UI tests on '$SIM'…"
+# Resolve the name to a UDID up front. A `name=` destination that doesn't match
+# an installed simulator makes xcodebuild print the destination list and exit —
+# which the >/dev/null below would swallow, leaving the previous run's PNGs in
+# place and looking like a successful capture. Fail loudly here instead.
+UDID="$(xcrun simctl list devices available \
+        | sed -n "s/^ *${SIM} (\([0-9A-F-]*\)) .*/\1/p" | head -1)"
+if [ -z "$UDID" ]; then
+  echo "✗ No available simulator named '$SIM'. Installed:" >&2
+  xcrun simctl list devices available | grep -E "^ +iPhone|^ +iPad" >&2
+  exit 1
+fi
+
+echo "▶︎ Running screenshot UI tests on '$SIM' ($UDID)…"
 xcodebuild test \
   -project "$ROOT/CourtsideHoopStats.xcodeproj" \
   -scheme CourtsideHoopStats \
-  -destination "platform=iOS Simulator,name=$SIM" \
+  -destination "platform=iOS Simulator,id=$UDID" \
   -only-testing:CourtsideHoopStatsUITests \
   -resultBundlePath "$RESULT" \
   >/dev/null

@@ -53,6 +53,40 @@ so there's nothing to write back to even if the flag were wrong.
 Only true app preferences (**Text Size**) edit live with no Save button — the
 Settings-app model. Anything that is *data* uses pattern 1.
 
+## 6. One badge style: `StatusBadge`
+
+Game status — WIN / LOSS / In Progress / Scheduled — is **coloured text on an
+18% wash of the same colour** (`StatusBadge` in `DesignSystem.swift`), never
+white text on a solid fill. `Color.teamAccent` is deliberately lighter on dark
+(`#5B9CF5`), so white on it lands at **2.80:1** — under even the 3:1 large-text
+floor. Tinting keeps the colour as the signal and lets the text carry the
+contrast, in both themes.
+
+Use the shared view rather than restyling per screen, so a game's status reads
+identically in the Games list, a summary card, and a follower's view.
+
+## 7. Two targets in one row means an explicit 44pt
+
+Where a row's own tap does something (Settings ▸ Teams: tap = make active) and
+it also contains a button, that button needs `.minimumTapTarget()`. A bare SF
+Symbol is ~22pt; a miss doesn't do nothing, it falls through to the row. In the
+Teams list that silently re-pointed Games and Roster at another team.
+
+## 8. Content that grows with Dynamic Type needs a cap, not just a scroll
+
+`@ScaledMetric` sizes grow fast at accessibility text sizes. Live Scoring's
+player deck is measured and capped at half the screen, scrolling within that —
+uncapped, a ten-player roster pushed the scoreboard and Score Log entirely off
+the screen and the tracker was scoring blind. Note that a bare `ScrollView` is
+*greedy* in a `VStack`: it claims whatever it's offered, so the content has to
+be measured and the height set to `min(content, cap)`.
+
+`CourtsideHoopStatsUITests/AccessibilityTextSizeTests.swift` guards this at the
+largest step. Use `-uiTestTextSizeIndex N` to drive text size in a UI test —
+the OS-level `-UIPreferredContentSizeCategoryName` argument does **not** reach
+a SwiftUI app whose root applies its own `.dynamicTypeSize` floor, and a test
+that uses it silently exercises the default size instead.
+
 ## Anti-patterns (do not reintroduce)
 
 - A detail screen that edits the store live *and* looks like a record editor
@@ -62,3 +96,4 @@ Settings-app model. Anything that is *data* uses pattern 1.
   the scroll view — see the old Score Log).
 - An "Edit" mode toggle on a list whose only purpose is delete (swipe covers it);
   reserve edit-mode for reordering.
+- White text on a solid colour fill for a badge (see 6).

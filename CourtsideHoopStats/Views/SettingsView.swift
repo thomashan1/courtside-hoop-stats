@@ -99,27 +99,10 @@ struct SettingsView: View {
     private var teamsSection: some View {
         Section {
             ForEach(store.teams) { team in
-                HStack(spacing: 12) {
-                    Image(systemName: team.id == store.activeTeamID ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(team.id == store.activeTeamID ? Color.teamAccent : .secondary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(team.name).foregroundStyle(.primary)
-                        Text("^[\(team.players.count) player](inflect: true)")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    // Edit name / jersey / delete — separate from selecting active.
-                    Button {
-                        editingTeam = TeamRef(id: team.id)
-                    } label: {
-                        Image(systemName: "info.circle")
-                            .foregroundStyle(Color.teamAccent)
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Edit \(team.name)")
-                }
-                .contentShape(Rectangle())
-                .onTapGesture { store.setActiveTeam(team.id) }   // tap = make active
+                TeamRow(team: team,
+                        isActive: team.id == store.activeTeamID,
+                        onEdit: { editingTeam = TeamRef(id: team.id) },
+                        onSelect: { store.setActiveTeam(team.id) })
                 .swipeActions(edge: .trailing) {
                     if store.teams.count > 1 {
                         Button(role: .destructive) {
@@ -177,6 +160,48 @@ struct SettingsView: View {
 
 /// Identifiable wrapper so a team id can drive a `.sheet(item:)`.
 private struct TeamRef: Identifiable { let id: UUID }
+
+/// One team in Settings: tap the row to make it active, tap ⓘ to edit it.
+///
+/// The two targets sit in the same row and do very different things, so the ⓘ
+/// gets an explicit 44pt hit area. Without it the glyph is ~22pt, and a miss
+/// doesn't do nothing — it falls through to the row and silently switches the
+/// active team, re-pointing Games and Roster at another team with no feedback.
+private struct TeamRow: View {
+    let team: Team
+    let isActive: Bool
+    let onEdit: () -> Void
+    let onSelect: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isActive ? Color.teamAccent : .secondary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(team.name).foregroundStyle(.primary)
+                Text("^[\(team.players.count) player](inflect: true)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 12)
+
+            Button(action: onEdit) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(Color.teamAccent)
+                    .minimumTapTarget()
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Edit \(team.name)")
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onSelect)
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(isActive ? [.isButton, .isSelected] : .isButton)
+    }
+}
 
 // MARK: - Team detail (all team editing lives here, #27-followup)
 
