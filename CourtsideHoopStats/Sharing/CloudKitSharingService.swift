@@ -130,6 +130,34 @@ final class CloudKitSharingService: TeamSharingService {
         return try await share(for: team) != nil
     }
 
+    /// Subscription id is fixed: CloudKit keeps one subscription per id, so
+    /// re-saving simply overwrites rather than accumulating duplicates every
+    /// launch.
+    private static let followedChangesSubscriptionID = "shared-teams-changed"
+
+    func subscribeToFollowedTeamChanges() async throws {
+        try await requireAccount()
+
+        let subscription = CKDatabaseSubscription(
+            subscriptionID: Self.followedChangesSubscriptionID)
+
+        // Silent: CloudKit's push can't carry a score, so it only wakes the app.
+        // The app then fetches and posts its own notification with real content
+        // — see FollowerNotifier.
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+
+        do {
+            _ = try await container.sharedCloudDatabase
+                .modifySubscriptions(saving: [subscription], deleting: [])
+        } catch let error as CKError where error.code == .serverRejectedRequest {
+            // Already registered — the common case on every launch after the
+            // first, and not worth surfacing.
+            return
+        }
+    }
+
     func shareURL(for team: Team) async throws -> URL? {
         try await requireAccount()
         return try await share(for: team)?.url

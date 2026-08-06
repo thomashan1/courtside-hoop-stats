@@ -43,7 +43,7 @@ struct CourtsideHoopStatsApp: App {
     private func accept(_ metadata: CKShare.Metadata) async {
         do {
             try await sharing.acceptShare(metadata)
-            store.followedTeams = try await sharing.fetchFollowedTeams()
+            await store.applyFollowedTeams(try await sharing.fetchFollowedTeams())
         } catch {
             // Nothing actionable for the user mid-launch; the Following tab's
             // own refresh reports errors where they can be seen.

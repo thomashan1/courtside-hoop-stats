@@ -30,6 +30,8 @@ final class AppStore: ObservableObject {
     /// a gym with no signal still sees the last known score. Kept out of
     /// `teams` so they can never be edited — see `FollowedTeam`.
     @Published var followedTeams: [FollowedTeam] { didSet { save() } }
+    /// How often a follower wants to be notified about games (#57).
+    @Published var alertCadence: FollowerAlertCadence { didSet { save() } }
     /// Teams this user has shared *out* (#57). Tracked locally so an edit knows
     /// whether it needs publishing without asking CloudKit on every keystroke.
     @Published var sharedTeamIDs: Set<UUID> { didSet { save() } }
@@ -39,6 +41,7 @@ final class AppStore: ObservableObject {
     private let textSizeKey = "chs.textSizeIndex.v1"
     private let followedKey = "chs.followedTeams.v1"
     private let sharedKey = "chs.sharedTeams.v1"
+    private let cadenceKey = "chs.alertCadence.v1"
 
     /// Backend for publishing local edits to followers. Injected at app launch;
     /// nil in tests and previews, which disables publishing entirely.
@@ -68,6 +71,7 @@ final class AppStore: ObservableObject {
             textSizeIndex = 0
             followedTeams = [DemoData.makeFollowedTeam()]
             sharedTeamIDs = []
+            alertCadence = .periodEnd
             ephemeral = true
             return
         }
@@ -91,6 +95,11 @@ final class AppStore: ObservableObject {
         } else {
             sharedTeamIDs = []
         }
+
+        // Period ends by default: frequent enough to follow a game, rare enough
+        // not to get muted.
+        alertCadence = UserDefaults.standard.string(forKey: cadenceKey)
+            .flatMap(FollowerAlertCadence.init(rawValue:)) ?? .periodEnd
 
         // Teams: load the saved collection, else start with one empty team.
         if let data = UserDefaults.standard.data(forKey: teamsKey),
@@ -126,6 +135,7 @@ final class AppStore: ObservableObject {
         if let data = try? encoder.encode(sharedTeamIDs) {
             UserDefaults.standard.set(data, forKey: sharedKey)
         }
+        UserDefaults.standard.set(alertCadence.rawValue, forKey: cadenceKey)
         schedulePublish()
     }
 
@@ -134,6 +144,28 @@ final class AppStore: ObservableObject {
     /// Note that a team is now shared, so later edits get published.
     func markShared(_ teamID: UUID) {
         sharedTeamIDs.insert(teamID)
+    }
+
+    /// Replace the followed snapshot, notifying about whatever changed.
+    ///
+    /// Every refresh path funnels through here — the tab, the game screen, a
+    /// push, launch — so alerting can't be forgotten at one call site and the
+    /// comparison always has the snapshot the follower actually last saw.
+    @MainActor
+    func applyFollowedTeams(_ fetched: [FollowedTeam]) async {
+        let previous = followedTeams
+        followedTeams = fetched
+
+        guard alertCadence != .off else { return }
+        var alerts: [FollowerAlert] = []
+        for team in fetched {
+            alerts += FollowerAlertBuilder.alerts(
+                previous: previous.first { $0.id == team.id },
+                current: team,
+                cadence: alertCadence
+            )
+        }
+        await FollowerNotifier.shared.post(alerts)
     }
 
     /// Ask CloudKit which of my teams are actually shared, and publish those.
