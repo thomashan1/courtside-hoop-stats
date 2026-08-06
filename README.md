@@ -24,37 +24,37 @@ visible. Absent players are benched so the grid stays uncluttered.
 
 | 1. Live scoring | 2. Tap a player, then the basket | 3. Fix anything, anytime |
 |---|---|---|
-| <img src="docs/img/01-live-scoring.png" width="240"> | <img src="docs/img/02-score-pad.png" width="240"> | <img src="docs/img/03-score-log.png" width="240"> |
+| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> | <img src="docs/img/03-game-score-log.png" width="240"> |
 
 ### Starting a game
 
 Every field is optional — **Start Game** to score right now, or **Save** to
 schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
-| 4. New game | 5. Location autocomplete |
-|---|---|
-| <img src="docs/img/04-new-game.png" width="240"> | <img src="docs/img/05-location.png" width="240"> |
+| 4. New game |
+|---|
+| <img src="docs/img/04-new-game.png" width="240"> |
 
 ### After the game
 
-| 6. Game summary | 7. Box score PDF — preview, then send to the group chat |
+| 5. Game summary | 6. Box score PDF — preview, then send to the group chat |
 |---|---|
-| <img src="docs/img/06-game-summary.png" width="240"> | <img src="docs/img/07-box-score-pdf.png" width="240"> |
+| <img src="docs/img/05-game-summary.png" width="240"> | <img src="docs/img/06-game-summary-share-pdf.png" width="240"> |
 
 ### Your team
 
-| 8. Games | 9. Roster | 10. Teams (Settings) |
+| 7. Games | 8. Roster | 9. Teams (Settings) |
 |---|---|---|
-| <img src="docs/img/08-games-list.png" width="240"> | <img src="docs/img/09-roster.png" width="240"> | <img src="docs/img/10-teams.png" width="240"> |
+| <img src="docs/img/07-team-games.png" width="240"> | <img src="docs/img/08-team-roster.png" width="240"> | <img src="docs/img/09-team-settings.png" width="240"> |
 
 ### Following a shared team
 
 What a **follower** sees — the same scores and stats, with no way to change
 anything. The tab appears only once a team has actually been shared with you.
 
-| 11. Teams you follow | 12. Watching a game |
+| 10. Teams you follow | 11. Watching a game |
 |---|---|
-| <img src="docs/img/11-following.png" width="240"> | <img src="docs/img/12-following-game.png" width="240"> |
+| <img src="docs/img/10-following-teams.png" width="240"> | <img src="docs/img/11-following-game.png" width="240"> |
 
 ## What it does
 
