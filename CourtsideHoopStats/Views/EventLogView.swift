@@ -17,14 +17,20 @@ struct EventLogView: View {
     /// When true, the per-period (Q1/Q2/…) headers stick to the top of the
     /// enclosing scroll view as you scroll, so you always see the current period.
     var pinsPeriodHeaders: Bool = false
+    /// Reverses the log so the newest play is at the top — periods count down
+    /// and events run newest-first within each. Live Scoring wants the opposite
+    /// (newest nearest the thumb, next to the buttons); a follower is watching
+    /// rather than tapping, so new plays should arrive where they're looking.
+    var newestFirst: Bool = false
     /// Called after any edit/delete so the caller can persist the game.
     var persist: () -> Void
 
     @State private var editingEvent: GameEvent?
 
-    /// Periods that have at least one event, oldest first (Q1 at the top).
-    private var periodsAscending: [Int] {
-        Set(game.events.map(\.period)).sorted()
+    /// Periods that have at least one event, in display order.
+    private var periodsInOrder: [Int] {
+        let periods = Set(game.events.map(\.period)).sorted()
+        return newestFirst ? periods.reversed() : periods
     }
 
     var body: some View {
@@ -36,10 +42,10 @@ struct EventLogView: View {
             } else {
                 LazyVStack(alignment: .leading, spacing: 14,
                            pinnedViews: pinsPeriodHeaders ? [.sectionHeaders] : []) {
-                    ForEach(periodsAscending, id: \.self) { period in
+                    ForEach(periodsInOrder, id: \.self) { period in
                         Section {
                             VStack(alignment: .leading, spacing: 8) {
-                                ForEach(eventsOldestFirst(in: period)) { event in
+                                ForEach(eventsInOrder(in: period)) { event in
                                     eventRow(event)
                                 }
                             }
@@ -99,10 +105,13 @@ struct EventLogView: View {
 
     // MARK: - Derived
 
-    private func eventsOldestFirst(in period: Int) -> [GameEvent] {
-        game.events
+    private func eventsInOrder(in period: Int) -> [GameEvent] {
+        let events = game.events
             .filter { $0.period == period }
             .sorted { $0.timestamp < $1.timestamp }
+        // Running totals are keyed by event id and computed over the whole
+        // game, so reversing the display can't affect the numbers shown.
+        return newestFirst ? events.reversed() : events
     }
 
     private func ourPoints(in period: Int) -> Int {
