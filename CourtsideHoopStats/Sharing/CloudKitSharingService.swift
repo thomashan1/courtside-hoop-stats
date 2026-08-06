@@ -296,6 +296,28 @@ final class CloudKitSharingService: TeamSharingService {
                                in zoneID: CKRecordZone.ID) async throws {
         try await save([teamRecord] + extras)
         try await save(gameRecords(for: games, teamID: teamID, in: zoneID))
+        try await deleteGamesNoLongerPresent(games, in: zoneID)
+    }
+
+    /// Remove game records the owner has since deleted locally.
+    ///
+    /// Publishing only ever *saved*, so a deleted game stayed in the zone and
+    /// kept coming back to followers on every fetch — the follower's copy was
+    /// append-only whatever the owner did.
+    private func deleteGamesNoLongerPresent(_ games: [Game],
+                                            in zoneID: CKRecordZone.ID) async throws {
+        let keep = Set(games.map { CloudKitSchema.gameRecordID($0.id, in: zoneID) })
+        let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: nil)
+
+        let stale = changes.modificationResultsByID.compactMap { id, result -> CKRecord.ID? in
+            guard let record = try? result.get().record,
+                  record.recordType == CloudKitSchema.gameRecordType,
+                  !keep.contains(id) else { return nil }
+            return id
+        }
+
+        guard !stale.isEmpty else { return }
+        _ = try await database.modifyRecords(saving: [], deleting: stale)
     }
 
     private func existingRecord(_ id: CKRecord.ID) async throws -> CKRecord? {

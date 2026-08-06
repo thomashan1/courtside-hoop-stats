@@ -198,19 +198,54 @@ the accept handshake and the real fetch require two accounts.
 e.g. one running the app courtside while the other jumps in. The mechanism is
 identical; a co-tracker is just a participant at a higher permission level.
 
-What it needs beyond today's code:
+Roughly **3–4x the work followers took**, and a different kind of work: followers
+were purely additive, while co-trackers *change* the code followers depend on —
+the service's database/zone handling, the publish path, and `Game`'s shape.
 
-- **A synced store.** True bidirectional sync is where the persistence question
-  finally bites, and the answer is **Core Data via
-  `NSPersistentCloudKitContainer`** — its cross-*user* `CKShare` support is
-  mature and proven. Re-check SwiftData's state at that point in case it has
-  caught up, but default to the proven path.
-- **Write-conflict handling.** Two people recording the same game at once can
-  drop an event under last-writer-wins. Realistically this is rare and
-  low-stakes (worst case: re-tap a basket), so it may not need real conflict
-  resolution — revisit only if it proves annoying.
-- Widening `availablePermissions` in the share sheet, which also turns its
-  currently single-choice "Sharing Options" into a real choice.
+What it needs:
+
+- **Writing into someone else's zone.** Every private method here assumes the
+  private database and a self-owned zone (`ownerName: CKCurrentUserDefaultName`).
+  A co-tracker writes into the *owner's* zone in the shared database, so the
+  database and zone have to be threaded through rather than assumed.
+- **Echo suppression.** Applying an inbound change mutates `@Published` state,
+  which triggers `save()` → `schedulePublish()` — republishing what was just
+  downloaded. Needs an apply-remote path that doesn't re-publish.
+- **Change tokens and subscriptions.** Followers get away with fetch-on-launch
+  and a refresh button. Co-trackers can't: if one person's baskets don't appear
+  until the other pulls to refresh, they double-record.
+- **A merge policy.** Here the event-sourced model helps, but less than it looks:
+  - Events carry stable ids, so merging two event lists is **union by id,
+    sorted by timestamp** — commutative, idempotent, converges in any order.
+  - But events are **not** actually append-only in this code: the log editor
+    deletes and edits them in place. Deletes need **tombstones** (a union merge
+    can't tell "deleted" from "not seen yet", so deleted events resurrect), and
+    in-place edits have no modification stamp to arbitrate with.
+  - `periodEndScores` is hand-typed and mutable, `applyingReorderedLog` rewrites
+    every event's period, and `benchedPlayerIDs` is a plain list. None of these
+    merge — they need whole-game last-writer-wins or an owner-only lock.
+- **Live Scoring's ownership model.** It holds a local `@State` copy of the game
+  loaded once. A remote change landing while it's open is invisible, and the
+  next tap republishes the stale copy over it.
+
+**Not Core Data.** An earlier version of this doc said co-trackers require
+`NSPersistentCloudKitContainer`. That's over-conservative: its attribute-level
+merge buys nothing while a whole game rides as one JSON blob in a single field,
+so getting value from it would *also* mean normalizing every event into its own
+record and migrating everyone off the `UserDefaults` blob — three large changes
+instead of one. Merging locally on the existing `Codable` structs is the smaller
+path.
+
+**Smallest useful slice: baton-passing, not merging.** Share at `.readWrite` but
+have the app enforce a single writer — an active-tracker marker on the game plus
+an explicit "Take over scoring" handoff. That delivers the real story (one person
+takes over at halftime) with almost no conflict surface: no tombstones, no merge
+function, no per-field policy.
+
+**Riskiest part** is not the CloudKit plumbing, which is mechanical. It's that
+whole-game last-writer-wins plus Live Scoring's stale local copy can lose data
+*silently and retroactively, during a live game* — exactly when the user can't
+stop and debug. Followers could never lose data; co-trackers can.
 
 ### Also not built
 
