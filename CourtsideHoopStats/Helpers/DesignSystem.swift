@@ -176,9 +176,12 @@ struct ScoreboardView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 32
 
     var body: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 10) {
             teamColumn(name: ourName, score: ourScore, highlight: true)
 
+            // Sized to its own content rather than an equal third: the period
+            // label needs a fraction of the width the names do, and giving it a
+            // third left both team names shrinking to fit.
             VStack(spacing: 2) {
                 Text(periodLabel)
                     .font(.caption).bold()
@@ -187,7 +190,7 @@ struct ScoreboardView: View {
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.4))
             }
-            .frame(maxWidth: .infinity)
+            .fixedSize()
 
             teamColumn(name: opponentName, score: opponentScore, highlight: false)
         }
