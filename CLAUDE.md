@@ -174,6 +174,12 @@ milestone.
   session has the full toolchain: `xcodebuild`, the simulators, and `devicectl`
   for installing to the phone. There is **no docs-only session type** — any
   session can write Swift, build, test, and install.
+- **Installing to the phones:** `scripts/install.sh [thomas|jean|all]`. It builds
+  once for `generic/platform=iOS` and installs to whichever of the two phones is
+  **currently reachable** — the other is skipped, not treated as a failure,
+  since they're rarely home together. A failed build stops the install (it used
+  to fall through and push the previous `.app`, which reads as a fix that
+  changed nothing).
 - **Backlog = GitHub Issues.** Every feature/bug/idea is tracked as an issue.
   Work from `gh issue list`, implement one, close it with "Closes #N" in the PR.
 - **Change flow:** feature work lands via **PRs**, not direct commits to `main`.
