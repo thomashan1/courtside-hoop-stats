@@ -298,12 +298,7 @@ struct GameRowView: View {
     }
 
     private func badge(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption2).bold()
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(color.opacity(0.2)))
-            .foregroundStyle(color)
+        StatusBadge(text: text, color: color, compact: true)
     }
 
     private var resultBadge: some View {
@@ -311,15 +306,10 @@ struct GameRowView: View {
             switch game.result {
             case .win:  return ("W", .teamAccent)
             case .loss: return ("L", .red)
-            case .tie:  return ("T", .gray)
+            case .tie:  return ("T", .secondary)
             }
         }()
-        return Text(text)
-            .font(.caption2).bold()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Capsule().fill(color))
+        return StatusBadge(text: text, color: color, compact: true)
     }
 }
 

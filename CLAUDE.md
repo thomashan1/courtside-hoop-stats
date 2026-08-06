@@ -74,6 +74,11 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   score.
 - Models use **migration-safe optional `Codable` fields**: a `try?` decode
   failure wipes saved data, so new fields must be optional or defaulted.
+- **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
+  player deck pushed the scoreboard and Score Log off the screen at
+  accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a
+  bare `ScrollView` can't do this on its own, and how to drive text size from a
+  UI test (`-uiTestTextSizeIndex`, *not* `-UIPreferredContentSizeCategoryName`).
 
 ## Naming (settled)
 
@@ -91,9 +96,12 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - Test device: **iPhone 17 Pro**. Signing via free **Personal Team** (works).
 - **End user (Thomas's wife):** on **iOS 26 now**, will move to iOS 27 at GM in
   **September 2026**. → Do not require iOS 27 before then.
-- **Simulators:** there is **no "iPhone 17 Pro" simulator** installed, despite
-  that being the default in `scripts/screenshots.sh`. Use **"iPhone 17"** for
-  `xcodebuild` destinations, or pass a name to the script.
+- **Simulators installed:** iPhone 17e, iPhone Air, iPhone 14 Plus. There is no
+  "iPhone 17 Pro" or plain "iPhone 17". Drive `xcodebuild` **by UDID**
+  (`xcrun simctl list devices available`) — a `name=` destination that doesn't
+  resolve makes `xcodebuild` dump the destination list and exit, which reads as
+  a test failure. `scripts/screenshots.sh` resolves the name itself and fails
+  loudly if it can't.
 - **Don't run two `xcodebuild` invocations at once.** Concurrent runs share the
   simulator and DerivedData, and the UI-test runner dies at bootstrap ("Test
   crashed with signal kill before establishing connection") — which looks like a

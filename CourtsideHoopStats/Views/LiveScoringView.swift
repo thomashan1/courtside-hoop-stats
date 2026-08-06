@@ -39,6 +39,27 @@ struct LiveScoringView: View {
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
     @ScaledMetric private var cardMinWidth: CGFloat = 100
 
+    /// Height of the screen, and of the player deck's content, so the deck can
+    /// be capped rather than allowed to push the Score Log off the screen.
+    ///
+    /// At accessibility text sizes `cardMinWidth` grows, the grid drops to one
+    /// or two columns, and a full roster becomes tall enough to crowd out
+    /// everything above it. The deck is measured and capped instead — it never
+    /// takes more than `deckHeightFraction` of the screen, and scrolls within
+    /// that. Measuring is unavoidable: a bare `ScrollView` is greedy in a
+    /// `VStack` and would claim the cap even for a four-player roster.
+    @State private var availableHeight: CGFloat = 0
+    @State private var deckContentHeight: CGFloat = 0
+
+    private let deckHeightFraction: CGFloat = 0.5
+
+    /// The deck's height: its natural size, capped at half the screen. Zero
+    /// until the first measurement lands, which means "unconstrained".
+    private var deckHeight: CGFloat? {
+        guard availableHeight > 0, deckContentHeight > 0 else { return nil }
+        return min(deckContentHeight, availableHeight * deckHeightFraction)
+    }
+
     init(gameID: UUID) {
         self.gameID = gameID
         // Placeholder; the real game is loaded from the store in `.onAppear`.
@@ -112,17 +133,28 @@ struct LiveScoringView: View {
             // …and the player cards sit at the bottom, in the thumb zone right
             // above the action bar. The deck has its own elevated surface so it
             // reads as a distinct control area, separate from the Score Log.
-            VStack(alignment: .leading, spacing: 8) {
-                benchStrip
-                // Cue the tap-to-score flow until the first point is scored.
-                if game.events.isEmpty && !store.team.players.isEmpty {
-                    Text("Tap a player to score")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    benchStrip
+                    // Cue the tap-to-score flow until the first point is scored.
+                    if game.events.isEmpty && !store.team.players.isEmpty {
+                        Text("Tap a player to score")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                    playerGrid
                 }
-                playerGrid
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: DeckHeightKey.self,
+                                               value: proxy.size.height)
+                    }
+                )
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(height: deckHeight)
+            .onPreferenceChange(DeckHeightKey.self) { deckContentHeight = $0 }
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 2)
@@ -133,7 +165,13 @@ struct LiveScoringView: View {
                     .shadow(color: .black.opacity(0.18), radius: 10, y: -3)
             )
         }
-        .background(Color(.systemGroupedBackground))
+        .background(
+            GeometryReader { proxy in
+                Color(.systemGroupedBackground)
+                    .onAppear { availableHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, new in availableHeight = new }
+            }
+        )
         // Hidden system nav bar — the scoreboard's own top row carries the
         // controls, reclaiming the bar's height (long-press a card to score).
         .toolbar(.hidden, for: .navigationBar)
@@ -715,5 +753,18 @@ struct EndPeriodSheet: View {
                 opponentFieldFocused = true
             }
         }
+    }
+}
+
+/// Natural height of the player deck, reported up so the deck can be capped.
+///
+/// `LiveScoringView` needs the deck to size to its content *up to* a limit. A
+/// bare `ScrollView` can't do that — it's flexible, so in a `VStack` it claims
+/// whatever it's offered even when four cards would fit in a third of it. So
+/// the content measures itself and the parent picks `min(content, cap)`.
+private struct DeckHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
