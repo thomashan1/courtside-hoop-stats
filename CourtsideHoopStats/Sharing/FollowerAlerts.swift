@@ -62,6 +62,32 @@ enum FollowerAlertBuilder {
         var alerts: [FollowerAlert] = []
         let teamName = current.team.name
 
+        // A whole season entered at once shouldn't fire a notification per
+        // game, so several new fixtures collapse into one.
+        let known = Set(previous.games.map(\.id))
+        let newlyScheduled = current.games.filter {
+            !known.contains($0.id) && $0.lifecycle == .scheduled
+        }
+        if newlyScheduled.count > 2 {
+            alerts.append(FollowerAlert(
+                // Derived from the game ids themselves, not a hash: Swift's
+                // hashing is seeded per process, so a hashed id would differ
+                // across launches and stack a duplicate notification.
+                id: "scheduled-batch-" + newlyScheduled.map(\.id.uuidString).sorted().joined(separator: "-"),
+                title: "\(teamName) — \(newlyScheduled.count) games scheduled",
+                body: "Added to the schedule. Open Courtside to see them."
+            ))
+        } else {
+            for game in newlyScheduled {
+                alerts.append(FollowerAlert(
+                    id: "scheduled-\(game.id)",
+                    title: "\(teamName) — game scheduled",
+                    body: [opponentPhrase(game), game.date.gameDayCompact]
+                        .compactMap { $0 }.joined(separator: " · ")
+                ))
+            }
+        }
+
         for game in current.games {
             let before = previous.games.first { $0.id == game.id }
 
