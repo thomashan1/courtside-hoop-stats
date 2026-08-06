@@ -16,10 +16,6 @@ struct GameSummaryView: View {
     /// Presents the PDF preview, from which it can be shared.
     @State private var showingPDF = false
 
-    /// Final-score digits scale with Dynamic Type (capped so they can't overflow
-    /// the row), matching the live scoreboard's behavior (issue #12).
-    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 36
-
     init(gameID: UUID) {
         self.gameID = gameID
         _game = State(initialValue: Game(opponent: ""))
@@ -96,45 +92,10 @@ struct GameSummaryView: View {
 
     private var finalScoreSection: some View {
         Section {
-            HStack {
-                scoreColumn(name: store.team.name, score: game.ourScore, highlight: true)
-                VStack {
-                    resultBadge
-                    Text("Final").font(.caption2).foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity)
-                scoreColumn(name: game.opponent, score: game.opponentScore, highlight: false)
-            }
-            .padding(.vertical, 8)
+            // Shared with a follower's read-only detail, so the two screens
+            // can't drift.
+            GameScoreCard(game: game, ourName: store.team.name)
         }
-    }
-
-    private func scoreColumn(name: String, score: Int, highlight: Bool) -> some View {
-        VStack(spacing: 4) {
-            Text(name).font(.subheadline).bold().lineLimit(1).minimumScaleFactor(0.6)
-            Text("\(score)")
-                .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
-                .monospacedDigit()
-                .lineLimit(1)
-                .foregroundStyle(highlight ? Color.teamAccent : .primary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var resultBadge: some View {
-        let (text, color): (String, Color) = {
-            switch game.result {
-            case .win:  return ("WIN", .teamAccent)
-            case .loss: return ("LOSS", .red)
-            case .tie:  return ("TIE", .gray)
-            }
-        }()
-        return Text(text)
-            .font(.caption).bold()
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(color))
     }
 
     // MARK: - Period-by-period grid (read-only)

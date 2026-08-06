@@ -42,11 +42,11 @@ A follower's screens don't hide editing behind a flag — they're built without 
 `FollowingView` is its own view rather than `GamesListView` with `isReadOnly`,
 because a flag leaves an edit path one missed check away from appearing.
 
-Presentational components *are* shared (`GameRowView`, `PlayerStatsTable`,
-`PeriodBreakdownGrid`, `EventLogView` in display-only mode), so a follower's
-numbers can't drift from the owner's. Where a shared component has an editable
-mode, disarm it twice: pass the flag **and** a constant binding, so there's
-nothing to write back to even if the flag were wrong.
+Presentational components *are* shared (`GameRowView`, `GameScoreCard`,
+`PlayerStatsTable`, `PeriodBreakdownGrid`, `EventLogView` in display-only mode),
+so a follower's numbers can't drift from the owner's. Where a shared component
+has an editable mode, disarm it twice: pass the flag **and** a constant binding,
+so there's nothing to write back to even if the flag were wrong.
 
 ## 5. Preferences are not records
 

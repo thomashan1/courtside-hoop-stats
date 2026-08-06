@@ -2,10 +2,108 @@ import SwiftUI
 
 /// Shared read-only stat panels (issue #8).
 ///
-/// These are the single implementation of the player-stats table and the
-/// by-period score grid, reused across the post-game **Summary**, the **Live
-/// Scoring** screen, and while **editing** a finished game — so the numbers
-/// look identical everywhere and there's one place to change them.
+/// These are the single implementation of the score card, the player-stats
+/// table and the by-period score grid, reused across the post-game **Summary**,
+/// the **Live Scoring** screen, a follower's read-only detail, and while
+/// **editing** a finished game — so the numbers look identical everywhere and
+/// there's one place to change them.
+
+// MARK: - Score card
+
+/// The score panel at the top of a game screen: both teams, their scores, and
+/// where the game is up to. Shared by the owner's **Game Summary** and a
+/// follower's read-only detail — the follower's screen used to carry Live
+/// Scoring's navy banner, which is tuned for reading at ten feet in a gym
+/// rather than for a phone in your hand.
+///
+/// State-aware rather than final-score-only, because a follower opens games at
+/// every stage: a scheduled game drawn as a final score reads as a 0–0 tie that
+/// has already been played.
+struct GameScoreCard: View {
+    let game: Game
+    /// Whose team this is — the active team, or the followed one. Passed in
+    /// rather than read from the store: a follower is looking at someone else's.
+    let ourName: String
+
+    /// Score digits scale with Dynamic Type (capped so they can't overflow the
+    /// row), matching the live scoreboard's behavior (issue #12).
+    @ScaledMetric(relativeTo: .largeTitle) private var scoreSize: CGFloat = 36
+
+    /// A game that hasn't tipped off has no score — nothing to show, rather than
+    /// a pair of zeros that would read as a game played to a scoreless tie.
+    private var isScoreless: Bool { game.lifecycle == .scheduled }
+
+    var body: some View {
+        HStack {
+            teamColumn(name: ourName, score: game.ourScore, highlight: true)
+            VStack {
+                statusBadge
+                Text(caption).font(.caption2).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            teamColumn(name: game.opponent.isEmpty ? "Opponent" : game.opponent,
+                       score: game.opponentScore,
+                       highlight: false)
+        }
+        .padding(.vertical, 8)
+    }
+
+    private func teamColumn(name: String, score: Int, highlight: Bool) -> some View {
+        VStack(spacing: 4) {
+            Text(name).font(.subheadline).bold().lineLimit(1).minimumScaleFactor(0.6)
+            if isScoreless {
+                // Small and grey: a placeholder shouldn't carry the visual
+                // weight of a score, which at this size reads as a black bar.
+                Text("—").font(.title2).foregroundStyle(.tertiary)
+            } else {
+                Text("\(score)")
+                    .font(.system(size: min(scoreSize, 64), weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .foregroundStyle(highlight ? Color.teamAccent : .primary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var statusBadge: some View {
+        let (text, color): (String, Color) = {
+            switch game.lifecycle {
+            case .complete:
+                switch game.result {
+                case .win:  return ("WIN", .teamAccent)
+                case .loss: return ("LOSS", .red)
+                case .tie:  return ("TIE", .gray)
+                }
+            case .inProgress:
+                // The period stands in for the result there isn't one of yet.
+                // Pickup games have no periods, so they say they're live.
+                return (game.periodFormat == .pickup
+                        ? "LIVE"
+                        : game.periodFormat.periodLabel(game.currentPeriod),
+                        .teamAccent)
+            case .scheduled:
+                return ("SCHEDULED", .gray)
+            }
+        }()
+        return Text(text)
+            .font(.caption).bold()
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(color))
+    }
+
+    /// One line under the badge saying what the scores mean — for a game not
+    /// yet played, the tip-off time is more use than restating "scheduled".
+    private var caption: String {
+        switch game.lifecycle {
+        case .complete:   return "Final"
+        case .inProgress: return "In Progress"
+        case .scheduled:  return game.date.formatted(date: .omitted, time: .shortened)
+        }
+    }
+}
 
 // MARK: - Player stats table
 

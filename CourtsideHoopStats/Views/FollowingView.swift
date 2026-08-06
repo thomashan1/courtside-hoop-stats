@@ -172,11 +172,11 @@ private struct GameGroup {
 /// A followed game, showing everything the owner's Game Summary shows — the
 /// same box score and the same play-by-play — minus every way to change it.
 ///
-/// Reuses `PlayerStatsTable`, `PeriodBreakdownGrid`, and `EventLogView` rather
-/// than reimplementing them, so a follower's numbers can never drift from the
-/// owner's. `EventLogView` already has a display-only mode (no tap-to-edit, no
-/// swipe-to-delete), and the game is passed as a constant binding, so there's
-/// nothing for an edit to write back to.
+/// Reuses `GameScoreCard`, `PlayerStatsTable`, `PeriodBreakdownGrid`, and
+/// `EventLogView` rather than reimplementing them, so a follower's numbers can
+/// never drift from the owner's. `EventLogView` already has a display-only mode
+/// (no tap-to-edit, no swipe-to-delete), and the game is passed as a constant
+/// binding, so there's nothing for an edit to write back to.
 private struct FollowedGameView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.teamSharingService) private var sharing
@@ -273,12 +273,22 @@ private struct FollowedGameView: View {
     private func content(for game: Game) -> some View {
         List {
             Section {
-                ScoreboardView(ourName: teamName,
-                               ourScore: game.ourScore,
-                               opponentName: game.opponent.isEmpty ? "Opponent" : game.opponent,
-                               opponentScore: game.opponentScore,
-                               periodLabel: periodLabel(for: game))
-                    .listRowInsets(EdgeInsets())
+                // The same card the owner's Game Summary leads with, not Live
+                // Scoring's navy banner: that banner is built for glancing at
+                // across a gym while scoring, and a follower is neither.
+                GameScoreCard(game: game, ourName: teamName)
+            }
+
+            // Nothing else on the screen for a game that hasn't tipped off, and
+            // a blank page reads as a failure to load rather than as "not yet".
+            if game.lifecycle == .scheduled {
+                Section {
+                    Text("Scores and stats appear here once the game starts.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
             }
 
             // Log first, newest at the top: a follower is watching for the next
@@ -293,7 +303,9 @@ private struct FollowedGameView: View {
                 }
             }
 
-            if !stats.isEmpty {
+            // A game that hasn't tipped off would otherwise get a full roster of
+            // zeros, contradicting the card above it.
+            if game.lifecycle != .scheduled, !stats.isEmpty {
                 Section("Player Stats") {
                     PlayerStatsTable(stats: stats, didNotPlay: game.didNotPlay(from: roster))
                 }
@@ -304,14 +316,6 @@ private struct FollowedGameView: View {
                     PeriodBreakdownGrid(game: game, ourName: teamName)
                 }
             }
-        }
-    }
-
-    private func periodLabel(for game: Game) -> String {
-        switch game.lifecycle {
-        case .complete:   return "Final"
-        case .scheduled:  return "Scheduled"
-        case .inProgress: return game.periodFormat.periodLabel(game.currentPeriod)
         }
     }
 }
