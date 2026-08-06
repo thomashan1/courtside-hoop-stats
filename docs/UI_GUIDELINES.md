@@ -87,6 +87,28 @@ the OS-level `-UIPreferredContentSizeCategoryName` argument does **not** reach
 a SwiftUI app whose root applies its own `.dynamicTypeSize` floor, and a test
 that uses it silently exercises the default size instead.
 
+## 9. Owning a team and following one must look different
+
+The Games tab and the Following tab show the same team, the same games, the same
+stats. The only structural difference is that one accepts taps that change the
+score. That is not enough on its own, so each side says which it is, in the
+**same slot** — the navigation subtitle:
+
+| | Subtitle | Also |
+|---|---|---|
+| **Games** (you own it) | "Shared with 2 followers", or nothing when unshared | followers button in the toolbar |
+| **Following** (someone shared with you) | "Updated Just Now" | read-only footer; no edit affordances |
+
+Settings ▸ Teams tags each shared team, so you can see which rosters other
+people can see without opening every team in turn.
+
+Deliberately **not** done: read-only badges on the Following side. The absence
+of edit controls already carries it, and a badge on every screen reads as a
+warning about something that isn't wrong.
+
+`.navigationSubtitle` takes a plain `String` — `^[…](inflect:)` markup is passed
+through and rendered literally, so pluralise by hand.
+
 ## Anti-patterns (do not reintroduce)
 
 - A detail screen that edits the store live *and* looks like a record editor

@@ -93,7 +93,11 @@ final class AppStore: ObservableObject {
             // the value arrives already parsed; 0 when absent.
             textSizeIndex = UserDefaults.standard.integer(forKey: "uiTestTextSizeIndex")
             followedTeams = [DemoData.makeFollowedTeam()]
-            sharedTeamIDs = []
+            // The demo team is presented as shared, so the owner-side sharing
+            // markers (#93) appear in screenshots rather than the unshared
+            // default. Paired with `DemoSharingService`, which supplies the
+            // follower list they read from.
+            sharedTeamIDs = [demoTeam.id]
             alertCadence = .periodEnd
             ephemeral = true
             return

@@ -171,3 +171,39 @@ extension EnvironmentValues {
         set { self[TeamSharingServiceKey.self] = newValue }
     }
 }
+
+#if DEBUG
+/// Stand-in sharing service for the screenshot harness (`-uiTestSeedDemo`).
+///
+/// The demo team is presented as shared, so the owner-side markers (#93) need
+/// something to report: a real count for the "Shared with 2 followers" subtitle
+/// and a populated Followers list. `NoopSharingService` returns nothing, which
+/// renders every one of those screens in its empty state.
+///
+/// Read-only and offline — it never touches CloudKit, and publishing is a no-op
+/// so a screenshot run can't try to push demo rosters anywhere.
+struct DemoSharingService: TeamSharingService {
+    /// Only this team reports as shared. `isSharing` returning `true` for
+    /// everything made `syncSharedState()` adopt *every* demo team, so the
+    /// second team picked up a "Shared" tag it was never given.
+    let sharedTeamID: UUID
+
+    var isAvailable: Bool { true }
+
+    func prepareShare(for team: Team, games: [Game]) async throws -> PreparedShare {
+        throw SharingError.unavailable
+    }
+    func publish(team: Team, games: [Game]) async throws {}
+    func stopSharing(_ team: Team) async throws {}
+    func acceptShare(_ metadata: CKShare.Metadata) async throws {}
+    func fetchFollowedTeams() async throws -> [FollowedTeam] { [DemoData.makeFollowedTeam()] }
+    func isSharing(_ team: Team) async throws -> Bool { team.id == sharedTeamID }
+    func participants(for team: Team) async throws -> [SharedParticipant] {
+        team.id == sharedTeamID ? DemoData.makeParticipants() : []
+    }
+    func shareURL(for team: Team) async throws -> URL? {
+        team.id == sharedTeamID ? URL(string: "https://www.icloud.com/share/demo") : nil
+    }
+    func subscribeToFollowedTeamChanges() async throws {}
+}
+#endif

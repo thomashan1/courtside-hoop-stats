@@ -14,6 +14,31 @@ struct GamesListView: View {
     @State private var pendingDelete: Game?
     /// Presents the New Game form (#44 — every field optional; Start or Save).
     @State private var showingNewGame = false
+    /// Presents the followers list for the active team.
+    @State private var showFollowers = false
+    /// How many people follow the active team, once we've asked CloudKit.
+    /// `nil` means "not asked yet, or the ask failed" — the marker still shows,
+    /// just without a number.
+    @State private var followerCount: Int?
+
+    @Environment(\.teamSharingService) private var sharing
+
+    /// This tab is the *owner's* view. When the team is also shared, that has
+    /// to be visible here — otherwise the Games tab and the Following tab look
+    /// alike, and the only cue that you're the one whose taps change the score
+    /// is which tab you happen to be on (#93).
+    ///
+    /// Mirrors the Following tab, which puts "Updated Just Now" in the same
+    /// slot: same position, opposite meaning.
+    /// Pluralised by hand: `.navigationSubtitle` takes a plain `String`, so
+    /// `^[…](inflect:)` markup is passed straight through and rendered
+    /// literally rather than resolved.
+    private var sharedSubtitle: String {
+        guard store.isShared(store.team.id) else { return "" }
+        guard let followerCount, followerCount > 0 else { return "Shared" }
+        return followerCount == 1 ? "Shared with 1 follower"
+                                  : "Shared with \(followerCount) followers"
+    }
 
     /// Games being scored right now. Listed first — a game in progress is the
     /// only thing you'd open the app mid-game to reach.
@@ -70,6 +95,7 @@ struct GamesListView: View {
             }
             // Show the active team name (multi-team) — the tab bar labels it "Games".
             .navigationTitle(store.team.name)
+            .navigationSubtitle(sharedSubtitle)
             .confirmationDialog("Delete this game?",
                                 isPresented: Binding(get: { pendingDelete != nil },
                                                      set: { if !$0 { pendingDelete = nil } }),
@@ -89,7 +115,28 @@ struct GamesListView: View {
             .sheet(isPresented: $showingNewGame) {
                 NewGameSheet(onStartNow: { path.append(.live($0)) })
             }
+            // Declared out here rather than inside the toolbar: a sheet inherits
+            // the environment of wherever it's declared, and that has bitten
+            // this app before (a followers sheet opened from the navy
+            // scoreboard bar inherited its forced white text).
+            .sheet(isPresented: $showFollowers) {
+                FollowersView(team: store.team)
+            }
             .toolbar {
+                if store.isShared(store.team.id) {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        // "Who can see this?" — the same question the live
+                        // scoring screen answers, asked from the tab you're on
+                        // between games.
+                        Button {
+                            showFollowers = true
+                        } label: {
+                            Image(systemName: "person.2.fill")
+                                .minimumTapTarget()
+                        }
+                        .accessibilityLabel(sharedSubtitle.isEmpty ? "Followers" : sharedSubtitle)
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     // Open the New Game form — every field is optional. "Start
                     // Game" begins scoring immediately; "Save" schedules it for
@@ -102,6 +149,16 @@ struct GamesListView: View {
                     }
                     .accessibilityLabel("New Game")
                 }
+            }
+            // Best-effort. A failure leaves the subtitle reading "Shared"
+            // without a count, which is still true.
+            .task(id: store.activeTeamID) {
+                guard store.isShared(store.team.id) else {
+                    followerCount = nil
+                    return
+                }
+                followerCount = (try? await sharing.participants(for: store.team))?
+                    .filter { !$0.isOwner }.count
             }
         }
     }
