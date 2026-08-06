@@ -59,7 +59,23 @@ final class AppStore: ObservableObject {
     /// so seeded demo content never overwrites real data.
     private let ephemeral: Bool
 
-    init() {
+    /// - Parameter inMemory: skips loading and saving entirely. Used by unit
+    ///   tests so they exercise the real logic without reading or writing the
+    ///   app's stored data.
+    init(inMemory: Bool = false) {
+        if inMemory {
+            let team = Team(name: "Test Team", players: [])
+            teams = [team]
+            activeTeamID = team.id
+            games = []
+            textSizeIndex = 0
+            followedTeams = []
+            sharedTeamIDs = []
+            alertCadence = .periodEnd
+            ephemeral = true
+            return
+        }
+
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
             let demoTeam = DemoData.makeTeam()
