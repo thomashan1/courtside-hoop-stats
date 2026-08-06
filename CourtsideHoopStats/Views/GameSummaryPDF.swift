@@ -45,12 +45,7 @@ struct GameSummaryPrintout: View {
     ///
     /// A benched player who has events still appears above (#59) — they were
     /// evidently there — so they must not also be listed as a DNP.
-    private var didNotPlay: [Player] {
-        let alreadyListed = Set(stats.map(\.player.id))
-        return roster.filter {
-            game.benchedPlayerIDs.contains($0.id) && !alreadyListed.contains($0.id)
-        }
-    }
+    private var didNotPlay: [Player] { game.didNotPlay(from: roster) }
 
     /// First names, widened to "Jake M." only where two players would collide.
     /// Computed across the whole roster so a benched Jake still disambiguates

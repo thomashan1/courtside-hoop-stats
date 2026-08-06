@@ -156,7 +156,8 @@ struct GameSummaryView: View {
             // Pass the whole roster: `stats(for:)` drops benched players itself,
             // but keeps any who actually scored so the points column still adds
             // up to the final score (#59).
-            PlayerStatsTable(stats: game.stats(for: store.team.players))
+            PlayerStatsTable(stats: game.stats(for: store.team.players),
+                             didNotPlay: game.didNotPlay(from: store.team.players))
         }
     }
 

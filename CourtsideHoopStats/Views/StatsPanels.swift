@@ -15,6 +15,10 @@ import SwiftUI
 /// column-aligned.
 struct PlayerStatsTable: View {
     let stats: [PlayerStats]
+    /// Players who sat the game out, listed below the scorers as **DNP**
+    /// instead of being dropped — a roster that silently loses people reads as
+    /// a bug, and zeroes would wrongly say "played, didn't score".
+    var didNotPlay: [Player] = []
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -43,6 +47,22 @@ struct PlayerStatsTable: View {
                     }
                     .font(.subheadline)
                     .monospacedDigit()
+                }
+
+                // Below the scorers: they contributed nothing to the numbers
+                // above, so listing them among them would imply otherwise.
+                ForEach(didNotPlay) { player in
+                    GridRow {
+                        HStack(spacing: 8) {
+                            JerseyBadge(number: player.number, size: 26)
+                            Text(player.firstName).lineLimit(1)
+                        }
+                        .frame(minWidth: 120, alignment: .leading)
+                        Text("DNP")
+                            .gridCellColumns(4)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                 }
             }
             .padding(.vertical, 2)

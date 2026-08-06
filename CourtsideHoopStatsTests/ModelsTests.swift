@@ -456,3 +456,57 @@ struct ModelsTests {
         #expect(result.periodEndScores.keys.allSatisfy { $0 <= 2 })
     }
 }
+
+/// Tests for the DNP split shared by the summary, follower view, and PDF.
+struct DidNotPlayTests {
+
+    private let ava = Player(name: "Ava Reyes", number: "4")
+    private let jake = Player(name: "Jake Lawson", number: "11")
+    private let wes = Player(name: "Wesley Kim", number: "9")
+
+    private var roster: [Player] { [ava, jake, wes] }
+
+    private func game(benched: [Player], events: [GameEvent] = []) -> Game {
+        var game = Game(opponent: "Hawks")
+        game.benchedPlayerIDs = benched.map(\.id)
+        game.events = events
+        return game
+    }
+
+    @Test func benchedPlayerWithNoEventsIsDNP() {
+        let game = game(benched: [wes])
+        #expect(game.didNotPlay(from: roster).map(\.id) == [wes.id])
+    }
+
+    @Test func playersWhoPlayedAreNotDNP() {
+        let game = game(benched: [wes])
+        let dnp = Set(game.didNotPlay(from: roster).map(\.id))
+        #expect(!dnp.contains(ava.id))
+        #expect(!dnp.contains(jake.id))
+    }
+
+    /// Benching means "wasn't at the game", but an event proves otherwise — so
+    /// they keep their stats row and must not also appear as a DNP (#59).
+    @Test func benchedPlayerWithEventsIsNotDNP() {
+        let scored = GameEvent(playerID: wes.id, type: .twoPoint, period: 1)
+        let game = game(benched: [wes], events: [scored])
+
+        #expect(game.didNotPlay(from: roster).isEmpty)
+        #expect(game.stats(for: roster).contains { $0.player.id == wes.id })
+    }
+
+    @Test func nobodyBenchedMeansNoDNPRows() {
+        #expect(game(benched: []).didNotPlay(from: roster).isEmpty)
+    }
+
+    /// Every player appears exactly once — either with stats or as a DNP.
+    @Test func statsAndDNPPartitionTheRoster() {
+        let scored = GameEvent(playerID: ava.id, type: .threePoint, period: 1)
+        let game = game(benched: [wes], events: [scored])
+
+        let listed = game.stats(for: roster).map(\.player.id)
+        let dnp = game.didNotPlay(from: roster).map(\.id)
+        #expect(Set(listed).isDisjoint(with: Set(dnp)))
+        #expect(Set(listed + dnp) == Set(roster.map(\.id)))
+    }
+}

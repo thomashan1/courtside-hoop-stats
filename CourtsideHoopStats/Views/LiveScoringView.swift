@@ -390,7 +390,8 @@ struct LiveScoringView: View {
                 // The whole roster goes in: `stats(for:)` leaves benched players
                 // out, except any who already scored — hiding those would make
                 // the table disagree with the scoreboard (#59).
-                PlayerStatsTable(stats: game.stats(for: store.team.players))
+                PlayerStatsTable(stats: game.stats(for: store.team.players),
+                                 didNotPlay: game.didNotPlay(from: store.team.players))
             }
             .padding(.top, 12)
         } label: {
