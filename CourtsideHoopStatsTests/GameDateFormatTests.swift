@@ -82,3 +82,26 @@ struct GameDateCompactTests {
             .contains(sample.formatted(date: .omitted, time: .shortened)))
     }
 }
+
+/// The "last updated" wording shown on a followed team (#57).
+struct UpdatedLabelTests {
+
+    @Test func withinAMinuteReadsJustNow() {
+        #expect(Date().updatedLabel == "Updated Just Now")
+        #expect(Date().addingTimeInterval(-30).updatedLabel == "Updated Just Now")
+    }
+
+    /// Rounded to the minute: the sync isn't accurate to the second, and a
+    /// string that ticks every second reads as anxious precision.
+    @Test func pastAMinuteReadsRelative() {
+        let label = Date().addingTimeInterval(-300).updatedLabel
+        #expect(label.hasPrefix("Updated "))
+        #expect(label != "Updated Just Now")
+        #expect(!label.contains("second"))
+    }
+
+    @Test func theBoundaryIsAMinute() {
+        #expect(Date().addingTimeInterval(-59).updatedLabel == "Updated Just Now")
+        #expect(Date().addingTimeInterval(-61).updatedLabel != "Updated Just Now")
+    }
+}

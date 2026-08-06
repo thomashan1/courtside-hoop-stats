@@ -253,3 +253,20 @@ extension Date {
         return "\(day) at \(formatted(date: .omitted, time: .shortened))"
     }
 }
+
+// MARK: - Sync freshness (#57)
+
+extension Date {
+    /// "Updated Just Now" / "Updated 5 minutes ago", for the navigation
+    /// subtitle on a followed team.
+    ///
+    /// Rounded to the minute rather than exact: the underlying sync isn't
+    /// accurate to the second anyway, and a string that ticks every second
+    /// reads as anxious precision rather than information. "Just Now" matches
+    /// Mail's wording for the same idea.
+    var updatedLabel: String {
+        let elapsed = Date().timeIntervalSince(self)
+        guard elapsed >= 60 else { return "Updated Just Now" }
+        return "Updated \(formatted(.relative(presentation: .named)))"
+    }
+}
