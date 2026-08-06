@@ -393,6 +393,19 @@ struct Game: Identifiable, Codable {
     ///
     /// Events belonging to a player who isn't on the roster at all (deleted
     /// player, imported game) are still ignored — there's no name to show.
+    /// Players benched for this game who recorded nothing.
+    ///
+    /// Listed as **DNP** rather than rows of zeroes, which would wrongly read as
+    /// "played, didn't score". A benched player who *does* have events still
+    /// appears in the stats table (#59) — they were evidently there — so they
+    /// must not also be listed here.
+    func didNotPlay(from roster: [Player]) -> [Player] {
+        let listed = Set(stats(for: roster).map(\.player.id))
+        return roster.filter {
+            benchedPlayerIDs.contains($0.id) && !listed.contains($0.id)
+        }
+    }
+
     func stats(for players: [Player]) -> [PlayerStats] {
         var map: [UUID: PlayerStats] = [:]
         for player in players { map[player.id] = PlayerStats(player: player) }

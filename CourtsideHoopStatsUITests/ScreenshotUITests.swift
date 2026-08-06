@@ -42,6 +42,12 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
         snap(app, "02-game-summary")
 
+        // Absent players are listed as DNP rather than dropped from the table —
+        // a roster that silently loses people reads as a bug. The demo game
+        // benches Wesley, so a DNP row must be present.
+        XCTAssertTrue(app.staticTexts["DNP"].firstMatch.waitForExistence(timeout: 5),
+                      "Benched players should appear as DNP in the stats table")
+
         // 2a) Box-score PDF preview (#55) — the share sheet is opened from here,
         // so the preview is the last screen we can capture deterministically.
         app.buttons["Box Score PDF"].tap()

@@ -295,7 +295,7 @@ private struct FollowedGameView: View {
 
             if !stats.isEmpty {
                 Section("Player Stats") {
-                    PlayerStatsTable(stats: stats)
+                    PlayerStatsTable(stats: stats, didNotPlay: game.didNotPlay(from: roster))
                 }
             }
 
