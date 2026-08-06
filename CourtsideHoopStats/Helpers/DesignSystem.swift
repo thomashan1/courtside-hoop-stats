@@ -213,3 +213,40 @@ struct ScoreboardView: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+// MARK: - Game dates (#67)
+
+extension Date {
+    /// A game's date with its **3-letter weekday**, e.g. `Tue, Aug 4, 2026`.
+    ///
+    /// Youth games are scheduled by weekday far more than by date — "is that
+    /// the Saturday one?" — so the day is worth the space wherever a game is
+    /// listed. The weekday leads rather than trailing the year, because a
+    /// trailing weekday collides with the time ("Aug 4, 2026 at 11:40 AM Tue").
+    var gameDay: String {
+        formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year())
+    }
+
+    /// The same, plus the start time: `Tue, Aug 4, 2026 at 11:40 AM`. For
+    /// detail screens, where a full-width row has space for it.
+    var gameDayAndTime: String {
+        "\(gameDay) at \(formatted(date: .omitted, time: .shortened))"
+    }
+
+    /// List-row form: `Tue, Aug 4 at 11:40 AM`.
+    ///
+    /// Drops the year for games in the current year. A game row also carries a
+    /// location, and adding the weekday to the full date pushed the tip-off
+    /// time into an ellipsis — the time matters more on a schedule than a year
+    /// you can already infer. Past seasons keep the year, so an old game is
+    /// never ambiguous.
+    var gameDayCompact: String {
+        let calendar = Calendar.current
+        let sameYear = calendar.component(.year, from: self)
+            == calendar.component(.year, from: Date())
+        let day = sameYear
+            ? formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+            : gameDay
+        return "\(day) at \(formatted(date: .omitted, time: .shortened))"
+    }
+}

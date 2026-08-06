@@ -258,7 +258,11 @@ struct GameRowView: View {
                 Text(game.opponent.isEmpty ? "New Game" : "vs \(game.opponent)")
                     .font(.headline)
                 HStack(spacing: 6) {
-                    Text(game.date.formatted(date: .abbreviated, time: .shortened))
+                    // When these compete for width the gym name gives way, not
+                    // the tip-off time — "which day, what time" is the question
+                    // this row exists to answer.
+                    Text(game.date.gameDayCompact)
+                        .layoutPriority(1)
                     if !game.location.isEmpty {
                         Text("·")
                         Text(game.location)

@@ -41,7 +41,7 @@ struct GameDetailView: View {
                 LabeledContent("Jersey") {
                     JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
                 }
-                LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .shortened))
+                LabeledContent("Date", value: game.date.gameDayAndTime)
             }
 
             Section {

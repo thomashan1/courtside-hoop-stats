@@ -185,7 +185,7 @@ struct GameSummaryView: View {
 
     private var detailsSection: some View {
         Section("Details") {
-            LabeledContent("Date", value: game.date.formatted(date: .abbreviated, time: .shortened))
+            LabeledContent("Date", value: game.date.gameDayAndTime)
             LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
             if !game.league.isEmpty { LabeledContent("League", value: game.league) }
             if !game.location.isEmpty {

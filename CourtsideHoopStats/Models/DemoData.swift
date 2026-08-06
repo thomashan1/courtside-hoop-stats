@@ -45,7 +45,11 @@ enum DemoData {
     }
 
     /// A fixed reference date so screenshots are reproducible.
-    private static let refDate = Date(timeIntervalSince1970: 1_752_000_000) // 2025-07-08
+    /// Fixed so screenshots are reproducible, but kept in the **current
+    /// season**: game rows drop the year in-season, so a stale reference date
+    /// would both truncate the tip-off time and date the App Store listing.
+    /// Roll this forward when it falls behind the calendar year.
+    private static let refDate = Date(timeIntervalSince1970: 1_783_510_800) // 2026-07-08
 
     // MARK: - Random test game (easter egg: long-press "+" on the Games list)
 
