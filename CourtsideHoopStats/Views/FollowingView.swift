@@ -146,7 +146,6 @@ struct FollowingView: View {
             GameGroup(title: "Final Scores", games: finished),
         ].filter { !$0.games.isEmpty }
     }
-
     private func refresh() async {
         guard sharing.isAvailable, !isRefreshing else { return }
         isRefreshing = true
@@ -190,6 +189,15 @@ private struct FollowedGameView: View {
     /// makes watching a game hands-off.
     private let livePollInterval: Duration = .seconds(20)
 
+    /// The most recent basket, shown as a banner. A push notification is
+    /// suppressed by iOS while the app is foregrounded, so without this a
+    /// follower staring at the game gets the least feedback of anyone.
+    @State private var flash: ScoreFlash?
+    /// Events already seen, so only genuinely new ones flash. Seeded on first
+    /// appearance rather than empty — otherwise opening a game mid-way would
+    /// announce a basket from ten minutes ago.
+    @State private var seenEventIDs: Set<UUID>?
+
     private var followed: FollowedTeam? {
         store.followedTeams.first { $0.id == followedID }
     }
@@ -216,7 +224,9 @@ private struct FollowedGameView: View {
         }
         .navigationTitle(game.map { $0.opponent.isEmpty ? "Game" : "vs. \($0.opponent)" } ?? "Game")
         .navigationBarTitleDisplayMode(.inline)
+        .scoreToast($flash)
         .refreshable { await refresh() }
+        .onChange(of: game?.events.count) { _, _ in flashNewestScore() }
         .task(id: game?.lifecycle) {
             // Only poll a game actually in progress; a finished game can't
             // change, and polling it would be pure battery cost.
@@ -227,6 +237,30 @@ private struct FollowedGameView: View {
                 await refresh()
             }
         }
+    }
+
+    /// Banner the newest basket that wasn't there before.
+    private func flashNewestScore() {
+        guard let game else { return }
+        let ids = Set(game.events.map(\.id))
+
+        // First look at this game establishes the baseline silently.
+        guard let seen = seenEventIDs else {
+            seenEventIDs = ids
+            return
+        }
+        seenEventIDs = ids
+
+        guard let event = game.events.last(where: { !seen.contains($0.id) }),
+              event.type.points > 0,
+              let player = roster.first(where: { $0.id == event.playerID }) else { return }
+
+        flash = ScoreFlash(id: event.id,
+                           playerName: player.firstName,
+                           jerseyNumber: player.number,
+                           label: event.type.scoreLogLabel,
+                           teamScore: game.ourScore,
+                           opponentScore: game.opponentScore)
     }
 
     private func refresh() async {
@@ -247,9 +281,15 @@ private struct FollowedGameView: View {
                     .listRowInsets(EdgeInsets())
             }
 
-            if !game.periodBreakdown().isEmpty {
-                Section("By Period") {
-                    PeriodBreakdownGrid(game: game, ourName: teamName)
+            // Log first, newest at the top: a follower is watching for the next
+            // basket, and shouldn't have to scroll past a box score to find it.
+            if !game.events.isEmpty {
+                Section("Score Log") {
+                    EventLogView(game: .constant(game),
+                                 players: roster,
+                                 isEditable: false,
+                                 newestFirst: true,
+                                 persist: {})
                 }
             }
 
@@ -259,12 +299,9 @@ private struct FollowedGameView: View {
                 }
             }
 
-            if !game.events.isEmpty {
-                Section("Score Log") {
-                    EventLogView(game: .constant(game),
-                                 players: roster,
-                                 isEditable: false,
-                                 persist: {})
+            if !game.periodBreakdown().isEmpty {
+                Section("By Period") {
+                    PeriodBreakdownGrid(game: game, ourName: teamName)
                 }
             }
         }
