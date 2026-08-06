@@ -202,4 +202,45 @@ struct SharingOrchestrationTests {
         #expect(push?.games.allSatisfy { $0.teamID == sharedID } == true)
         #expect(push?.games.contains { $0.opponent == "Other" } == false)
     }
+
+    // MARK: - Unsharing
+
+    /// The reported bug: a team unshared from the system share sheet kept its
+    /// "Shared" tag, because the sheet's `onStopped` callback was never wired
+    /// up and nothing cleared local state.
+    @Test func markNotSharedClearsTheSharedFlag() async {
+        let service = FakeSharingService()
+        let store = makeStore(service)
+        store.markShared(store.team.id)
+        #expect(store.isShared(store.team.id))
+
+        store.markNotShared(store.team.id)
+        #expect(!store.isShared(store.team.id))
+    }
+
+    /// …and a later sync must not resurrect it, or the tag comes back on the
+    /// next launch.
+    @Test func syncDoesNotResurrectAnUnsharedTeam() async {
+        let service = FakeSharingService()
+        let store = makeStore(service)
+        store.markShared(store.team.id)
+        service.sharedTeamIDs = []      // the server agrees it's no longer shared
+
+        store.markNotShared(store.team.id)
+        await store.syncSharedState()
+        #expect(!store.isShared(store.team.id))
+    }
+
+    /// An unshared team must also stop publishing — otherwise edits keep
+    /// uploading to a zone nobody can read.
+    @Test func anUnsharedTeamStopsPublishing() async {
+        let service = FakeSharingService()
+        let store = makeStore(service)
+        store.markShared(store.team.id)
+        store.markNotShared(store.team.id)
+        service.sharedTeamIDs = []
+
+        await store.syncSharedState()
+        #expect(service.published.isEmpty)
+    }
 }

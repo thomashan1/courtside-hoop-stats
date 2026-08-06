@@ -286,12 +286,7 @@ struct TeamDetailView: View {
     @State private var jersey: JerseyColor = .white
     @State private var teamColor: JerseyColor = .blue
     @State private var confirmingDelete = false
-    @State private var sharingError: String?
-    @State private var preparedShare: PreparedShare?
-    @State private var isPreparingShare = false
     @State private var showingFollowers = false
-    @State private var inviteURL: URL?
-    @State private var didCopyLink = false
 
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -350,51 +345,28 @@ struct TeamDetailView: View {
             // button ships. See docs/SHARING.md.
             if let team, sharing.isAvailable {
                 Section {
-                    Button {
-                        shareTeam(team)
-                    } label: {
-                        HStack {
-                            Label("Share Team…", systemImage: "person.crop.circle.badge.plus")
-                            if isPreparingShare {
-                                Spacer()
-                                ProgressView()
-                            }
-                        }
-                    }
-                    .disabled(isPreparingShare)
-
-                    // Always offered, never gated on local state: "who did I
-                    // share this with?" should be answerable at any time, and
-                    // the sheet says plainly when nobody is following yet.
+                    // One row, not two. "Share Team…" and "See Who's Following"
+                    // sat side by side doing overlapping jobs — and once a team
+                    // was shared, the first one's job *was* "add more people",
+                    // which its wording didn't say.
+                    //
+                    // A shared album works this way: one People screen that
+                    // lists who's on it, invites more, and stops sharing. That
+                    // screen is `FollowersView`; this is the way in.
                     Button {
                         showingFollowers = true
                     } label: {
-                        Label("See Who's Following", systemImage: "person.2")
-                    }
-
-                    // The system share sheet's own Copy Link hides the URL and
-                    // dismisses on tap. Showing it here means you can read it,
-                    // select part of it, or copy it and carry on — handy for
-                    // sending the invite by a route the sheet doesn't offer.
-                    if let inviteURL {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(inviteURL.absoluteString)
-                                .font(.footnote.monospaced())
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                                .lineLimit(2)
-                                .truncationMode(.middle)
-
-                            Button {
-                                UIPasteboard.general.url = inviteURL
-                                withAnimation { didCopyLink = true }
-                            } label: {
-                                Label(didCopyLink ? "Copied" : "Copy Invite Link",
-                                      systemImage: didCopyLink ? "checkmark" : "doc.on.doc")
+                        HStack {
+                            Label(store.isShared(team.id) ? "Followers" : "Share Team…",
+                                  systemImage: store.isShared(team.id)
+                                      ? "person.2.fill" : "person.crop.circle.badge.plus")
+                            Spacer()
+                            if store.isShared(team.id) {
+                                Image(systemName: "chevron.right")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
                             }
-                            .buttonStyle(.borderless)
                         }
-                        .padding(.vertical, 2)
                     }
                 } header: {
                     Text("Share with Followers")
@@ -445,7 +417,6 @@ struct TeamDetailView: View {
                 teamColor = team.kitColor
             }
         }
-        .task(id: team?.id) { await loadInviteLink() }
         .confirmationDialog("Delete \(team?.name ?? "team")?",
                             isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete Team & Its Games", role: .destructive) {
@@ -456,52 +427,9 @@ struct TeamDetailView: View {
         } message: {
             Text("This deletes the team and all of its games. This can't be undone.")
         }
-        .alert("Couldn't Share", isPresented: Binding(
-            get: { sharingError != nil },
-            set: { if !$0 { sharingError = nil } }
-        )) {
-            Button("OK", role: .cancel) { sharingError = nil }
-        } message: {
-            Text(sharingError ?? "")
-        }
         .sheet(isPresented: $showingFollowers) {
             if let team { FollowersView(team: team) }
         }
-        .sheet(item: $preparedShare) { prepared in
-            CloudSharingSheet(share: prepared.share,
-                              container: prepared.container,
-                              title: team?.name,
-                              onError: { sharingError = $0.localizedDescription })
-                .ignoresSafeArea()
-        }
-    }
-
-    /// Begin sharing this team (#57): mirror it to CloudKit, then hand the
-    /// resulting share to the system invite sheet. Talking to iCloud can take a
-    /// moment, so the button shows a spinner rather than appearing dead.
-    private func shareTeam(_ team: Team) {
-        let games = store.games.filter { ($0.teamID ?? team.id) == team.id }
-        isPreparingShare = true
-        Task {
-            defer { isPreparingShare = false }
-            do {
-                preparedShare = try await sharing.prepareShare(for: team, games: games)
-                // From here on, edits to this team publish to its followers.
-                store.markShared(team.id)
-                await loadInviteLink()
-            } catch {
-                sharingError = error.localizedDescription
-            }
-        }
-    }
-
-    /// Fetch the invite link so it can be shown and copied without going
-    /// through the system sheet. Silent on failure — an absent link just hides
-    /// the row, and the sheet remains the primary way to invite.
-    private func loadInviteLink() async {
-        guard let team, sharing.isAvailable else { return }
-        inviteURL = try? await sharing.shareURL(for: team)
-        didCopyLink = false
     }
 
     private func save() {
