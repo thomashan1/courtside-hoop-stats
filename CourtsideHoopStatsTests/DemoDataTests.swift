@@ -40,6 +40,33 @@ struct DemoDataTests {
         }
     }
 
+    /// The demo exists to make screenshots representative, so the variety is
+    /// part of the contract — not incidental. Without this, dropping a game
+    /// while editing the seed quietly costs a badge or a linescore layout that
+    /// no longer appears anywhere in the App Store listing.
+    @Test func demoGamesCoverEveryResultAndPeriodFormat() {
+        let games = DemoData.makeGames(team: DemoData.makeTeam())
+        let finished = games.filter { $0.lifecycle == .complete }
+
+        #expect(finished.contains { $0.result == .win },  "no win to show a WIN badge")
+        #expect(finished.contains { $0.result == .loss }, "no loss to show a LOSS badge")
+        #expect(finished.contains { $0.result == .tie },  "no tie to show a TIE badge")
+
+        for format in PeriodFormat.allCases {
+            #expect(games.contains { $0.periodFormat == format },
+                    "no \(format.displayName) game — that linescore layout is unscreenshotted")
+        }
+    }
+
+    /// All three Games-list sections need an entry, or a section header ships
+    /// having never been seen.
+    @Test func demoGamesFillEveryGamesListSection() {
+        let games = DemoData.makeGames(team: DemoData.makeTeam())
+        #expect(games.contains { $0.lifecycle == .inProgress }, "nothing in Playing Now")
+        #expect(games.contains { $0.lifecycle == .scheduled },  "nothing in Coming Up")
+        #expect(games.contains { $0.lifecycle == .complete },   "nothing in Final Scores")
+    }
+
     // MARK: - Followed team (#57)
 
     @Test func followedTeamGamesAreInternallyConsistent() {

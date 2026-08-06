@@ -46,6 +46,29 @@ PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
 `04-roster`, `12-score-pad`, `13-new-game`, `20-following-list`,
 `21-following-game` (see the two test files for the full set).
 
+## What the demo data covers
+
+`DemoData.makeGames` is built so one run of the harness exercises the real
+range, not one happy path:
+
+| Dimension | Covered by |
+|---|---|
+| Sections | Playing Now (Northgate), Coming Up (Summit), Final Scores (four games) |
+| Results | **win** (Lakeside 48–41), **loss** (Central 38–44), **tie** (Pine Ridge 30–30) |
+| Period formats | quarters, **halves** (Pine Ridge), **pickup** (Bayview — no periods, no location) |
+| Edge cases | a DNP row (Wesley benched), a missed FT so FT% isn't always 100%, optional fields left blank on the pickup game |
+
+`DemoDataTests` asserts this coverage, so dropping a game while editing the seed
+fails a test rather than quietly costing a badge nothing screenshots any more.
+
+Two more things it's tuned for: **Nicholas (#77) leads every game on threes**,
+which keeps one narrative across owner and follower screens, and each game gets
+its **own tip-off time** — the reference date is built from calendar components
+so it lands at a plausible 10:00 AM rather than the 4:40 AM a raw epoch produced.
+
+`15-game-summary-halves` is a **verification capture, not part of the committed
+set** — it exists so the halves linescore and the TIE badge get looked at.
+
 ## Adding a screen
 
 1. Add a `snap(app, "NN-name")` step in `ScreenshotUITests.swift`, driving to the
