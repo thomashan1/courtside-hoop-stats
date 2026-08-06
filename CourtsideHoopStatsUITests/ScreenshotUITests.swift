@@ -52,7 +52,7 @@ final class ScreenshotUITests: XCTestCase {
 
         // 1b) Followers — reachable from Games, not just from a live game.
         app.buttons["Shared with 2 followers"].tap()
-        XCTAssertTrue(app.navigationBars["Followers"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Grandma Chen"].waitForExistence(timeout: 5))
         snap(app, "16-followers")
         app.buttons["Done"].tap()
