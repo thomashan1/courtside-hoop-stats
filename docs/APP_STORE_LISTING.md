@@ -146,7 +146,7 @@ adds iCloud and push entitlements.
 Keep it while the sharing feature is still new to users; it can drop out of a
 later release's notes once it isn't news.
 
-### v1.1 — submitted 2026-08-04
+### v1.1 — submitted 2026-08-04 (confirmed in App Store Connect)
 
 > NEW
 >
