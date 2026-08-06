@@ -127,6 +127,24 @@ code.
 > 1. Stays readable and usable at the largest text sizes.
 > 2. Buttons in Settings and on the scoring screen no longer miss taps.
 > 3. Deleting a team now asks first.
+>
+> UPDATED PRIVACY
+>
+> 1. Nothing leaves your device unless you share a team. If you do, that team's
+>    roster and games are copied to your own iCloud so the people you invite can
+>    see them — and nowhere else.
+> 2. Only people you invite by Apple Account can view it. There's no public
+>    link, and they can't change anything.
+> 3. Still no account, no ads, and no tracking. We receive no copy of your data.
+
+The privacy block exists because earlier versions promised data *"never leaves
+your device"*, and sharing makes that no longer true for a team you choose to
+share. Saying so in the release notes is the honest version of a changed
+promise, and it pre-empts the obvious review question on the submission that
+adds iCloud and push entitlements.
+
+Keep it while the sharing feature is still new to users; it can drop out of a
+later release's notes once it isn't news.
 
 ### v1.1 — submitted 2026-08-04
 
