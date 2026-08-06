@@ -171,3 +171,68 @@ struct FollowerAlertTests {
         #expect(first.first?.id == "period-\(id)-1")
     }
 }
+
+/// Newly scheduled games (#57 follow-up) — a follower wants to know a fixture
+/// was added, not just that one started.
+struct ScheduledGameAlertTests {
+
+    private func team(_ games: [Game]) -> FollowedTeam {
+        FollowedTeam(team: Team(name: "Swish Warriors", players: []),
+                     games: games,
+                     zoneName: "z", ownerName: "o", updatedAt: Date())
+    }
+
+    private func scheduled(_ opponent: String = "Hawks") -> Game {
+        var game = Game(opponent: opponent)
+        game.hasStarted = false
+        return game
+    }
+
+    @Test func aNewlyScheduledGameNotifies() throws {
+        let before = team([])
+        let game = scheduled()
+        let alert = try #require(FollowerAlertBuilder.alerts(
+            previous: before, current: team([game]), cadence: .periodEnd).first)
+
+        #expect(alert.title.contains("game scheduled"))
+        #expect(alert.body.contains("Hawks"))
+        #expect(alert.id == "scheduled-\(game.id)")
+    }
+
+    /// Entering a season at once shouldn't fire a notification per fixture.
+    @Test func severalNewGamesCollapseIntoOne() throws {
+        let games = (0..<5).map { scheduled("Team \($0)") }
+        let alerts = FollowerAlertBuilder.alerts(
+            previous: team([]), current: team(games), cadence: .periodEnd)
+
+        #expect(alerts.count == 1)
+        #expect(try #require(alerts.first).title.contains("5 games scheduled"))
+    }
+
+    /// Ids must survive a relaunch, or the same batch notifies twice.
+    @Test func batchIdIsDeterministic() {
+        let games = (0..<4).map { scheduled("Team \($0)") }
+        let first = FollowerAlertBuilder.alerts(previous: team([]), current: team(games),
+                                                cadence: .periodEnd)
+        let second = FollowerAlertBuilder.alerts(previous: team([]), current: team(games),
+                                                 cadence: .periodEnd)
+        #expect(first == second)
+        #expect(first.first?.id.hasPrefix("scheduled-batch-") == true)
+    }
+
+    /// A game that arrives already in progress is announced as starting, not as
+    /// scheduled — one notification for one event.
+    @Test func aGameThatArrivesLiveIsAnnouncedOnceAsStarting() {
+        var live = Game(opponent: "Hawks")
+        live.hasStarted = true
+        let alerts = FollowerAlertBuilder.alerts(previous: team([]), current: team([live]),
+                                                 cadence: .periodEnd)
+        #expect(alerts.count == 1)
+        #expect(alerts[0].title.contains("game starting"))
+    }
+
+    @Test func scheduledGamesAreSilentWhenNotificationsAreOff() {
+        #expect(FollowerAlertBuilder.alerts(previous: team([]), current: team([scheduled()]),
+                                            cadence: .off).isEmpty)
+    }
+}
