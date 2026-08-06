@@ -107,15 +107,23 @@ Write what the user *sees* — "player totals when someone is benched" says
 nothing to them. Regenerate each release from the milestone:
 `gh issue list --milestone vX.Y --state closed`.
 
+Keep it short. Lead with the one thing that's new, then a line of smaller
+additions, then only the fixes a user would have *noticed*. Nobody reads a
+twenty-line changelog on a phone.
+
 **v1.2:**
 
 > NEW: Let family follow your games.
 >
-> Share a team and invite grandparents, friends, or the other parent from the
-> normal share sheet — just like a shared photo album. They get a view-only
-> screen with the live score and player stats on their own iPhone, and can't
-> change anything. Updates arrive in seconds when you have signal, and catch up
-> once you're out of a dead-zone gym.
+> Share a team the way you'd share a photo album — invite family from the share
+> sheet and they get a view-only screen with the live score and player stats.
+> Optional alerts at each quarter and at the final.
+>
+> Also: choose your team's colour, players who sat out show as DNP, and game
+> dates now show the day of the week.
+>
+> Fixed: stays readable at large text sizes, more reliable taps, and deleting a
+> team now asks first.
 
 ---
 
@@ -127,16 +135,25 @@ Connect privacy questions as:
 - **Do you or your third-party partners collect data from this app?** → **No**
 
 That yields a "**Data Not Collected**" label. No account, no analytics SDK, no
-ads. Storage is local UserDefaults/JSON.
+ads.
 
-⚠️ **Re-check this now that sharing exists.** A shared team's roster and games
-are written to **the user's own iCloud** (CloudKit private/shared database).
-Apple's questionnaire is about data *we* collect, and data that stays inside a
-user's own iCloud is not collection by the developer — so "No" should still be
-right. But a **changed privacy answer plus new iCloud entitlements is the
-profile that draws review scrutiny**, so re-read the questions against the
-sharing feature before submitting rather than answering from memory, and expect
-more friction than a routine update.
+**Sharing does not change that answer.** A shared team's roster and games are
+written to **the user's own iCloud** (CloudKit private/shared database), where
+the developer has no access and receives no copy. Apple's questionnaire asks
+what *we* collect, and data that stays inside a user's own iCloud isn't
+developer collection.
+
+What it *does* change is the risk profile: **new iCloud and push entitlements
+alongside an unchanged privacy answer draws more scrutiny than a routine
+update**. Two things to have ready rather than improvise:
+
+- `docs/PRIVACY_POLICY.md` is already rewritten for sharing. The pre-sharing
+  version claimed data is *"stored only on your device"* and *"never sent to any
+  server"*, which sharing made false — make sure the **hosted** copy at the
+  listing's privacy URL is the current one, not the old text.
+- The review notes (§10) should say plainly that sharing is invite-only via
+  CKShare, read-only for invitees, and that a shared roster can contain minors'
+  first names and jersey numbers.
 
 **Export compliance / encryption:** already declared in the target —
 `ITSAppUsesNonExemptEncryption = NO`. App Store Connect will not ask again.
@@ -190,12 +207,27 @@ App preview video: optional, still skipped.
 
 ## 10. Review notes (App Review Information field)
 
-> Single-user local app for tracking a youth basketball team's stats. No account
-> or login. To try it: on the Roster tab add a player or two, tap "+" on the
-> Games tab to open the New Game form (every field is optional) and tap "Start
-> Game", then tap a player and a +2/+3/FT button to score, and tap the period
-> boundary at the top of the score log to "End Period". All data is stored
-> locally on device.
+> App for tracking a youth basketball team's stats. No account or login.
+>
+> To try it: on the Roster tab add a player or two, tap "+" on the Games tab to
+> open the New Game form (every field is optional) and tap "Start Game", then tap
+> a player and a +2/+3/FT button to score, and tap the period boundary at the top
+> of the score log to "End Period".
+>
+> Data is stored locally on device. The optional sharing feature (Settings ▸
+> Teams ▸ a team ▸ Share Team) uses CloudKit CKShare to copy that team's roster
+> and games into the *user's own* iCloud so people they invite can view them.
+> Invitations go to specific Apple Accounts through the system share sheet;
+> there is no public link, invitees are read-only, and we operate no server and
+> receive no copy of any data. Push is a silent content-available notification
+> used only to refresh a follower's copy; the alert text is generated on device.
+>
+> A shared roster may contain minors' first names and jersey numbers, entered by
+> the user and visible only to the specific Apple Accounts they invite.
+>
+> Sharing needs two different Apple Accounts to exercise end-to-end. If that
+> isn't practical, everything else in the app works without it — the sharing UI
+> only appears once a team is shared.
 
 No demo account needed (there is no login).
 
