@@ -82,28 +82,30 @@ the README renders (at `width="240"`, so resolution costs nothing visually).
 Don't keep a second, smaller README-only set; that drift is what caused the
 confusion above.
 
-`docs/img/` is **numbered in README display order**, so the files sort the way
-they're presented and nothing goes untracked:
+Each file is `NN-<section>-<screen>.png`: **`NN` is README display order** and
+`<section>` is the README heading it sits under, so a filename alone says where
+the image is used and the directory sorts the way the README reads.
 
 | File | README section | Captured from |
 |---|---|---|
-| `01-live-scoring.png` | Scoring courtside | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
-| `02-score-pad.png` | Scoring courtside | `12-score-pad` |
-| `03-score-log.png` | Scoring courtside | `07-score-log-editor` |
+| `01-game-live-scoring.png` | Scoring courtside | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
+| `02-game-score-pad.png` | Scoring courtside | `12-score-pad` |
+| `03-game-score-log.png` | Scoring courtside | `07-score-log-editor` |
 | `04-new-game.png` | Starting a game | `13-new-game` |
-| `05-location.png` | Starting a game | `06-location-autocomplete` |
-| `06-game-summary.png` | After the game | `02-game-summary` |
-| `07-box-score-pdf.png` | After the game | `14-box-score-pdf` |
-| `08-games-list.png` | Your team | `01-games-list` |
-| `09-roster.png` | Your team | `04-roster` |
-| `10-teams.png` | Your team | `08-settings-teams` |
-| `11-following.png` | Following | `20-following-list` — teams shared with you |
-| `12-following-game.png` | Following | `21-following-game` — a follower watching a game |
+| `05-game-summary.png` | After the game | `02-game-summary` |
+| `06-game-summary-share-pdf.png` | After the game | `14-box-score-pdf` |
+| `07-team-games.png` | Your team | `01-games-list` |
+| `08-team-roster.png` | Your team | `04-roster` |
+| `09-team-settings.png` | Your team | `08-settings-teams` — the Teams list in Settings |
+| `10-following-teams.png` | Following a shared team | `20-following-list` — teams shared with you |
+| `11-following-game.png` | Following a shared team | `21-following-game` — a follower watching a game |
 | `app-icon.png` | header | not a screenshot; unnumbered |
 
 Renumber the whole set if the README order changes — the prefix *is* the order,
-so a stale number is worse than none.
+so a stale number is worse than none. Keep it **under 12 images**: past that the
+README reads as a catalogue rather than a tour, and only the critical screens
+earn a slot.
 
-`live-scoring.png` is deliberately the **bench** capture (`11-bench`) — the live
-scoring screen with the "Not playing" strip open, so one image shows both.
+The live-scoring image is deliberately the **bench** capture (`11-bench`) — the
+live scoring screen with the "Not playing" strip open, so one image shows both.
 

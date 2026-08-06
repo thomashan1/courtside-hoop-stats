@@ -180,9 +180,9 @@ size and **numbered in display order** — see [`SCREENSHOTS.md`](SCREENSHOTS.md
 Don't regenerate a second, smaller README-only set; that drift is what caused an
 upload to be rejected.
 
-Upload hero-first: `01-live-scoring` → `02-score-pad` → `07-box-score-pdf` →
-`11-following` (the headline for this release) → `06-game-summary` →
-`08-games-list`.
+Upload hero-first: `01-game-live-scoring` → `02-game-score-pad` →
+`06-game-summary-share-pdf` → `10-following-teams` (the headline for this
+release) → `05-game-summary` → `07-team-games`.
 
 App preview video: optional, still skipped.
 
