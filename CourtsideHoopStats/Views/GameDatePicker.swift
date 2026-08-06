@@ -36,6 +36,15 @@ struct GameDatePicker: UIViewRepresentable {
         if selection != rounded { DispatchQueue.main.async { selection = rounded } }
     }
 
+    /// Without this SwiftUI hands the picker whatever the `Form` row proposes and
+    /// the compact pills render clipped. Answer with the control's own compressed
+    /// size so the row grows to fit it instead.
+    func sizeThatFits(_ proposal: ProposedViewSize,
+                      uiView picker: UIDatePicker,
+                      context: Context) -> CGSize? {
+        picker.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+    }
+
     func makeCoordinator() -> Coordinator { Coordinator(selection: $selection) }
 
     final class Coordinator: NSObject {
