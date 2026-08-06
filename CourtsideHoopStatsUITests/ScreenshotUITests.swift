@@ -125,7 +125,9 @@ final class ScreenshotUITests: XCTestCase {
         // 4c) Team detail — name + jersey editing lives here now. Tapping a row
         // makes it active; the ⓘ button opens the editor.
         app.buttons["Edit Eastside Eagles"].tap()
-        XCTAssertTrue(app.staticTexts["Home Jersey"].waitForExistence(timeout: 10))
+        // A team is white plus one colour of its own, so the section covers
+        // both the colour and which is worn at home.
+        XCTAssertTrue(app.staticTexts["Jerseys"].waitForExistence(timeout: 10))
         snap(app, "09-team-detail")
         // Dismiss the editor sheet before moving on (Cancel/Save now).
         app.navigationBars["Eastside Eagles"].buttons["Cancel"].tap()

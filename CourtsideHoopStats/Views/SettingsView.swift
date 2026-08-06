@@ -191,6 +191,7 @@ struct TeamDetailView: View {
     // Staged edits (Cancel/Save), matching every other record editor.
     @State private var name = ""
     @State private var jersey: JerseyColor = .white
+    @State private var teamColor: JerseyColor = .blue
     @State private var confirmingDelete = false
     @State private var sharingError: String?
     @State private var preparedShare: PreparedShare?
@@ -202,6 +203,11 @@ struct TeamDetailView: View {
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// The kit worn away — the one that isn't worn at home.
+    private var awayJerseyLabel: String {
+        (jersey == .white ? teamColor : .white).label
+    }
+
     var body: some View {
         Form {
             Section("Team Name") {
@@ -210,16 +216,38 @@ struct TeamDetailView: View {
             }
 
             Section {
-                Picker("Home jersey", selection: $jersey) {
-                    ForEach(JerseyColor.allCases) { color in
-                        Text(color.label).tag(color)
+                // Nearly every team is white plus one colour, so this asks for
+                // the colour and which one is worn at home, rather than making
+                // both jerseys free-form.
+                Picker("Team colour", selection: $teamColor) {
+                    ForEach(JerseyColor.teamColors) { color in
+                        Label {
+                            Text(color.label)
+                        } icon: {
+                            Circle()
+                                .fill(color.swatch)
+                                .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 0.5))
+                        }
+                        .tag(color)
                     }
                 }
+
+                Picker("Worn at home", selection: $jersey) {
+                    Text("White").tag(JerseyColor.white)
+                    Text(teamColor.label).tag(teamColor)
+                }
                 .pickerStyle(.segmented)
+                // The home choice is White or *the team colour*, so changing
+                // the colour has to carry the choice with it — otherwise the
+                // selection points at a colour no longer on offer and the
+                // segmented control shows nothing selected.
+                .onChange(of: teamColor) { previous, current in
+                    if jersey == previous { jersey = current }
+                }
             } header: {
-                Text("Home Jersey")
+                Text("Jerseys")
             } footer: {
-                Text("Away games use the other jersey — \(jersey.opposite.label).")
+                Text("Away games wear the other one — \(awayJerseyLabel).")
             }
 
             // Live CloudKit sharing (#57) leads: it's the primary way to get a
@@ -321,6 +349,7 @@ struct TeamDetailView: View {
             if let team {
                 name = team.name
                 jersey = team.homeJersey ?? .white
+                teamColor = team.kitColor
             }
         }
         .task(id: team?.id) { await loadInviteLink() }
@@ -386,6 +415,7 @@ struct TeamDetailView: View {
         guard var team else { return }
         team.name = trimmedName
         team.homeJersey = jersey
+        team.teamColor = teamColor
         store.updateTeam(team)
         dismiss()
     }
