@@ -25,6 +25,7 @@ struct LiveScoringView: View {
     /// Presents the game-details editor (location, notes, matchup) so details
     /// can be fixed mid-game — the same Cancel/Save sheet used elsewhere.
     @State private var showDetails = false
+    @State private var showFollowers = false
     /// Whether the at-a-glance stats/period panel is expanded (#8). Collapsed by
     /// default so it never gets in the way of fast two-tap entry.
     @State private var showStats = false
@@ -140,6 +141,9 @@ struct LiveScoringView: View {
         // navigation away from a live game.
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadGameIfNeeded)
+        .sheet(isPresented: $showFollowers) {
+            FollowersView(team: store.team)
+        }
         .sheet(isPresented: $showDetails) {
             // Format can't change once a game is under way (would rescramble
             // recorded periods).
@@ -187,7 +191,7 @@ struct LiveScoringView: View {
             // family are watching, and a way to check who without leaving the
             // game (#57).
             if store.isShared(store.team.id) {
-                FollowersBadge(team: store.team)
+                FollowersBadge(team: store.team) { showFollowers = true }
             }
             Button { showDetails = true } label: { Image(systemName: "info.circle") }
                 .accessibilityLabel("Details")

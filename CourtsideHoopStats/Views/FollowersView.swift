@@ -103,13 +103,18 @@ struct FollowersView: View {
 /// when the team isn't shared, so it never costs space in the common case.
 struct FollowersBadge: View {
     let team: Team
+    /// Presenting is the caller's job. A sheet inherits the environment of
+    /// wherever it's declared, and this badge sits inside the scoreboard bar,
+    /// which forces white text and tint for the navy banner — a sheet declared
+    /// here inherits both and is unreadable in light mode.
+    let onTap: () -> Void
+
     @Environment(\.teamSharingService) private var sharing
     @State private var count: Int?
-    @State private var showingFollowers = false
 
     var body: some View {
         Button {
-            showingFollowers = true
+            onTap()
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "eye.fill")
@@ -128,9 +133,6 @@ struct FollowersBadge: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(count.map { "\($0) following" } ?? "Followers")
-        .sheet(isPresented: $showingFollowers) {
-            FollowersView(team: team)
-        }
         .task {
             // Best-effort: a failure just leaves the eye without a number,
             // which is still a truthful "this team is shared".
