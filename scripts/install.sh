@@ -29,18 +29,33 @@ esac
 FIRST_ID="${IDS[0]}"
 
 echo "▶︎ Building…"
-xcodebuild -project "$ROOT/CourtsideHoopStats.xcodeproj" -scheme CourtsideHoopStats \
-  -destination "platform=iOS,id=$FIRST_ID" -configuration Debug \
-  -allowProvisioningUpdates build 2>&1 \
-  | grep -E "error:|warning:|BUILD SUCCEEDED|BUILD FAILED" || true
+# The build must be able to *stop* the install. Previously this piped into grep
+# with `|| true`, which discarded xcodebuild's exit status entirely: a failed
+# build fell through to the install step and pushed the previous .app, which
+# then looked like a shipped fix that hadn't changed anything. Nothing below
+# runs unless the build actually succeeded.
+BUILD_LOG="$(mktemp)"
+trap 'rm -f "$BUILD_LOG"' EXIT
+
+if ! xcodebuild -project "$ROOT/CourtsideHoopStats.xcodeproj" -scheme CourtsideHoopStats \
+     -destination "platform=iOS,id=$FIRST_ID" -configuration Debug \
+     -allowProvisioningUpdates build >"$BUILD_LOG" 2>&1; then
+  echo "✗ BUILD FAILED — nothing installed." >&2
+  echo "  (The previous .app is still on disk; installing it would look like a" >&2
+  echo "   working build that silently changed nothing.)" >&2
+  grep -E "error:" "$BUILD_LOG" | head -20 >&2
+  exit 1
+fi
+
+grep -E "warning:.*\.swift" "$BUILD_LOG" || true
 
 APP=$(find ~/Library/Developer/Xcode/DerivedData/CourtsideHoopStats-*/Build/Products/Debug-iphoneos \
   -maxdepth 1 -name "*.app" | head -1)
-[ -n "$APP" ] || { echo "✗ no .app found — build failed"; exit 1; }
+[ -n "$APP" ] || { echo "✗ no .app found despite a successful build" >&2; exit 1; }
 
-# Guard against installing a stale binary when the build silently failed.
 echo "▶︎ Built: $(stat -f '%Sm' -t '%H:%M:%S' "$APP/CourtsideHoopStats")  (now $(date '+%H:%M:%S'))"
 
+failed=0
 for i in "${!IDS[@]}"; do
   device_id="${IDS[$i]}"
   device_name="${NAMES[$i]}"
@@ -53,5 +68,10 @@ for i in "${!IDS[@]}"; do
     fi
   else
     echo "  FAILED  ${device_name}: install failed (connected and unlocked?)"
+    failed=1
   fi
 done
+
+# Exit non-zero if any device missed the build, so a partial run can't be
+# reported as a success.
+exit "$failed"
