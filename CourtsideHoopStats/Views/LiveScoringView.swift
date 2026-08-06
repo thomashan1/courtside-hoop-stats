@@ -220,8 +220,14 @@ struct LiveScoringView: View {
 
     private var scoreboardTopBar: some View {
         HStack(spacing: 22) {
+            // This bar replaces the system nav bar, so nothing pads these for
+            // us — a toolbar would. Left bare they're ~20pt glyphs, and the
+            // back button in particular is the one control you reach for
+            // one-handed, mid-game, without looking (#56, #93).
             Button { dismiss() } label: {
-                Image(systemName: "chevron.backward").fontWeight(.semibold)
+                Image(systemName: "chevron.backward")
+                    .fontWeight(.semibold)
+                    .minimumTapTarget()
             }
             .accessibilityLabel("Back")
             Spacer()
@@ -231,8 +237,10 @@ struct LiveScoringView: View {
             if store.isShared(store.team.id) {
                 FollowersBadge(team: store.team) { showFollowers = true }
             }
-            Button { showDetails = true } label: { Image(systemName: "info.circle") }
-                .accessibilityLabel("Details")
+            Button { showDetails = true } label: {
+                Image(systemName: "info.circle").minimumTapTarget()
+            }
+            .accessibilityLabel("Details")
         }
         .font(.title3)
         .tint(.white)
@@ -626,6 +634,11 @@ struct ScorePadSheet: View {
 /// from the "Final" divider when re-editing a finished game — the single place
 /// opponent scores are corrected now that the Summary is read-only.
 struct OpponentTotalsSheet: View {
+    /// Both scale: the period column has to fit "Game" for a pickup game, and
+    /// the field has to fit a three-digit total, at any text size.
+    @ScaledMetric private var labelColumn: CGFloat = 44
+    @ScaledMetric private var totalField: CGFloat = 70
+
     @Environment(\.dismiss) private var dismiss
     @Binding var game: Game
     var persist: () -> Void
@@ -655,7 +668,7 @@ struct OpponentTotalsSheet: View {
                         HStack {
                             Text(game.periodFormat.periodLabel(period))
                                 .font(.subheadline).bold()
-                                .frame(width: 44, alignment: .leading)
+                                .frame(width: labelColumn, alignment: .leading)
                             Text("Opponent running total")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -663,7 +676,7 @@ struct OpponentTotalsSheet: View {
                             TextField("0", value: opponentBinding(for: period), format: .number)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
-                                .frame(width: 70)
+                                .frame(width: totalField)
                         }
                     }
                 } footer: {

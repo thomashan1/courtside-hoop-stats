@@ -58,6 +58,7 @@ struct FollowingView: View {
                             ProgressView()
                         } else {
                             Image(systemName: "arrow.clockwise")
+                                .minimumTapTarget()
                         }
                     }
                     .disabled(isRefreshing)

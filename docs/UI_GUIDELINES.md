@@ -28,6 +28,24 @@ Editors that follow this: `PlayerEditSheet`, `EditGameSheet`, `EventEditSheet`,
   `confirmationDialog`. Simple deletes (a player, an empty scheduled game) don't
   need confirmation — swipe is already deliberate.
 
+### Confirming a swipe delete — the crash to avoid
+
+When a swipe delete goes through a `confirmationDialog`, the swipe action
+**must not** use `role: .destructive`. That role makes SwiftUI animate the row
+away the moment it's tapped, assuming the data is about to lose it. Behind a
+confirmation it isn't, so the next update reports the row back and UIKit traps:
+
+```
+Invalid update: invalid number of items in section 0. The number of items
+after the update (4) must be equal to the number before the update (3),
+plus or minus the number inserted or deleted (0 inserted, 0 deleted)
+```
+
+Use a plain `Button` with `.tint(.red)` instead — it still reads as destructive
+and leaves the row alone until the delete actually happens. `.onDelete` is safe
+with a confirmation (the Games list does exactly this); only a hand-rolled
+`role: .destructive` swipe button pre-empts the data.
+
 ## 3. Read vs edit is one-directional
 
 Read-only screens (the **Game Summary**) stay read-only and expose editing only
