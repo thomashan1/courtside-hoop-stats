@@ -33,9 +33,22 @@ final class ScreenshotUITests: XCTestCase {
     func testCaptureScreens() {
         let app = launchSeeded()
 
-        // 1) Games list — upcoming + played sections.
+        // 1) Games list — all three sections, and a win, a loss and a tie so
+        // every result badge appears in one shot.
         XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
         snap(app, "01-games-list")
+
+        // 1a) A game played in halves, which also happens to be the tie. Two
+        // things worth a look that the quarters games can't show: the linescore
+        // collapsing to two rows, and the TIE badge.
+        app.staticTexts["vs Pine Ridge Panthers"].tap()
+        XCTAssertTrue(app.navigationBars["vs Pine Ridge Panthers"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["H1"].waitForExistence(timeout: 5),
+                      "A halves game should label its periods H1/H2, not Q1–Q4")
+        XCTAssertFalse(app.staticTexts["Q1"].exists, "Quarter labels leaked into a halves game")
+        snap(app, "15-game-summary-halves")
+        app.navigationBars["vs Pine Ridge Panthers"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
         // 2) Finished game → Summary (final score, period grid, player stats).
         app.staticTexts["vs Lakeside Lightning"].tap()

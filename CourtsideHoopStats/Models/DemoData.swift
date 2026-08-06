@@ -44,12 +44,31 @@ enum DemoData {
         )
     }
 
-    /// A fixed reference date so screenshots are reproducible.
-    /// Fixed so screenshots are reproducible, but kept in the **current
-    /// season**: game rows drop the year in-season, so a stale reference date
-    /// would both truncate the tip-off time and date the App Store listing.
-    /// Roll this forward when it falls behind the calendar year.
-    private static let refDate = Date(timeIntervalSince1970: 1_783_510_800) // 2026-07-08
+    /// A fixed reference date so screenshots are reproducible — kept in the
+    /// **current season**, since game rows drop the year in-season and a stale
+    /// date would visibly age the App Store listing. Roll it forward when it
+    /// falls behind the calendar year.
+    ///
+    /// Built from calendar components rather than an epoch constant so it lands
+    /// at a plausible **10:00 AM tip-off in whatever timezone the screenshots
+    /// are captured in**. The previous raw timestamp rendered as *"4:40 AM"* on
+    /// every row — a detail nobody notices in one row and nobody misses in six.
+    private static let refDate: Date = {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 7
+        components.day = 8
+        components.hour = 10
+        components.minute = 0
+        return Calendar.current.date(from: components)
+            ?? Date(timeIntervalSince1970: 1_783_510_800)
+    }()
+
+    /// `refDate` shifted by whole days and hours, so each game gets its own
+    /// believable tip-off time instead of all six sharing one.
+    private static func gameDate(daysFromRef days: Int, hour: Double = 0) -> Date {
+        refDate.addingTimeInterval(Double(days) * 86_400 + hour * 3_600)
+    }
 
     // MARK: - Random test game (easter egg: long-press "+" on the Games list)
 
@@ -103,10 +122,20 @@ enum DemoData {
         return game
     }
 
-    /// Games list: one finished game (rich stats, the #8 edit target), one game
-    /// in progress, and one scheduled.
+    /// Games list: every state the list can show, so a screenshot exercises the
+    /// real range rather than one happy path.
+    ///
+    /// Covers all three sections (Playing Now / Coming Up / Final Scores), all
+    /// three results (**win, loss, tie** — so each result badge appears), and
+    /// all three period formats (**quarters, halves, pickup**). Deliberately
+    /// stops at four finished games: a fifth pushes the Final Scores section
+    /// past the bottom of the Games-list screenshot, which is the one place the
+    /// variety is meant to be visible.
     static func makeGames(team: Team) -> [Game] {
         [finishedGame(team: team),
+         lostGame(team: team),
+         tiedHalvesGame(team: team),
+         pickupGame(team: team),
          inProgressGame(team: team),
          scheduledGame()]
     }
@@ -138,7 +167,7 @@ enum DemoData {
             liveEvents.append(GameEvent(playerID: p[index].id, type: type, period: period))
         }
         let live = Game(
-            date: refDate.addingTimeInterval(7 * 86_400),
+            date: gameDate(daysFromRef: 7, hour: 1),      // 11:00 AM
             opponent: "Harbor Sharks",
             league: "Metro Youth League",
             location: "Bayview Middle School",
@@ -181,9 +210,40 @@ enum DemoData {
             hasStarted: true
         )
 
+        // And one they lost, 22–27 — a follower's history shouldn't be all wins
+        // any more than the owner's is.
+        var lossEvents: [GameEvent] = []
+        for (index, type, period): (Int, EventType, Int) in [
+            // Q1 = 6
+            (8, .threePoint, 1), (8, .threePoint, 1),
+            // Q2 = 5
+            (8, .threePoint, 2), (2, .twoPoint, 2),
+            // Q3 = 6
+            (8, .threePoint, 3), (4, .twoPoint, 3), (8, .ftMade, 3),
+            // Q4 = 5
+            (8, .threePoint, 4), (7, .twoPoint, 4),
+        ] {
+            lossEvents.append(GameEvent(playerID: p[index].id, type: type, period: period))
+        }
+        let loss = Game(
+            date: gameDate(daysFromRef: -6, hour: 2),     // noon
+            opponent: "Central Cyclones",
+            league: "Metro Youth League",
+            location: "Central Arena",
+            isHome: false,
+            periodFormat: .quarters,
+            events: lossEvents,
+            periodEndScores: [1: PeriodEndScore(ourRunningTotal: 6, opponentRunningTotal: 9),
+                              2: PeriodEndScore(ourRunningTotal: 11, opponentRunningTotal: 15),
+                              3: PeriodEndScore(ourRunningTotal: 17, opponentRunningTotal: 21),
+                              4: PeriodEndScore(ourRunningTotal: 22, opponentRunningTotal: 27)],
+            isComplete: true,
+            hasStarted: true
+        )
+
         return FollowedTeam(
             team: team,
-            games: [live, past],
+            games: [live, past, loss],
             zoneName: "team-demo",
             ownerName: "_demoOwner_",
             updatedAt: Date().addingTimeInterval(-12)
@@ -244,6 +304,120 @@ enum DemoData {
         )
     }
 
+    // MARK: - Loss (38–44), so the LOSS / "L" badge appears somewhere.
+
+    private static func lostGame(team: Team) -> Game {
+        let p = team.players
+        // Our per-quarter deltas: 9, 11, 8, 10 = 38. Nicholas still leads with
+        // 19 — losing the game is the point, not losing the player narrative.
+        let script: [(Int, EventType, Int)] = [
+            // Q1 = 9
+            (8, .threePoint, 1), (2, .twoPoint, 1), (7, .twoPoint, 1),
+            (8, .ftMade, 1), (8, .ftMade, 1), (3, .ftMissed, 1),
+            // Q2 = 11
+            (8, .threePoint, 2), (4, .twoPoint, 2), (6, .twoPoint, 2),
+            (1, .twoPoint, 2), (8, .ftMade, 2), (0, .ftMade, 2),
+            // Q3 = 8
+            (8, .threePoint, 3), (3, .twoPoint, 3), (7, .twoPoint, 3),
+            (8, .ftMade, 3), (8, .ftMissed, 3),
+            // Q4 = 10
+            (8, .threePoint, 4), (8, .threePoint, 4), (5, .twoPoint, 4), (2, .twoPoint, 4),
+        ]
+        return Game(
+            date: gameDate(daysFromRef: -3, hour: 3),     // 1:00 PM
+            opponent: "Central Cyclones",
+            league: "Metro Youth League",
+            location: "Central Arena",
+            isHome: false,
+            periodFormat: .quarters,
+            events: events(from: script, roster: p),
+            // Opponent running totals: 12, 22, 34, 44 (final 44 > our 38).
+            periodEndScores: [
+                1: PeriodEndScore(ourRunningTotal: 9, opponentRunningTotal: 12),
+                2: PeriodEndScore(ourRunningTotal: 20, opponentRunningTotal: 22),
+                3: PeriodEndScore(ourRunningTotal: 28, opponentRunningTotal: 34),
+                4: PeriodEndScore(ourRunningTotal: 38, opponentRunningTotal: 44),
+            ],
+            notes: "Cold from the line in the third. Rebounding cost us this one.",
+            isComplete: true,
+            hasStarted: true
+        )
+    }
+
+    // MARK: - Tie (30–30) played in halves — covers the TIE badge *and* the
+    // two-period linescore in one game.
+
+    private static func tiedHalvesGame(team: Team) -> Game {
+        let p = team.players
+        // H1 = 16, H2 = 14 → 30.
+        //
+        // Spread deliberately uneven: a couple of players with two baskets, a
+        // couple with none. Giving everyone exactly one bucket balances neatly
+        // but produces a box score of identical "2 / 1 / 0 / 0-0" rows, which
+        // reads as generated data rather than a game.
+        let script: [(Int, EventType, Int)] = [
+            // H1 = 16
+            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1),
+            (4, .twoPoint, 1), (4, .twoPoint, 1), (7, .twoPoint, 1),
+            (8, .ftMade, 1), (8, .ftMade, 1),
+            // H2 = 14
+            (8, .threePoint, 2), (2, .twoPoint, 2), (6, .twoPoint, 2), (6, .twoPoint, 2),
+            (5, .twoPoint, 2), (8, .ftMade, 2), (8, .ftMissed, 2), (8, .ftMade, 2),
+            (2, .ftMade, 2),
+        ]
+        return Game(
+            date: gameDate(daysFromRef: -7, hour: -1),    // 9:00 AM
+            opponent: "Pine Ridge Panthers",
+            league: "Metro Youth League",
+            location: "Valley Fieldhouse",
+            isHome: true,
+            periodFormat: .halves,
+            events: events(from: script, roster: p),
+            periodEndScores: [
+                1: PeriodEndScore(ourRunningTotal: 16, opponentRunningTotal: 15),
+                2: PeriodEndScore(ourRunningTotal: 30, opponentRunningTotal: 30),
+            ],
+            isComplete: true,
+            hasStarted: true
+        )
+    }
+
+    // MARK: - Pickup game (one running period, #35) — no quarter breaks, and
+    // the linescore collapses to a single row.
+
+    private static func pickupGame(team: Team) -> Game {
+        let p = team.players
+        // One period, 24 points. No league or location: pickup games are the
+        // case where every optional field really is left blank.
+        let script: [(Int, EventType, Int)] = [
+            (8, .threePoint, 1), (8, .threePoint, 1), (8, .threePoint, 1),
+            (2, .twoPoint, 1), (4, .twoPoint, 1), (7, .twoPoint, 1),
+            (6, .twoPoint, 1), (5, .twoPoint, 1), (1, .twoPoint, 1),
+            (8, .ftMade, 1), (8, .ftMade, 1), (0, .ftMade, 1), (3, .ftMissed, 1),
+        ]
+        return Game(
+            date: gameDate(daysFromRef: -10, hour: 8),    // 6:00 PM pickup
+            opponent: "Bayview Bobcats",
+            isHome: false,
+            periodFormat: .pickup,
+            events: events(from: script, roster: p),
+            periodEndScores: [1: PeriodEndScore(ourRunningTotal: 24, opponentRunningTotal: 19)],
+            isComplete: true,
+            hasStarted: true
+        )
+    }
+
+    /// Shared script→events expansion. The timestamp only has to be monotonic
+    /// within a game for the Score Log to read in order.
+    private static func events(from script: [(Int, EventType, Int)],
+                               roster: [Player]) -> [GameEvent] {
+        script.enumerated().map { offset, entry in
+            let (index, type, period) = entry
+            return GameEvent(playerID: roster[index].id, type: type, period: period,
+                             timestamp: refDate.addingTimeInterval(Double(offset) * 60))
+        }
+    }
+
     // MARK: - In-progress game (partway through Q2).
 
     private static func inProgressGame(team: Team) -> Game {
@@ -256,7 +430,7 @@ enum DemoData {
             GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
         ]
         return Game(
-            date: refDate.addingTimeInterval(7 * 86_400),
+            date: gameDate(daysFromRef: 7, hour: 1),      // 11:00 AM
             opponent: "Northgate Falcons",
             league: "Metro Youth League",
             location: "Northgate High",
@@ -273,7 +447,7 @@ enum DemoData {
 
     private static func scheduledGame() -> Game {
         Game(
-            date: refDate.addingTimeInterval(10 * 86_400),
+            date: gameDate(daysFromRef: 10, hour: 2.5),   // 12:30 PM
             opponent: "Summit Storm",
             league: "Metro Youth League",
             location: "Summit Rec Center",
