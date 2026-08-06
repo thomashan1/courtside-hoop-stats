@@ -7,7 +7,7 @@ Project context for any Claude Code session. Read this first, then
 > implement it, and close it with "Closes #N" in the PR. Log new ideas and
 > feedback as issues as they come up.
 > Issues are grouped into **milestones** per release, so
-> `gh issue list --milestone v1.1 --state closed` gives the shipped list to turn
+> `gh issue list --milestone vX.Y --state closed` gives the shipped list to turn
 > into App Store release notes.
 
 ## What this is
@@ -23,9 +23,10 @@ tap targets, and error recovery are the top UX priorities.**
 **Live on the App Store:**
 <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
-Releases are grouped by GitHub milestone — `gh issue list --milestone v1.2` for
-what's in flight, `--state closed` for what shipped. **v1.2 is in progress:
-read-only followers (#57).**
+Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` for
+what's in a release. **v1.2 is code-complete: read-only followers and their
+notifications.** It needs the CloudKit schema deployed to Production before
+submission (see `docs/SHARING.md`).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 (`scripts/screenshots.sh`). **iPhone-only** (`TARGETED_DEVICE_FAMILY = 1`); #32
@@ -130,21 +131,22 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 
 ## Next steps
 
-The backlog lives in **GitHub Issues** — see `gh issue list` — and releases are
-grouped by **milestone** (`gh issue list --milestone v1.1 --state closed` gives
-the shipped list to turn into App Store release notes).
+The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
+milestone.
 
-1. **Submit v1.1.** The code is merged and the version is bumped; it just needs
-   an archive + upload. Description, keywords, screenshots and "What's New" all
-   require a new version *with a build attached* — only **promotional text** is
-   editable without review, so metadata edits ride along with this submission.
-2. **#57 — multi-user sharing** (CloudKit `CKShare`; `docs/SHARING.md`). The big
-   one, and the largest architectural change the app would take: persistence
-   moves off `UserDefaults`/JSON. Ship **read-only followers first** (no write
-   conflicts, and there's real demand — two friends asked to follow games), then
-   read-write co-trackers. New entitlements plus a changed privacy declaration
-   is the profile that draws a rejection, so expect more review friction here
-   than a normal update.
+1. **Submit v1.2.** Before uploading, **deploy the CloudKit schema to
+   Production** in the CloudKit Console: Development auto-creates record types,
+   Production does not, so sharing fails on a TestFlight or App Store build
+   otherwise. Description, keywords, screenshots and "What's New" all need a
+   version *with a build attached* — only promotional text is editable without
+   review, so metadata rides along with the submission. Expect more review
+   friction than usual: new iCloud/push entitlements plus a changed privacy
+   declaration is the profile that draws scrutiny.
+2. **#57 — co-trackers.** Read-write participants, so two people can score the
+   same team. Roughly 3–4x the followers work and it *changes* code followers
+   depend on, so it's a v1.3 candidate rather than a v1.2 addition.
+   `docs/SHARING.md` covers what it needs and names a smaller first slice
+   (baton-passing rather than merging).
 3. **#32 — iPad layout.** Deferred; the app is iPhone-only.
 
 ## MVP defaults chosen for the spec's open questions

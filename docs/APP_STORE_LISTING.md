@@ -10,7 +10,7 @@ no undo button). Edit tone to taste before submitting.
 > Only **promotional text** can be edited without a review. App name, subtitle,
 > **description, keywords, screenshots**, "What's New", and the support/privacy
 > URLs all require a **new version with a build attached** — so bundle metadata
-> changes with the v1.1 upload rather than treating them as a separate errand.
+> changes with the next upload rather than treating them as a separate errand.
 
 ---
 
@@ -107,7 +107,7 @@ Write what the user *sees* — "player totals when someone is benched" says
 nothing to them. Regenerate each release from the milestone:
 `gh issue list --milestone vX.Y --state closed`.
 
-**v1.2** (in progress):
+**v1.2:**
 
 > NEW: Let family follow your games.
 >
@@ -215,7 +215,7 @@ No demo account needed (there is no login).
 - [x] App Privacy = *Data Not Collected*; Age rating = 4+
 - [x] v1.0 approved and live
 
-### Per-release checklist (v1.1 onward)
+### Per-release checklist
 
 **Upload:** `Product ▸ Archive` in Xcode, then in the Organizer
 `Distribute App ▸ App Store Connect ▸ Upload`. Organizer re-signs for

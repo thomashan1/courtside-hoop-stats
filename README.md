@@ -73,10 +73,12 @@ anything. The tab appears only once a team has actually been shared with you.
   iOS share sheet (Messages / Mail / AirDrop), exactly like an iCloud Shared
   Album; they get a **read-only** view in a **Following** tab and can't change
   anything. Built on CloudKit, so there's no account to create and no server.
-  Updates land within seconds when you have signal — and in a gym with no
-  reception, they catch up once you're back online.
+  Followers are **notified** when a game starts, at each period end, and at the
+  final score — with a cadence setting, down to off. Updates land within seconds
+  when you have signal, and catch up once you're out of a gym with no reception.
 - **Summary** — final score, cumulative by-period linescore, and per-player stats
-  including **FT%** (e.g. `5/6 (83%)`).
+  including **FT%** (e.g. `5/6 (83%)`). Players who sat the game out are listed
+  **DNP** rather than dropped from the roster.
 - **Box score PDF** — export the summary as a clean one-page PDF and share it
   (AirDrop / Messages / Files). Preview it first, so you see exactly what lands
   in the parents' group chat. Players who didn't play are listed **DNP**,
