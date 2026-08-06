@@ -83,12 +83,16 @@ struct FollowingView: View {
     private func gameList(for followed: FollowedTeam) -> some View {
         List {
             // Status sits at the top, where it's read before the scores rather
-            // than discovered under them.
+            // than discovered under them. Its own section, but with the
+            // grouping chrome stripped out — a one-line note shouldn't get a
+            // full section's worth of padding above and below it.
             Section {
                 statusLine(for: followed)
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
             }
+            .listSectionSpacing(.compact)
 
             // Same section titles as the Games tab.
             ForEach(gameGroups(for: followed), id: \.title) { group in
