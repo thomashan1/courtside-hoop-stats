@@ -52,6 +52,13 @@ struct FollowersView: View {
             }
             .navigationTitle("Followers")
             .navigationBarTitleDisplayMode(.inline)
+            // A sheet inherits the environment of whatever presented it, and
+            // one entry point is the scoreboard bar — which forces white text
+            // for the navy banner. Inheriting that renders this unreadable in
+            // light mode, so the sheet states its own colours rather than
+            // depending on where it was opened from.
+            .foregroundStyle(.primary)
+            .tint(Color.teamAccent)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
