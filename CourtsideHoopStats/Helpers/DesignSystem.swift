@@ -80,14 +80,27 @@ struct StatusBadge: View {
     let text: String
     let color: Color
     var compact = false
+    /// Optional leading glyph. Sized to the label's own font rather than left
+    /// at its natural weight — an SF Symbol next to caption text otherwise
+    /// renders noticeably heavier than the words it belongs to.
+    var systemImage: String?
+
+    private var font: Font { compact ? .caption2 : .caption }
 
     var body: some View {
-        Text(text)
-            .font(compact ? .caption2 : .caption).bold()
-            .foregroundStyle(color)
-            .padding(.horizontal, compact ? 8 : 10)
-            .padding(.vertical, compact ? 3 : 4)
-            .background(Capsule().fill(color.opacity(0.18)))
+        HStack(spacing: 3) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .imageScale(.small)
+                    .font(font)
+            }
+            Text(text)
+        }
+        .font(font.bold())
+        .foregroundStyle(color)
+        .padding(.horizontal, compact ? 8 : 10)
+        .padding(.vertical, compact ? 3 : 4)
+        .background(Capsule().fill(color.opacity(0.18)))
     }
 }
 

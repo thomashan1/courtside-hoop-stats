@@ -177,10 +177,15 @@ struct PeriodBreakdownGrid: View {
     let game: Game
     let ourName: String
 
+    /// The period-label column. Scaled, because the labels aren't all "Q1":
+    /// a pickup game's period is labelled **"Game"**, which is already tight in
+    /// 44pt at default text size and truncates outright at accessibility sizes.
+    @ScaledMetric private var labelColumn: CGFloat = 44
+
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                Text("").frame(width: 44, alignment: .leading)
+                Text("").frame(width: labelColumn, alignment: .leading)
                 Text(ourName).font(.caption).bold().frame(maxWidth: .infinity)
                 Text(game.opponent).font(.caption).bold().frame(maxWidth: .infinity)
             }
@@ -190,7 +195,7 @@ struct PeriodBreakdownGrid: View {
                 HStack {
                     Text(game.periodFormat.periodLabel(row.period))
                         .font(.subheadline).bold()
-                        .frame(width: 44, alignment: .leading)
+                        .frame(width: labelColumn, alignment: .leading)
                     Text("\(row.our)")
                         .monospacedDigit()
                         .frame(maxWidth: .infinity)

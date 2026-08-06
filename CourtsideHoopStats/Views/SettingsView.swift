@@ -13,6 +13,9 @@ struct SettingsView: View {
     @State private var showImporter = false
     @State private var importMessage: String?
 
+    /// A team swiped for deletion, pending confirmation.
+    @State private var pendingTeamDelete: Team?
+
     var body: some View {
         NavigationStack {
             List {
@@ -24,9 +27,11 @@ struct SettingsView: View {
                             store.textSizeIndex = max(0, store.textSizeIndex - 1)
                         } label: {
                             Image(systemName: "textformat.size.smaller")
+                                .minimumTapTarget()
                         }
                         .buttonStyle(.bordered)
                         .disabled(store.textSizeIndex == 0)
+                        .accessibilityLabel("Smaller text")
 
                         Text("Aa")
                             .fontWeight(.semibold)
@@ -36,9 +41,11 @@ struct SettingsView: View {
                             store.textSizeIndex = min(AppTextSize.maxIndex, store.textSizeIndex + 1)
                         } label: {
                             Image(systemName: "textformat.size.larger")
+                                .minimumTapTarget()
                         }
                         .buttonStyle(.bordered)
                         .disabled(store.textSizeIndex == AppTextSize.maxIndex)
+                        .accessibilityLabel("Larger text")
                     }
 
                     if store.textSizeIndex != 0 {
@@ -79,6 +86,9 @@ struct SettingsView: View {
             .sheet(item: $editingTeam) { ref in
                 NavigationStack { TeamDetailView(teamID: ref.id) }
             }
+            .modifier(DeleteTeamConfirmation(team: $pendingTeamDelete) { id in
+                store.deleteTeam(id)
+            })
             .fileImporter(isPresented: $showImporter,
                           allowedContentTypes: [.json]) { result in
                 handleImport(result)
@@ -105,11 +115,19 @@ struct SettingsView: View {
                         onEdit: { editingTeam = TeamRef(id: team.id) },
                         onSelect: { store.setActiveTeam(team.id) })
                 .swipeActions(edge: .trailing) {
-                    if store.teams.count > 1 {
-                        Button(role: .destructive) {
-                            store.deleteTeam(team.id)
-                        } label: { Label("Delete", systemImage: "trash") }
-                    }
+                    // Red by tint, **not** by `role: .destructive`.
+                    //
+                    // A destructive role makes SwiftUI animate the row away as
+                    // soon as it's tapped, on the assumption the data is about
+                    // to lose it. Behind a confirmation it isn't: the next
+                    // update reports the row back and UIKit traps with
+                    // "number of items after the update (4) … before (3) …
+                    // 0 inserted, 0 deleted". The delete goes through the
+                    // dialog, so the swipe must leave the row alone.
+                    Button {
+                        pendingTeamDelete = team
+                    } label: { Label("Delete", systemImage: "trash") }
+                    .tint(.red)
                 }
             }
 
@@ -162,6 +180,37 @@ struct SettingsView: View {
 /// Identifiable wrapper so a team id can drive a `.sheet(item:)`.
 private struct TeamRef: Identifiable { let id: UUID }
 
+/// Confirmation for deleting a team, which takes its roster and every game it
+/// played with it (UI_GUIDELINES §2).
+///
+/// A separate modifier rather than another `.confirmationDialog` inline: this
+/// view's body is already at the type-checker's time limit, and adding one more
+/// builder to the chain tips it over.
+private struct DeleteTeamConfirmation: ViewModifier {
+    @Binding var team: Team?
+    let onDelete: (UUID) -> Void
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(
+            "Delete this team?",
+            isPresented: Binding(get: { team != nil },
+                                 set: { if !$0 { team = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Team & Its Games", role: .destructive) {
+                guard let id = team?.id else { return }
+                team = nil
+                onDelete(id)
+            }
+            Button("Cancel", role: .cancel) { team = nil }
+        } message: {
+            if let team {
+                Text("“\(team.name)”, its roster and every game it played will be deleted. This can't be undone.")
+            }
+        }
+    }
+}
+
 /// One team in Settings: tap the row to make it active, tap ⓘ to edit it.
 ///
 /// The two targets sit in the same row and do very different things, so the ⓘ
@@ -189,15 +238,15 @@ private struct TeamRow: View {
                 // each team in turn to find out which ones other people can
                 // see. That matters more than most settings, because the thing
                 // being shared is a roster of children's names (#93).
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Text("^[\(team.players.count) player](inflect: true)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     if isShared {
-                        Label("Shared", systemImage: "person.2.fill")
-                            .foregroundStyle(Color.teamAccent)
+                        StatusBadge(text: "Shared", color: .teamAccent,
+                                    compact: true, systemImage: "person.2.fill")
                     }
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 12)
