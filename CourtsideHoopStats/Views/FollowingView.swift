@@ -99,9 +99,10 @@ struct FollowingView: View {
                 Section(group.title) {
                     ForEach(group.games) { game in
                         NavigationLink {
-                            FollowedGameView(game: game,
-                                             roster: followed.team.players,
-                                             teamName: followed.team.name)
+                            // Identified rather than passed by value: the view
+                            // re-reads from the store, so a refresh reaches a
+                            // game already open.
+                            FollowedGameView(followedID: followed.id, gameID: game.id)
                         } label: {
                             GameRowView(game: game, ourName: followed.team.name)
                         }
@@ -178,20 +179,71 @@ private struct GameGroup {
 /// swipe-to-delete), and the game is passed as a constant binding, so there's
 /// nothing for an edit to write back to.
 private struct FollowedGameView: View {
-    let game: Game
-    let roster: [Player]
-    let teamName: String
+    @EnvironmentObject var store: AppStore
+    @Environment(\.teamSharingService) private var sharing
+    let followedID: String
+    let gameID: UUID
 
-    private var stats: [PlayerStats] { game.stats(for: roster) }
+    /// How often a live game re-fetches while you're watching it. Long enough
+    /// not to drain a phone sitting on the bleachers, short enough that the
+    /// score doesn't feel stale. Until push notifications land, this is what
+    /// makes watching a game hands-off.
+    private let livePollInterval: Duration = .seconds(20)
+
+    private var followed: FollowedTeam? {
+        store.followedTeams.first { $0.id == followedID }
+    }
+    private var game: Game? {
+        followed?.games.first { $0.id == gameID }
+    }
+    private var roster: [Player] { followed?.team.players ?? [] }
+    private var teamName: String { followed?.team.name ?? "" }
+    private var stats: [PlayerStats] { game?.stats(for: roster) ?? [] }
 
     var body: some View {
+        Group {
+            if let game {
+                content(for: game)
+            } else {
+                // The game vanished from the share — deleted by the owner, or
+                // the team was unshared while this screen was open.
+                ContentUnavailableView {
+                    Label("Game Unavailable", systemImage: "questionmark.circle")
+                } description: {
+                    Text("This game is no longer being shared with you.")
+                }
+            }
+        }
+        .navigationTitle(game.map { $0.opponent.isEmpty ? "Game" : "vs. \($0.opponent)" } ?? "Game")
+        .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await refresh() }
+        .task(id: game?.lifecycle) {
+            // Only poll a game actually in progress; a finished game can't
+            // change, and polling it would be pure battery cost.
+            guard game?.lifecycle == .inProgress else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: livePollInterval)
+                guard !Task.isCancelled else { return }
+                await refresh()
+            }
+        }
+    }
+
+    private func refresh() async {
+        guard sharing.isAvailable else { return }
+        guard let teams = try? await sharing.fetchFollowedTeams() else { return }
+        // Don't wipe a good cache on a transient failure returning nothing.
+        if !teams.isEmpty { store.followedTeams = teams }
+    }
+
+    private func content(for game: Game) -> some View {
         List {
             Section {
                 ScoreboardView(ourName: teamName,
                                ourScore: game.ourScore,
                                opponentName: game.opponent.isEmpty ? "Opponent" : game.opponent,
                                opponentScore: game.opponentScore,
-                               periodLabel: periodLabel)
+                               periodLabel: periodLabel(for: game))
                     .listRowInsets(EdgeInsets())
             }
 
@@ -216,11 +268,9 @@ private struct FollowedGameView: View {
                 }
             }
         }
-        .navigationTitle(game.opponent.isEmpty ? "Game" : "vs. \(game.opponent)")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var periodLabel: String {
+    private func periodLabel(for game: Game) -> String {
         switch game.lifecycle {
         case .complete:   return "Final"
         case .scheduled:  return "Scheduled"
