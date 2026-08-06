@@ -130,6 +130,11 @@ final class CloudKitSharingService: TeamSharingService {
         return try await share(for: team) != nil
     }
 
+    func shareURL(for team: Team) async throws -> URL? {
+        try await requireAccount()
+        return try await share(for: team)?.url
+    }
+
     /// The team's share, if it has one. Nil when the zone, the record, or the
     /// share is missing — all of which mean "not shared".
     private func share(for team: Team) async throws -> CKShare? {

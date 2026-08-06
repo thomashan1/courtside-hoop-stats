@@ -180,6 +180,8 @@ struct TeamDetailView: View {
     @State private var preparedShare: PreparedShare?
     @State private var isPreparingShare = false
     @State private var showingFollowers = false
+    @State private var inviteURL: URL?
+    @State private var didCopyLink = false
 
     private var team: Team? { store.teams.first { $0.id == teamID } }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -232,6 +234,31 @@ struct TeamDetailView: View {
                     } label: {
                         Label("See Who's Following", systemImage: "person.2")
                     }
+
+                    // The system share sheet's own Copy Link hides the URL and
+                    // dismisses on tap. Showing it here means you can read it,
+                    // select part of it, or copy it and carry on — handy for
+                    // sending the invite by a route the sheet doesn't offer.
+                    if let inviteURL {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(inviteURL.absoluteString)
+                                .font(.footnote.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                                .lineLimit(2)
+                                .truncationMode(.middle)
+
+                            Button {
+                                UIPasteboard.general.url = inviteURL
+                                withAnimation { didCopyLink = true }
+                            } label: {
+                                Label(didCopyLink ? "Copied" : "Copy Invite Link",
+                                      systemImage: didCopyLink ? "checkmark" : "doc.on.doc")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                        .padding(.vertical, 2)
+                    }
                 } header: {
                     Text("Share with Followers")
                 } footer: {
@@ -280,6 +307,7 @@ struct TeamDetailView: View {
                 jersey = team.homeJersey ?? .white
             }
         }
+        .task(id: team?.id) { await loadInviteLink() }
         .confirmationDialog("Delete \(team?.name ?? "team")?",
                             isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete Team & Its Games", role: .destructive) {
@@ -322,10 +350,20 @@ struct TeamDetailView: View {
                 preparedShare = try await sharing.prepareShare(for: team, games: games)
                 // From here on, edits to this team publish to its followers.
                 store.markShared(team.id)
+                await loadInviteLink()
             } catch {
                 sharingError = error.localizedDescription
             }
         }
+    }
+
+    /// Fetch the invite link so it can be shown and copied without going
+    /// through the system sheet. Silent on failure — an absent link just hides
+    /// the row, and the sheet remains the primary way to invite.
+    private func loadInviteLink() async {
+        guard let team, sharing.isAvailable else { return }
+        inviteURL = try? await sharing.shareURL(for: team)
+        didCopyLink = false
     }
 
     private func save() {

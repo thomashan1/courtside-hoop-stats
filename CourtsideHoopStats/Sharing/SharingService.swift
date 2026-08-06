@@ -114,6 +114,11 @@ protocol TeamSharingService {
     /// Who a team you own is shared with. Empty when it isn't shared.
     func participants(for team: Team) async throws -> [SharedParticipant]
 
+    /// The invitation link for a shared team, or nil when it isn't shared.
+    /// Same URL the system share sheet sends — useful for handing it over by
+    /// any route the sheet doesn't offer.
+    func shareURL(for team: Team) async throws -> URL?
+
     /// Whether this team currently has a share in CloudKit.
     ///
     /// The authority is CloudKit, not local state: a team can have been shared
@@ -143,6 +148,7 @@ struct NoopSharingService: TeamSharingService {
     func fetchFollowedTeams() async throws -> [FollowedTeam] { [] }
     func participants(for team: Team) async throws -> [SharedParticipant] { [] }
     func isSharing(_ team: Team) async throws -> Bool { false }
+    func shareURL(for team: Team) async throws -> URL? { nil }
 }
 
 // MARK: - Environment injection
