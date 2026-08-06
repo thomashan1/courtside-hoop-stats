@@ -6,6 +6,11 @@
 # Both devices are registered to the same Apple Developer team, so one Debug
 # build is signed for both — build once, install twice.
 #
+# The two phones are rarely home at the same time, so `all` means "whichever
+# are reachable": absent devices are skipped, not treated as failures. The
+# build targets `generic/platform=iOS` rather than a specific device, so it
+# can't fail just because a phone is out of the house.
+#
 # Note: development-signed builds stop launching after ~7 days. Re-run this to
 # refresh them.
 set -euo pipefail
@@ -13,6 +18,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BID="com.thomashan.CourtsideHoopStats"
 TARGET="${1:-all}"
+
+TMPDIR_DEV="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR_DEV"' EXIT
 
 THOMAS="161AC4C8-88E5-5FDA-9DA5-4F062C23D6B5"
 JEAN="AD793CF7-0739-509B-A6D2-33C490448B88"
@@ -24,21 +32,61 @@ case "$TARGET" in
   *) echo "usage: $0 [thomas|jean|all]" >&2; exit 2 ;;
 esac
 
-# Build against whichever device we're installing first; the resulting .app is
-# signed for every device on the profile, so a second build would be wasted.
-FIRST_ID="${IDS[0]}"
+# Which of the requested devices are actually reachable right now. `tunnelState`
+# is the honest signal — `devicectl list devices` shows paired-but-absent phones
+# too, so pairing alone says nothing about whether one is in the house.
+xcrun devicectl list devices --json-output "$TMPDIR_DEV/devices.json" >/dev/null 2>&1 || true
 
-echo "▶︎ Building…"
+reachable() {
+  python3 - "$TMPDIR_DEV/devices.json" "$1" <<'PY'
+import json, sys
+try:
+    devices = json.load(open(sys.argv[1]))["result"]["devices"]
+except Exception:
+    sys.exit(1)
+for d in devices:
+    if d.get("identifier") == sys.argv[2]:
+        sys.exit(0 if d["connectionProperties"].get("tunnelState") == "connected" else 1)
+sys.exit(1)
+PY
+}
+
+PRESENT_IDS=()
+PRESENT_NAMES=()
+ABSENT_NAMES=()
+for i in "${!IDS[@]}"; do
+  if reachable "${IDS[$i]}"; then
+    PRESENT_IDS+=("${IDS[$i]}")
+    PRESENT_NAMES+=("${NAMES[$i]}")
+  else
+    ABSENT_NAMES+=("${NAMES[$i]}")
+  fi
+done
+
+if [ "${#ABSENT_NAMES[@]}" -gt 0 ]; then
+  echo "▶︎ Not reachable, skipping: ${ABSENT_NAMES[*]}"
+fi
+
+if [ "${#PRESENT_IDS[@]}" -eq 0 ]; then
+  echo "✗ None of the requested devices are reachable — nothing to install." >&2
+  echo "  Connect a phone (unlocked, trusted) and re-run." >&2
+  exit 1
+fi
+
+echo "▶︎ Building for: ${PRESENT_NAMES[*]}"
 # The build must be able to *stop* the install. Previously this piped into grep
 # with `|| true`, which discarded xcodebuild's exit status entirely: a failed
 # build fell through to the install step and pushed the previous .app, which
 # then looked like a shipped fix that hadn't changed anything. Nothing below
 # runs unless the build actually succeeded.
-BUILD_LOG="$(mktemp)"
-trap 'rm -f "$BUILD_LOG"' EXIT
+BUILD_LOG="$TMPDIR_DEV/build.log"
 
+# `generic/platform=iOS` rather than a specific device: the .app is signed for
+# every device on the profile anyway, and targeting one by id meant the build
+# failed outright whenever that particular phone was away — taking the other
+# phone's install down with it.
 if ! xcodebuild -project "$ROOT/CourtsideHoopStats.xcodeproj" -scheme CourtsideHoopStats \
-     -destination "platform=iOS,id=$FIRST_ID" -configuration Debug \
+     -destination "generic/platform=iOS" -configuration Debug \
      -allowProvisioningUpdates build >"$BUILD_LOG" 2>&1; then
   echo "✗ BUILD FAILED — nothing installed." >&2
   echo "  (The previous .app is still on disk; installing it would look like a" >&2
@@ -56,9 +104,9 @@ APP=$(find ~/Library/Developer/Xcode/DerivedData/CourtsideHoopStats-*/Build/Prod
 echo "▶︎ Built: $(stat -f '%Sm' -t '%H:%M:%S' "$APP/CourtsideHoopStats")  (now $(date '+%H:%M:%S'))"
 
 failed=0
-for i in "${!IDS[@]}"; do
-  device_id="${IDS[$i]}"
-  device_name="${NAMES[$i]}"
+for i in "${!PRESENT_IDS[@]}"; do
+  device_id="${PRESENT_IDS[$i]}"
+  device_name="${PRESENT_NAMES[$i]}"
   echo "▶︎ Installing to ${device_name}…"
   if xcrun devicectl device install app --device "$device_id" "$APP" >/dev/null 2>&1; then
     if xcrun devicectl device process launch --device "$device_id" "$BID" >/dev/null 2>&1; then
@@ -72,6 +120,7 @@ for i in "${!IDS[@]}"; do
   fi
 done
 
-# Exit non-zero if any device missed the build, so a partial run can't be
-# reported as a success.
+# Non-zero only if a device that *was* reachable failed to take the build. A
+# phone that simply isn't home was already reported as skipped above and isn't
+# an error — but a failure on one that is here must not be reported as success.
 exit "$failed"
