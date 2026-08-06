@@ -32,6 +32,10 @@ struct FollowingView: View {
                 }
             }
             .navigationTitle(selected?.team.name ?? "Following")
+            // Freshness belongs in chrome, not content: it's always visible,
+            // system-styled, and costs no room above the scores. Mail and
+            // Podcasts show last-updated the same way.
+            .navigationSubtitle(selected.map { $0.updatedAt.updatedLabel } ?? "")
             .toolbar {
                 // Only a real choice when there's more than one team to pick.
                 if store.followedTeams.count > 1 {
@@ -82,18 +86,6 @@ struct FollowingView: View {
 
     private func gameList(for followed: FollowedTeam) -> some View {
         List {
-            // Status sits at the top, where it's read before the scores rather
-            // than discovered under them. Its own section, but with the
-            // grouping chrome stripped out — a one-line note shouldn't get a
-            // full section's worth of padding above and below it.
-            Section {
-                statusLine(for: followed)
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
-            }
-            .listSectionSpacing(.compact)
-
             // Same section titles as the Games tab.
             ForEach(gameGroups(for: followed), id: \.title) { group in
                 Section(group.title) {
@@ -116,19 +108,17 @@ struct FollowingView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            // Below the fold, where iOS puts explanatory non-actionable text —
+            // and mirroring the wording the owner sees in FollowersView. No
+            // persistent badge: Apple's own shared Notes and albums convey
+            // read-only by simply having no edit affordances, which this
+            // screen already does.
+            Section {} footer: {
+                Text("You can see this team's games and stats, but can't change them.")
+            }
         }
         .refreshable { await refresh() }
-    }
-
-    /// Honest about staleness rather than implying "live", and italic so it
-    /// reads as a note about the data rather than part of it.
-    private func statusLine(for followed: FollowedTeam) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: "eye")
-            Text("View only · updated \(followed.updatedAt, format: .relative(presentation: .named))")
-        }
-        .font(.footnote.italic())
-        .foregroundStyle(.secondary)
     }
 
     /// A team's games split exactly the way the Games tab splits them.
@@ -223,6 +213,11 @@ private struct FollowedGameView: View {
             }
         }
         .navigationTitle(game.map { $0.opponent.isEmpty ? "Game" : "vs. \($0.opponent)" } ?? "Game")
+        // Only while it's live: watching a game in progress, how far behind the
+        // score might be is the most useful thing on screen. A final can't go
+        // stale, so there the same line would be noise.
+        .navigationSubtitle(game?.lifecycle == .inProgress
+                            ? (followed?.updatedAt.updatedLabel ?? "") : "")
         .navigationBarTitleDisplayMode(.inline)
         .scoreToast($flash)
         .refreshable { await refresh() }
