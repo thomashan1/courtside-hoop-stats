@@ -45,7 +45,7 @@ schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
 | 7. Games | 8. Roster | 9. Teams (Settings) |
 |---|---|---|
-| <img src="docs/img/07-team-games.png" width="240"> | <img src="docs/img/08-team-roster.png" width="240"> | <img src="docs/img/09-team-settings.png" width="240"> |
+| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/09-settings.png" width="240"> |
 
 ### Following a shared team
 
@@ -54,7 +54,7 @@ anything. The tab appears only once a team has actually been shared with you.
 
 | 10. Teams you follow | 11. Watching a game |
 |---|---|
-| <img src="docs/img/10-following-teams.png" width="240"> | <img src="docs/img/11-following-game.png" width="240"> |
+| <img src="docs/img/10-following.png" width="240"> | <img src="docs/img/11-following-game.png" width="240"> |
 
 ## What it does
 
