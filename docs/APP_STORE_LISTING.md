@@ -104,26 +104,40 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 ## 5. What's New
 
 Write what the user *sees* — "player totals when someone is benched" says
-nothing to them. Regenerate each release from the milestone:
-`gh issue list --milestone vX.Y --state closed`.
+nothing to them. **NEW** first, then **FIXES**, a couple of numbered lines each.
+Nobody reads a twenty-line changelog on a phone, so leave out anything they
+wouldn't have noticed.
 
-Keep it short. Lead with the one thing that's new, then a line of smaller
-additions, then only the fixes a user would have *noticed*. Nobody reads a
-twenty-line changelog on a phone.
+One block per submitted version, newest first, with the date it went to App
+Store Connect. This is the one place the project keeps a per-version record:
+what shipped when is the question App Review, a bug report, or a "when did this
+change?" all start from, and it can't be recovered from the current state of the
+code.
 
-**v1.2:**
+### v1.2 — submitted _(fill in on upload)_
 
-> NEW: Let family follow your games.
+> NEW
 >
-> Share a team the way you'd share a photo album — invite family from the share
-> sheet and they get a view-only screen with the live score and player stats.
-> Optional alerts at each quarter and at the final.
+> 1. Share a team so family can follow the live score and player stats from
+>    their own iPhone — with optional alerts each quarter and at the final.
+> 2. Choose your team's colour.
 >
-> Also: choose your team's colour, players who sat out show as DNP, and game
-> dates now show the day of the week.
+> FIXES
 >
-> Fixed: stays readable at large text sizes, more reliable taps, and deleting a
-> team now asks first.
+> 1. Stays readable and usable at the largest text sizes.
+> 2. Buttons in Settings and on the scoring screen no longer miss taps.
+> 3. Deleting a team now asks first.
+
+### v1.1 — submitted 2026-08-04
+
+> NEW
+>
+> 1. Share a one-page PDF box score after the game.
+>
+> FIXES
+>
+> 1. The "+" button on the Games tab no longer misses taps.
+> 2. Player totals now match the final score when someone is benched.
 
 ---
 
