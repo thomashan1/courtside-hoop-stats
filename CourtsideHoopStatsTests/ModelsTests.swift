@@ -510,3 +510,56 @@ struct DidNotPlayTests {
         #expect(Set(listed + dnp) == Set(roster.map(\.id)))
     }
 }
+
+/// Jersey colours: a team is white plus one colour of its own.
+struct JerseyColorTests {
+
+    @Test func whiteIsNotOfferedAsATeamColour() {
+        // A team whose both kits are white can't tell them apart.
+        #expect(!JerseyColor.teamColors.contains(.white))
+        #expect(JerseyColor.teamColors.count == JerseyColor.allCases.count - 1)
+    }
+
+    @Test func homeWhiteMeansAwayWearsTheTeamColour() {
+        var team = Team(name: "Warriors", players: [])
+        team.homeJersey = .white
+        team.teamColor = .red
+
+        #expect(team.jersey(isHome: true) == .white)
+        #expect(team.jersey(isHome: false) == .red)
+    }
+
+    @Test func homeColourMeansAwayWearsWhite() {
+        var team = Team(name: "Warriors", players: [])
+        team.homeJersey = .green
+        team.teamColor = .green
+
+        #expect(team.jersey(isHome: true) == .green)
+        #expect(team.jersey(isHome: false) == .white)
+    }
+
+    /// Teams saved before a colour could be chosen keep the blue they had.
+    @Test func teamsWithoutAColourDefaultToBlue() {
+        let team = Team(name: "Legacy", players: [])
+        #expect(team.kitColor == .blue)
+        #expect(team.jersey(isHome: false) == .blue)
+        #expect(team.jersey(isHome: true) == .white)
+    }
+
+    /// Migration safety: an older team decodes without the new field rather
+    /// than failing, which would wipe every saved team.
+    @Test func teamDecodesWithoutTeamColor() throws {
+        let legacy = """
+        {"id":"\(UUID().uuidString)","name":"Old Team","players":[],"homeJersey":"blue"}
+        """.data(using: .utf8)!
+
+        let team = try JSONDecoder().decode(Team.self, from: legacy)
+        #expect(team.name == "Old Team")
+        #expect(team.homeJersey == .blue)
+        #expect(team.kitColor == .blue)
+    }
+
+    @Test func everyColourHasALabel() {
+        #expect(JerseyColor.allCases.allSatisfy { !$0.label.isEmpty })
+    }
+}

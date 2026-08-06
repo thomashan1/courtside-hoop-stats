@@ -70,8 +70,16 @@ extension JerseyColor {
     /// The swatch fill for this jersey.
     var swatch: Color {
         switch self {
-        case .white: return Color(white: 0.96)
-        case .blue:  return .teamAccent
+        case .white:  return Color(white: 0.96)
+        case .blue:   return .teamAccent
+        case .red:    return Color(red: 0.80, green: 0.16, blue: 0.18)
+        case .green:  return Color(red: 0.11, green: 0.51, blue: 0.30)
+        case .black:  return Color(white: 0.13)
+        case .gold:   return Color(red: 0.85, green: 0.65, blue: 0.13)
+        case .purple: return Color(red: 0.42, green: 0.24, blue: 0.60)
+        case .orange: return Color(red: 0.90, green: 0.45, blue: 0.13)
+        case .maroon: return Color(red: 0.50, green: 0.13, blue: 0.22)
+        case .grey:   return Color(white: 0.55)
         }
     }
 }

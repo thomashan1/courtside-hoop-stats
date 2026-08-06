@@ -47,7 +47,9 @@ when someone has shared a team with you (§3.10).
 ### 3.1 Roster (Roster tab)
 - Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
 - Add / edit (Cancel-Save sheet) / delete / reorder players.
-- **Jerseys:** a single **Home jersey** choice (Blue/White); away is the opposite.
+- **Jerseys:** a team is **white plus one colour of its own** (blue, red, green,
+  black, gold, purple, orange, maroon, grey). Pick the colour, then which of the
+  two is worn at home; away wears the other. Editing lives in Settings ▸ Teams ▸ ⓘ.
 - **Multiple teams** — the active team scopes the Roster and Games tabs; switch/
   manage teams in Settings.
 
@@ -160,7 +162,9 @@ rendering, because `ImageRenderer` emits glyphs rather than annotations.
 
 Key types (see source for full detail):
 
-- `Team { name, players, homeJersey: JerseyColor? }` + `jersey(isHome:)` (away = opposite).
+- `Team { name, players, homeJersey: JerseyColor?, teamColor: JerseyColor? }` +
+  `jersey(isHome:)`. Both optional so older saved teams decode; `kitColor`
+  defaults to blue, which is what they had.
 - `Player { id, name, number }` + `firstName`.
 - `JerseyColor { white, blue }` + `opposite`.
 - `EventType { twoPoint, threePoint, ftMade, ftMissed, foul }` (+ points, labels).

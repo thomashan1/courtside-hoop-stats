@@ -5,18 +5,29 @@ import Foundation
 /// Which jersey the team wears. Optional on `Team` for backward compatibility;
 /// falls back to a home-white / away-blue convention.
 enum JerseyColor: String, Codable, CaseIterable, Identifiable {
-    case white, blue
+    case white, blue, red, green, black, gold, purple, orange, maroon, grey
 
     var id: String { rawValue }
+
     var label: String {
         switch self {
-        case .white: return "White"
-        case .blue:  return "Blue"
+        case .white:  return "White"
+        case .blue:   return "Blue"
+        case .red:    return "Red"
+        case .green:  return "Green"
+        case .black:  return "Black"
+        case .gold:   return "Gold"
+        case .purple: return "Purple"
+        case .orange: return "Orange"
+        case .maroon: return "Maroon"
+        case .grey:   return "Grey"
         }
     }
 
-    /// The team's other jersey — the two are worn opposite at home vs away.
-    var opposite: JerseyColor { self == .white ? .blue : .white }
+    /// Colours a team can pick as its own kit. White is excluded because it's
+    /// the *other* jersey — a team whose both kits are white has no way to tell
+    /// them apart.
+    static var teamColors: [JerseyColor] { allCases.filter { $0 != .white } }
 }
 
 struct Team: Identifiable, Codable {
@@ -26,16 +37,27 @@ struct Team: Identifiable, Codable {
     var id: UUID = UUID()
     var name: String
     var players: [Player]
-    /// The jersey worn at home; away games use its opposite. Optional for
-    /// backward compatibility (defaults to white — see `jersey(isHome:)`).
+    /// The jersey worn at home — either white or the team's own colour. Away
+    /// games wear the other one. Optional for backward compatibility (defaults
+    /// to white — see `jersey(isHome:)`).
     var homeJersey: JerseyColor? = nil
+    /// The team's own kit colour, the one that isn't white. Optional for
+    /// backward compatibility: teams saved before this existed decode as nil
+    /// and keep the blue they had.
+    var teamColor: JerseyColor? = nil
 
     static let empty = Team(name: "My Team", players: [])
 
-    /// The jersey to wear for a game: the home jersey at home, its opposite away.
+    /// The colour of this team's non-white kit.
+    var kitColor: JerseyColor { teamColor ?? .blue }
+
+    /// The jersey to wear for a game. Nearly every team has white plus one
+    /// colour, so this is white at home and the kit colour away, or the reverse
+    /// — rather than a free choice per game.
     func jersey(isHome: Bool) -> JerseyColor {
         let home = homeJersey ?? .white
-        return isHome ? home : home.opposite
+        let away = home == .white ? kitColor : .white
+        return isHome ? home : away
     }
 }
 
