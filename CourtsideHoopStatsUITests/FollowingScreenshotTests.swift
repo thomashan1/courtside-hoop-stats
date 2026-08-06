@@ -42,5 +42,26 @@ final class FollowingScreenshotTests: XCTestCase {
         XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
         liveGame.tap()
         snap("21-following-game")
+
+        // A live game must NOT offer the PDF: the page stamps FINAL and a
+        // win/loss result, which would state an outcome that hasn't happened.
+        XCTAssertFalse(app.buttons["Box Score PDF"].exists,
+                       "A game in progress should not offer a box score")
+
+        // A finished one does (#91) — the tracker isn't the only person who
+        // wants it in the family group chat.
+        app.navigationBars.buttons.firstMatch.tap()
+        let finished = app.staticTexts["vs Valley Vipers"]
+        XCTAssertTrue(finished.waitForExistence(timeout: 10))
+        finished.tap()
+
+        let pdfButton = app.buttons["Box Score PDF"]
+        XCTAssertTrue(pdfButton.waitForExistence(timeout: 10),
+                      "A finished followed game should offer the box score PDF")
+        pdfButton.tap()
+        XCTAssertTrue(app.buttons["Share"].waitForExistence(timeout: 10),
+                      "The PDF preview should offer Share")
+        snap("22-following-pdf")
+        app.buttons["Done"].tap()
     }
 }
