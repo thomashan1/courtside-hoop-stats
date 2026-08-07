@@ -302,11 +302,22 @@ ever exercised the Development schema.
 So there's normally no need to bump that by hand for a TestFlight build;
 `MARKETING_VERSION` still has to change for a new App Store version.
 
-⚠️ **Production CloudKit is a different store.** Teams shared from a
-development build do not exist there — expect to re-share and re-accept. And
-because installing over a development-signed build generally means deleting it
-first, **export each team as a backup before switching** (Settings ▸ Teams ▸ ⓘ ▸
-Export Team); deleting the app takes its local games with it.
+⚠️ **Production CloudKit is a different store**, and switching between them
+splits cleanly along that line. Verified by installing a TestFlight build over a
+development one:
+
+- **Local data survives.** Teams, rosters and games live in `UserDefaults`, and
+  the TestFlight build installs over the development one as an update rather
+  than requiring a delete. Exporting a backup first is still cheap insurance,
+  but it isn't the prerequisite it looks like.
+- **The Following tab empties.** Followed teams are a cache of what CloudKit
+  returns, and Production has none of the shares made from a development build.
+  That's correct behaviour, not data loss — the owner's copy is untouched.
+
+**Both devices have to be on the same environment for sharing to work at all.**
+A TestFlight build and a development build cannot see each other's shares, so
+testing this with a second person means moving *both* to TestFlight, then
+re-sharing and re-accepting there.
 
 **Manual upload**, only if Xcode Cloud is unavailable: set the run destination to
 **Any iOS Device (arm64)** (Archive is greyed out on a simulator), then
