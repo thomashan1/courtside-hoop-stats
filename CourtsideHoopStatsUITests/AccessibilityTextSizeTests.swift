@@ -55,6 +55,18 @@ final class AccessibilityTextSizeTests: XCTestCase {
         XCTAssertTrue(date.exists)
         XCTAssertGreaterThan(kitLabel.frame.minY, date.frame.midY,
                              "Banner should stack at xxxLarge, not share a row")
+        snap(app, "94-owner-banner-xxxlarge")
+
+        // The follower's banner at the same size.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout: 10))
+        app.buttons["Following"].tap()
+        let watched = app.staticTexts["vs Harbor Sharks"]
+        for _ in 0..<8 where !watched.exists { app.swipeUp() }
+        XCTAssertTrue(watched.waitForExistence(timeout: 10))
+        watched.tap()
+        XCTAssertTrue(app.staticTexts["Live now"].waitForExistence(timeout: 10))
+        snap(app, "95-follower-banner-xxxlarge")
     }
 
     /// …and the same banner must *not* stack at the default size, or every
