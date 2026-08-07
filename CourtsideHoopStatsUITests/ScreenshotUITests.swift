@@ -168,7 +168,26 @@ final class ScreenshotUITests: XCTestCase {
         // A team is white plus one colour of its own, so the section covers
         // both the colour and which is worn at home.
         XCTAssertTrue(app.staticTexts["Jerseys"].waitForExistence(timeout: 10))
+
+        // Both kits are drawn, and one of them is marked HOME. The old control
+        // was a segmented "Worn at home: White | Blue" — which said what it did
+        // in words but showed neither jersey, so it wasn't clear what changing
+        // the team colour had actually changed.
+        let whiteKit = app.buttons["White jersey"]
+        let colourKit = app.buttons["Blue jersey"]
+        XCTAssertTrue(whiteKit.waitForExistence(timeout: 5), "White kit should be shown")
+        XCTAssertTrue(colourKit.exists, "The team's colour kit should be shown")
+        XCTAssertEqual(app.staticTexts.matching(identifier: "HOME").count, 1,
+                       "Exactly one kit is the home kit")
+
         snap(app, "09-team-detail")
+
+        // Tapping the other kit moves HOME to it — the whole point of the
+        // control, and the part a static screenshot can't vouch for.
+        whiteKit.tap()
+        XCTAssertEqual(whiteKit.value as? String, "Home",
+                       "Tapping a kit should make it the home kit")
+        colourKit.tap()   // put it back so the captured state is the default
         // Dismiss the editor sheet before moving on (Cancel/Save now).
         app.navigationBars["Eastside Eagles"].buttons["Cancel"].tap()
 

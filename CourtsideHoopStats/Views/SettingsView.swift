@@ -320,22 +320,22 @@ struct TeamDetailView: View {
                     }
                 }
 
-                Picker("Worn at home", selection: $jersey) {
-                    Text("White").tag(JerseyColor.white)
-                    Text(teamColor.label).tag(teamColor)
-                }
-                .pickerStyle(.segmented)
-                // The home choice is White or *the team colour*, so changing
-                // the colour has to carry the choice with it — otherwise the
-                // selection points at a colour no longer on offer and the
-                // segmented control shows nothing selected.
-                .onChange(of: teamColor) { previous, current in
-                    if jersey == previous { jersey = current }
-                }
+                // Both kits, drawn, with the home one marked. The old control
+                // was a segmented "Worn at home: White | Maroon" — abstract
+                // enough that it wasn't clear what it changed, and it never
+                // showed the colour you'd just picked.
+                HomeJerseyPicker(kit: teamColor, home: $jersey)
+                    // The home choice is White or *the team colour*, so changing
+                    // the colour has to carry the choice with it — otherwise the
+                    // selection points at a colour no longer on offer and
+                    // neither kit reads as selected.
+                    .onChange(of: teamColor) { previous, current in
+                        if jersey == previous { jersey = current }
+                    }
             } header: {
                 Text("Jerseys")
             } footer: {
-                Text("Away games wear the other one — \(awayJerseyLabel).")
+                Text("Tap whichever your team wears at home. Away games wear the other one — \(awayJerseyLabel).")
             }
 
             // Live CloudKit sharing (#57) leads: it's the primary way to get a
@@ -445,4 +445,63 @@ struct TeamDetailView: View {
 #Preview {
     SettingsView()
         .environmentObject(AppStore())
+}
+
+
+/// The two kits a team owns, drawn side by side, with the home one selected.
+///
+/// Replaces a segmented "Worn at home: White | Maroon". That control asked the
+/// right question but showed nothing: no jersey, no colour, and — the actual
+/// complaint — no feedback that picking a team colour had changed anything.
+private struct HomeJerseyPicker: View {
+    let kit: JerseyColor
+    @Binding var home: JerseyColor
+
+    var body: some View {
+        HStack(spacing: 12) {
+            tile(.white)
+            tile(kit)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func tile(_ colour: JerseyColor) -> some View {
+        let isHome = home == colour
+        return Button {
+            home = colour
+        } label: {
+            VStack(spacing: 6) {
+                Circle()
+                    .fill(colour.swatch)
+                    // White needs an outline or it's an invisible disc on a
+                    // white row.
+                    .overlay(Circle().strokeBorder(Color(.separator), lineWidth: 0.5))
+                    .frame(width: 44, height: 44)
+
+                Text(colour.label)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+
+                Text(isHome ? "HOME" : "AWAY")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(isHome ? Color.teamAccent : .secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isHome ? Color.teamAccent.opacity(0.10) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(isHome ? Color.teamAccent : Color(.separator),
+                                  lineWidth: isHome ? 2 : 0.5)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(colour.label) jersey")
+        .accessibilityValue(isHome ? "Home" : "Away")
+        .accessibilityAddTraits(isHome ? [.isButton, .isSelected] : .isButton)
+    }
 }
