@@ -100,6 +100,44 @@ struct GameScoreCard: View {
     }
 }
 
+/// A game's header: a band in the team's colour above the shared score card.
+///
+/// One implementation for both sides. The owner's finished game and a
+/// follower's live one show the same thing and must keep looking like it —
+/// they had drifted into two copies of the band before this existed, each with
+/// its own padding, background and contrast handling.
+///
+/// Only the band's **contents** differ, because only they should: a follower
+/// gets "Following" and a live indicator, the owner gets the date and the kit
+/// they wore. Everything structural — the colour, the readable foreground, the
+/// inset onto the card — lives here.
+struct GameHeaderCard<Banner: View>: View {
+    let game: Game
+    /// Whose team this is: the active team, or the followed one.
+    let ourName: String
+    /// The team's kit colour. Drives the band and, via `onSwatch`, its text.
+    let kit: JerseyColor
+    @ViewBuilder var banner: Banner
+
+    var body: some View {
+        VStack(spacing: 0) {
+            banner
+                .foregroundStyle(kit.onSwatch)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(kit.swatch)
+
+            // Scores stay on the solid card: content is legible before it's
+            // decorative, and a score on a coloured field is harder to read
+            // than one on white.
+            GameScoreCard(game: game, ourName: ourName)
+                .padding(.horizontal, 4)
+        }
+        .listRowInsets(EdgeInsets())
+    }
+}
+
 // MARK: - Player stats table
 
 /// A horizontally-scrollable per-player stat table. At large Dynamic Type the

@@ -92,25 +92,18 @@ struct GameSummaryView: View {
 
     private var finalScoreSection: some View {
         Section {
-            VStack(spacing: 0) {
+            GameHeaderCard(game: game, ourName: store.team.name, kit: store.team.kitColor) {
                 summaryBanner
-                // Shared with a follower's read-only detail, so the two screens
-                // can't drift.
-                GameScoreCard(game: game, ourName: store.team.name)
-                    .padding(.horizontal, 4)
             }
-            .listRowInsets(EdgeInsets())
         }
     }
 
-    /// The team-colour band above the final score, matching the one a follower
-    /// gets on the same game.
-    ///
-    /// Carries the date and the kit they wore — neither is on the score card,
-    /// and both were only findable by scrolling to Details at the bottom. The
-    /// team name is deliberately absent: the card directly below leads with it.
+    /// What the band says on the owner's side: the date, and whether it was
+    /// home or away with the kit they wore. Neither is on the score card, and
+    /// both were previously only findable by scrolling to Details at the
+    /// bottom. The team name is deliberately absent — the card directly below
+    /// leads with it.
     private var summaryBanner: some View {
-        let kit = store.team.kitColor
         let worn = store.team.jersey(isHome: game.isHome)
         return HStack(spacing: 8) {
             Image(systemName: "basketball.fill")
@@ -121,22 +114,15 @@ struct GameSummaryView: View {
             Spacer(minLength: 8)
 
             // The kit named, not drawn. A swatch of the jersey they wore
-            // vanishes whenever that's the team colour — which is the common
-            // case — because it's then the same colour as the band behind it.
+            // vanishes whenever that's the team colour — the common case —
+            // because it's then the same colour as the band behind it.
             Text("\(game.isHome ? "HOME" : "AWAY") · \(worn.label.uppercased())")
                 .font(.caption2.weight(.heavy))
                 .opacity(0.9)
         }
-        .foregroundStyle(kit.onSwatch)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(kit.swatch)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(game.date.gameDayCompact), \(game.isHome ? "home" : "away") game, wore \(worn.label)")
     }
-
-    // MARK: - Period-by-period grid (read-only)
 
     private var periodSection: some View {
         Section("By Period") {

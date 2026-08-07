@@ -316,20 +316,15 @@ private struct FollowedGameView: View {
         if !teams.isEmpty { await store.applyFollowedTeams(teams) }
     }
 
-    /// The team-colour band above a followed game's score card.
+    /// What the band says on a follower's side: that they're watching someone
+    /// else's team, and whether it's happening right now. The team name is
+    /// deliberately absent — the card directly below leads with it.
     ///
-    /// Carries the two things a follower opens the app for and the score card
-    /// can't say on its own: whose team this is, and whether it's happening
-    /// right now. The live dot pulses, which is the only motion on the screen —
-    /// enough to read as live without becoming a distraction, and it respects
-    /// Reduce Motion.
+    /// The live dot pulses, which is the only motion on the screen — enough to
+    /// read as live without becoming a distraction, and it respects Reduce
+    /// Motion.
     private func followerBanner(for game: Game) -> some View {
-        let kit = followed?.team.kitColor ?? .blue
-        return HStack(spacing: 8) {
-            // Not the team name — the score card directly below already leads
-            // with it, and saying it twice in adjacent rows reads as a bug.
-            // The colour carries whose team this is; the words carry what this
-            // screen is.
+        HStack(spacing: 8) {
             Image(systemName: "binoculars.fill")
                 .font(.caption)
             Text("Following")
@@ -348,35 +343,16 @@ private struct FollowedGameView: View {
                     .font(.caption2.weight(.heavy))
             }
         }
-        .foregroundStyle(kit.onSwatch)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(kit.swatch)
         .onAppear { livePulse = true }
     }
 
     private func content(for game: Game) -> some View {
         List {
             Section {
-                VStack(spacing: 0) {
-                    // A band in the team's own colour. The owner's screen has
-                    // Live Scoring's navy banner; this had nothing, which read
-                    // as an unfinished version of it rather than a different
-                    // screen. Navy would have been the wrong borrow — it's
-                    // tuned for glancing across a gym while scoring, and a
-                    // follower is doing neither — so this takes the colour the
-                    // team actually picked, which also can't be mistaken for
-                    // the owner's fixed navy.
+                GameHeaderCard(game: game, ourName: teamName,
+                               kit: followed?.team.kitColor ?? .blue) {
                     followerBanner(for: game)
-
-                    // Scores stay on the solid card: content is legible before
-                    // it's decorative, and a score on a coloured field is worse
-                    // to read than one on white.
-                    GameScoreCard(game: game, ourName: teamName)
-                        .padding(.horizontal, 4)
                 }
-                .listRowInsets(EdgeInsets())
             }
 
             // Nothing else on the screen for a game that hasn't tipped off, and
