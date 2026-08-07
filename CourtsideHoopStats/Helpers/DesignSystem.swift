@@ -122,6 +122,19 @@ extension JerseyColor {
         case .grey:   return Color(white: 0.55)
         }
     }
+
+    /// Text/glyph colour that stays readable *on* `swatch`.
+    ///
+    /// Not always white: gold, orange and grey are light enough that white text
+    /// lands under 4.5:1 on them, so those take near-black instead. Picked per
+    /// case rather than computed, because these nine colours are a fixed list
+    /// and a luminance formula would only make the result harder to check.
+    var onSwatch: Color {
+        switch self {
+        case .gold, .orange, .grey, .white: return Color(white: 0.12)
+        case .blue, .red, .green, .black, .purple, .maroon: return .white
+        }
+    }
 }
 
 /// A small "wear this jersey" indicator: a colored swatch + label.

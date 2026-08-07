@@ -189,6 +189,9 @@ private struct FollowedGameView: View {
     /// suppressed by iOS while the app is foregrounded, so without this a
     /// follower staring at the game gets the least feedback of anyone.
     @State private var flash: ScoreFlash?
+    /// Drives the live dot's pulse in the team-colour banner.
+    @State private var livePulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Events already seen, so only genuinely new ones flash. Seeded on first
     /// appearance rather than empty — otherwise opening a game mid-way would
     /// announce a basket from ten minutes ago.
@@ -308,13 +311,67 @@ private struct FollowedGameView: View {
         if !teams.isEmpty { await store.applyFollowedTeams(teams) }
     }
 
+    /// The team-colour band above a followed game's score card.
+    ///
+    /// Carries the two things a follower opens the app for and the score card
+    /// can't say on its own: whose team this is, and whether it's happening
+    /// right now. The live dot pulses, which is the only motion on the screen —
+    /// enough to read as live without becoming a distraction, and it respects
+    /// Reduce Motion.
+    private func followerBanner(for game: Game) -> some View {
+        let kit = followed?.team.kitColor ?? .blue
+        return HStack(spacing: 8) {
+            // Not the team name — the score card directly below already leads
+            // with it, and saying it twice in adjacent rows reads as a bug.
+            // The colour carries whose team this is; the words carry what this
+            // screen is.
+            Image(systemName: "binoculars.fill")
+                .font(.caption)
+            Text("Following")
+                .font(.subheadline.weight(.semibold))
+
+            Spacer(minLength: 8)
+
+            if game.lifecycle == .inProgress {
+                Circle()
+                    .frame(width: 7, height: 7)
+                    .opacity(livePulse ? 0.35 : 1)
+                    .animation(reduceMotion ? nil
+                               : .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
+                               value: livePulse)
+                Text("LIVE")
+                    .font(.caption2.weight(.heavy))
+            }
+        }
+        .foregroundStyle(kit.onSwatch)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(kit.swatch)
+        .onAppear { livePulse = true }
+    }
+
     private func content(for game: Game) -> some View {
         List {
             Section {
-                // The same card the owner's Game Summary leads with, not Live
-                // Scoring's navy banner: that banner is built for glancing at
-                // across a gym while scoring, and a follower is neither.
-                GameScoreCard(game: game, ourName: teamName)
+                VStack(spacing: 0) {
+                    // A band in the team's own colour. The owner's screen has
+                    // Live Scoring's navy banner; this had nothing, which read
+                    // as an unfinished version of it rather than a different
+                    // screen. Navy would have been the wrong borrow — it's
+                    // tuned for glancing across a gym while scoring, and a
+                    // follower is doing neither — so this takes the colour the
+                    // team actually picked, which also can't be mistaken for
+                    // the owner's fixed navy.
+                    followerBanner(for: game)
+
+                    // Scores stay on the solid card: content is legible before
+                    // it's decorative, and a score on a coloured field is worse
+                    // to read than one on white.
+                    GameScoreCard(game: game, ourName: teamName)
+                        .padding(.horizontal, 4)
+                }
+                .listRowInsets(EdgeInsets())
             }
 
             // Nothing else on the screen for a game that hasn't tipped off, and
@@ -332,12 +389,25 @@ private struct FollowedGameView: View {
             // Log first, newest at the top: a follower is watching for the next
             // basket, and shouldn't have to scroll past a box score to find it.
             if !game.events.isEmpty {
-                Section("Score Log") {
+                Section {
                     EventLogView(game: .constant(game),
                                  players: roster,
                                  isEditable: false,
                                  newestFirst: true,
                                  persist: {})
+                } header: {
+                    // Says which way the log runs. It's the opposite of the
+                    // scoring screen, where the log is oldest-first and scrolls
+                    // to follow the game — and a log you can't tell the
+                    // direction of reads as one in the wrong order.
+                    HStack {
+                        Text("Score Log")
+                        Spacer()
+                        Text("Most recent on top")
+                            .font(.caption2)
+                            .textCase(nil)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
