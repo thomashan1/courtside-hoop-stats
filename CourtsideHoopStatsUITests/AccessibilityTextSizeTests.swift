@@ -102,4 +102,68 @@ final class AccessibilityTextSizeTests: XCTestCase {
         XCTAssertTrue(app.buttons["+2"].waitForExistence(timeout: 5),
                       "Point pad should open at large text size")
     }
+
+    /// Both game banners at the largest text size (#109).
+    ///
+    /// The band puts a date (or "Following") against a right-hand label. At
+    /// accessibility sizes the date alone wraps to two lines and shoulders the
+    /// label off the edge — reported from a real phone, where "HOME · PURPLE"
+    /// was pushed against the screen edge with the date wrapping beside it.
+    /// They stack instead now, so this asserts both halves stay on screen.
+    func testGameBannersSurviveLargestTextSize() throws {
+        let app = launchAtLargestText()
+        let screen = app.windows.firstMatch.frame
+
+        // Owner: a finished game. At this text size the Final Scores section
+        // starts below the fold, and a List doesn't realise rows it hasn't
+        // shown — so scroll to it rather than assuming it's there.
+        let played = app.staticTexts["vs Lakeside Lightning"]
+        for _ in 0..<8 where !played.exists { app.swipeUp() }
+        XCTAssertTrue(played.waitForExistence(timeout: 10),
+                      "Couldn't reach a finished game at the largest text size")
+        played.tap()
+
+        let ownerLabel = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'HOME ·' OR label BEGINSWITH 'AWAY ·'")).firstMatch
+        XCTAssertTrue(ownerLabel.waitForExistence(timeout: 10),
+                      "The owner's banner should show home/away and the kit")
+
+        // The real symptom is the two halves fighting over one row, each
+        // wrapping to three lines — not overflowing the screen, which is why
+        // asserting they're on screen catches nothing. At this size they must
+        // be on separate rows.
+        let ownerDate = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS ':' AND label CONTAINS ','")).firstMatch
+        XCTAssertTrue(ownerDate.exists, "The banner should show the game date")
+        XCTAssertGreaterThan(ownerLabel.frame.minY, ownerDate.frame.midY,
+                             "Banner should stack at the largest text size, not share a row")
+
+        snap(app, "91-summary-banner-large-text")
+        app.navigationBars.buttons.firstMatch.tap()
+
+        // Follower: a live game.
+        XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout: 10))
+        app.buttons["Following"].tap()
+        let watched = app.staticTexts["vs Harbor Sharks"]
+        for _ in 0..<8 where !watched.exists { app.swipeUp() }
+        XCTAssertTrue(watched.waitForExistence(timeout: 10))
+        watched.tap()
+
+        let live = app.staticTexts["Live now"]
+        XCTAssertTrue(live.waitForExistence(timeout: 10), "The follower's banner should show LIVE")
+        let followingLabel = app.staticTexts["Following"].firstMatch
+        XCTAssertTrue(followingLabel.exists)
+        XCTAssertGreaterThan(live.frame.minY, followingLabel.frame.midY,
+                             "Banner should stack at the largest text size, not share a row")
+
+        snap(app, "92-follower-banner-large-text")
+    }
+
+    /// Save a full-device screenshot as a kept attachment.
+    private func snap(_ app: XCUIApplication, _ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
 }

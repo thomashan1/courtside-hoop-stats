@@ -93,35 +93,21 @@ struct GameSummaryView: View {
     private var finalScoreSection: some View {
         Section {
             GameHeaderCard(game: game, ourName: store.team.name, kit: store.team.kitColor) {
-                summaryBanner
+                Label {
+                    Text(game.date.gameDayCompact)
+                        .font(.subheadline.weight(.semibold))
+                } icon: {
+                    Image(systemName: "basketball.fill").font(.caption)
+                }
+            } trailing: {
+                // The kit named, not drawn. A swatch of the jersey they wore
+                // vanishes whenever that's the team colour — the common case —
+                // because it's then the same colour as the band behind it.
+                Text("\(game.isHome ? "HOME" : "AWAY") · \(store.team.jersey(isHome: game.isHome).label.uppercased())")
+                    .font(.caption2.weight(.heavy))
+                    .opacity(0.9)
             }
         }
-    }
-
-    /// What the band says on the owner's side: the date, and whether it was
-    /// home or away with the kit they wore. Neither is on the score card, and
-    /// both were previously only findable by scrolling to Details at the
-    /// bottom. The team name is deliberately absent — the card directly below
-    /// leads with it.
-    private var summaryBanner: some View {
-        let worn = store.team.jersey(isHome: game.isHome)
-        return HStack(spacing: 8) {
-            Image(systemName: "basketball.fill")
-                .font(.caption)
-            Text(game.date.gameDayCompact)
-                .font(.subheadline.weight(.semibold))
-
-            Spacer(minLength: 8)
-
-            // The kit named, not drawn. A swatch of the jersey they wore
-            // vanishes whenever that's the team colour — the common case —
-            // because it's then the same colour as the band behind it.
-            Text("\(game.isHome ? "HOME" : "AWAY") · \(worn.label.uppercased())")
-                .font(.caption2.weight(.heavy))
-                .opacity(0.9)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(game.date.gameDayCompact), \(game.isHome ? "home" : "away") game, wore \(worn.label)")
     }
 
     private var periodSection: some View {

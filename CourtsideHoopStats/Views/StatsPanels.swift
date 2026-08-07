@@ -111,22 +111,51 @@ struct GameScoreCard: View {
 /// gets "Following" and a live indicator, the owner gets the date and the kit
 /// they wore. Everything structural — the colour, the readable foreground, the
 /// inset onto the card — lives here.
-struct GameHeaderCard<Banner: View>: View {
+struct GameHeaderCard<Leading: View, Trailing: View>: View {
     let game: Game
     /// Whose team this is: the active team, or the followed one.
     let ourName: String
     /// The team's kit colour. Drives the band and, via `onSwatch`, its text.
     let kit: JerseyColor
-    @ViewBuilder var banner: Banner
+    /// The band's two halves, given separately so the card can re-arrange them.
+    @ViewBuilder var leading: Leading
+    @ViewBuilder var trailing: Trailing
+
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(spacing: 0) {
-            banner
-                .foregroundStyle(kit.onSwatch)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 9)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(kit.swatch)
+            // Side by side when they fit, stacked when they don't. At large
+            // Dynamic Type the date alone wraps to two lines and shoulders the
+            // right-hand label off the edge; `ViewThatFits` gives each half a
+            // full line instead of letting them fight over one.
+            // Side by side normally, stacked at accessibility sizes.
+            //
+            // Switched on the type size rather than left to `ViewThatFits`:
+            // a wrapping `Text` always reports that it fits — it just gets
+            // taller — so `ViewThatFits` never reached the second candidate and
+            // the two halves squeezed into one row, each wrapping to three
+            // lines. `.lineLimit(1)` on the candidate didn't change that
+            // either. This is the condition we actually mean.
+            Group {
+                if typeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) {
+                        leading
+                        trailing
+                    }
+                } else {
+                    HStack(spacing: 8) {
+                        leading
+                        Spacer(minLength: 8)
+                        trailing
+                    }
+                }
+            }
+            .foregroundStyle(kit.onSwatch)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(kit.swatch)
 
             // Scores stay on the solid card: content is legible before it's
             // decorative, and a score on a coloured field is harder to read

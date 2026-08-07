@@ -194,6 +194,9 @@ private struct FollowedGameView: View {
     @State private var flash: ScoreFlash?
     /// Drives the live dot's pulse in the team-colour banner.
     @State private var livePulse = false
+    /// Scales with the label beside it — a fixed 9pt dot next to accessibility-
+    /// sized LIVE text reads as a speck.
+    @ScaledMetric(relativeTo: .caption2) private var liveDotSize: CGFloat = 9
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Events already seen, so only genuinely new ones flash. Seeded on first
     /// appearance rather than empty — otherwise opening a game mid-way would
@@ -316,34 +319,37 @@ private struct FollowedGameView: View {
         if !teams.isEmpty { await store.applyFollowedTeams(teams) }
     }
 
-    /// What the band says on a follower's side: that they're watching someone
-    /// else's team, and whether it's happening right now. The team name is
-    /// deliberately absent — the card directly below leads with it.
+    /// The "live now" marker, in the shape everything else uses: a green dot
+    /// and the word LIVE.
     ///
-    /// The live dot pulses, which is the only motion on the screen — enough to
-    /// read as live without becoming a distraction, and it respects Reduce
-    /// Motion.
-    private func followerBanner(for game: Game) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "binoculars.fill")
-                .font(.caption)
-            Text("Following")
-                .font(.subheadline.weight(.semibold))
-
-            Spacer(minLength: 8)
-
-            if game.lifecycle == .inProgress {
-                Circle()
-                    .frame(width: 7, height: 7)
-                    .opacity(livePulse ? 0.35 : 1)
-                    .animation(reduceMotion ? nil
-                               : .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
-                               value: livePulse)
-                Text("LIVE")
-                    .font(.caption2.weight(.heavy))
-            }
+    /// Two things stop the convention breaking on a team's own colour. The dot
+    /// carries a ring, so it still reads as a dot when the band behind it is
+    /// **green** — one of the nine kit colours, where a bare green dot would
+    /// vanish. And the pair sits on a wash of the band's foreground colour,
+    /// which separates the badge from any kit without needing a colour of its
+    /// own.
+    private var liveBadge: some View {
+        let kit = followed?.team.kitColor ?? .blue
+        return HStack(spacing: 5) {
+            Circle()
+                .fill(Color(.systemGreen))
+                .overlay(Circle().strokeBorder(kit.onSwatch.opacity(0.7), lineWidth: 1))
+                .frame(width: liveDotSize, height: liveDotSize)
+                // Pulsing opacity rather than scale: a dot that changes size
+                // nudges the text beside it.
+                .opacity(livePulse ? 0.35 : 1)
+                .animation(reduceMotion ? nil
+                           : .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
+                           value: livePulse)
+            Text("LIVE")
+                .font(.caption2.weight(.heavy))
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(kit.onSwatch.opacity(0.16)))
         .onAppear { livePulse = true }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Live now")
     }
 
     private func content(for game: Game) -> some View {
@@ -351,7 +357,13 @@ private struct FollowedGameView: View {
             Section {
                 GameHeaderCard(game: game, ourName: teamName,
                                kit: followed?.team.kitColor ?? .blue) {
-                    followerBanner(for: game)
+                    Label {
+                        Text("Following").font(.subheadline.weight(.semibold))
+                    } icon: {
+                        Image(systemName: "binoculars.fill").font(.caption)
+                    }
+                } trailing: {
+                    if game.lifecycle == .inProgress { liveBadge }
                 }
             }
 
