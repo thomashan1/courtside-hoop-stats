@@ -25,6 +25,58 @@ final class AccessibilityTextSizeTests: XCTestCase {
     /// category: the root view applies its own `.dynamicTypeSize` floor, so an
     /// `-UIPreferredContentSizeCategoryName` launch argument never reaches the
     /// views and the test silently exercises the default size instead.
+    private func launch(textSizeIndex: Int) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeedDemo", "-uiTestTextSizeIndex", "\(textSizeIndex)"]
+        app.launch()
+        return app
+    }
+
+    /// The banner at **xxxLarge** — the top of iOS's ordinary text slider,
+    /// reachable without ever turning on Larger Accessibility Sizes.
+    ///
+    /// This is the size the bug was reported at, and the reason the first fix
+    /// missed it: gating the stacked layout on `isAccessibilitySize` skipped
+    /// every user of the normal slider.
+    func testBannerStacksAtLargestNonAccessibilitySize() throws {
+        let app = launch(textSizeIndex: 3)   // AppTextSize.steps[3] == .xxxLarge
+
+        let played = app.staticTexts["vs Lakeside Lightning"]
+        for _ in 0..<8 where !played.exists { app.swipeUp() }
+        XCTAssertTrue(played.waitForExistence(timeout: 10))
+        played.tap()
+
+        let kitLabel = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'HOME ·' OR label BEGINSWITH 'AWAY ·'")).firstMatch
+        XCTAssertTrue(kitLabel.waitForExistence(timeout: 10))
+
+        let date = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'Wed,' OR label BEGINSWITH 'Mon,' OR label CONTAINS ','")).firstMatch
+        XCTAssertTrue(date.exists)
+        XCTAssertGreaterThan(kitLabel.frame.minY, date.frame.midY,
+                             "Banner should stack at xxxLarge, not share a row")
+    }
+
+    /// …and the same banner must *not* stack at the default size, or every
+    /// normal-sized screen pays for the accessibility fix.
+    func testBannerStaysOnOneRowAtDefaultTextSize() throws {
+        let app = launch(textSizeIndex: 0)
+
+        let played = app.staticTexts["vs Lakeside Lightning"]
+        XCTAssertTrue(played.waitForExistence(timeout: 10))
+        played.tap()
+
+        let kitLabel = app.staticTexts.matching(
+            NSPredicate(format: "label BEGINSWITH 'HOME ·' OR label BEGINSWITH 'AWAY ·'")).firstMatch
+        XCTAssertTrue(kitLabel.waitForExistence(timeout: 10))
+
+        let date = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS ','")).firstMatch
+        XCTAssertTrue(date.exists)
+        XCTAssertLessThan(abs(kitLabel.frame.midY - date.frame.midY), 12,
+                          "At the default size both halves should share one row")
+    }
+
     private func launchAtLargestText() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments += [
@@ -132,8 +184,11 @@ final class AccessibilityTextSizeTests: XCTestCase {
         // wrapping to three lines — not overflowing the screen, which is why
         // asserting they're on screen catches nothing. At this size they must
         // be on separate rows.
+        // Matches the day, e.g. "Wed, Jul 8". Deliberately not keyed on a
+        // colon — the banner dropped the tip-off time, which is what used to
+        // put one there.
         let ownerDate = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS ':' AND label CONTAINS ','")).firstMatch
+            NSPredicate(format: "label CONTAINS ','")).firstMatch
         XCTAssertTrue(ownerDate.exists, "The banner should show the game date")
         XCTAssertGreaterThan(ownerLabel.frame.minY, ownerDate.frame.midY,
                              "Banner should stack at the largest text size, not share a row")

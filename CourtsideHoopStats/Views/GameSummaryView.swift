@@ -93,8 +93,13 @@ struct GameSummaryView: View {
     private var finalScoreSection: some View {
         Section {
             GameHeaderCard(game: game, ourName: store.team.name, kit: store.team.kitColor) {
+                // Day only, no tip-off time. `gameDayCompact` reads
+                // "Wed, Jul 8 at 10:00 AM", which wraps to two lines in this
+                // band from xLarge upwards and shoulders the kit label into the
+                // edge. The time is on the same screen under Details, where a
+                // full-width row has room for it.
                 Label {
-                    Text(game.date.gameDayCompact)
+                    Text(game.date.gameDayShort)
                         .font(.subheadline.weight(.semibold))
                 } icon: {
                     Image(systemName: "basketball.fill").font(.caption)
