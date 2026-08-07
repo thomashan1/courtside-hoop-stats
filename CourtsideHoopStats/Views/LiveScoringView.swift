@@ -510,6 +510,10 @@ private struct PlayerCard: View {
     /// scaling text leaves the card looking lopsided at large sizes.
     @ScaledMetric private var badgeSize: CGFloat = 36
 
+    /// The team's colour, for the card's wash — a blue-tinted card behind a
+    /// maroon bubble reads as two different teams on one card.
+    @Environment(\.teamKitColor) private var kit
+
     /// Compact identity for accessibility, e.g. "Ava #4".
     private var idLabel: String {
         let number = player.number.isEmpty ? "" : "#\(player.number)"
@@ -534,7 +538,7 @@ private struct PlayerCard: View {
             .padding(.vertical, 9)
             .padding(.horizontal, 8)
             .background(
-                RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10))
+                RoundedRectangle(cornerRadius: 12).fill(kit.swatch.opacity(0.10))
             )
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }

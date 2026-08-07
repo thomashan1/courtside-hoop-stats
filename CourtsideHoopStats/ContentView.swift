@@ -25,6 +25,10 @@ struct ContentView: View {
         }
         // Apply the in-app Text Size as a Dynamic Type floor for the whole app.
         .dynamicTypeSize(AppTextSize.floor(for: store.textSizeIndex)...)
+        // Jersey bubbles across Games, Roster and Live Scoring belong to the
+        // active team. A follower's screens override this with the team they're
+        // watching, which is someone else's.
+        .environment(\.teamKitColor, store.team.kitColor)
         .task { await discoverFollowedTeams() }
         // CloudKit woke us: re-fetch, which posts any alerts worth posting.
         .onReceive(NotificationCenter.default.publisher(for: .sharedDataChanged)) { note in

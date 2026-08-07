@@ -189,6 +189,7 @@ struct GameSummaryView: View {
         // The full roster — the PDF lists benched players as DNP rows itself.
         pdfURL = GameSummaryPDF.render(game: game,
                                        teamName: store.team.name,
-                                       roster: store.team.players)
+                                       roster: store.team.players,
+                                       kit: store.team.kitColor)
     }
 }
