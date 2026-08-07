@@ -427,9 +427,14 @@ enum GameSummaryPDF {
     /// large roster shrinks slightly instead of spilling onto a second page.
     /// - Parameter roster: the **full** team roster; benched players are listed
     ///   as DNP rows rather than dropped.
+    /// - Parameter kit: the team's colour, for the jersey bubbles. Passed rather
+    ///   than read from the environment: `ImageRenderer` renders outside the
+    ///   view hierarchy, so nothing set by the presenting screen reaches here.
     @MainActor
-    static func render(game: Game, teamName: String, roster: [Player]) -> URL? {
+    static func render(game: Game, teamName: String, roster: [Player],
+                       kit: JerseyColor = .blue) -> URL? {
         let page = GameSummaryPrintout(game: game, teamName: teamName, roster: roster)
+            .environment(\.teamKitColor, kit)
 
         let renderer = ImageRenderer(content: page)
         renderer.proposedSize = ProposedViewSize(width: Page.size.width, height: nil)

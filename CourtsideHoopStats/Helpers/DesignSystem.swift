@@ -206,6 +206,13 @@ struct JerseyBadge: View {
     let number: String
     var size: CGFloat = 40
 
+    /// Whose team this bubble belongs to. Read from the environment rather than
+    /// passed: these appear in nine places across the roster, the deck, the
+    /// score log, the stats table, the toast and the PDF, and threading a
+    /// colour through every intermediate view to reach them would be a lot of
+    /// plumbing for one value that's constant per screen.
+    @Environment(\.teamKitColor) private var kit
+
     /// Multiplier tracking the body text scale (1 at the default size).
     @ScaledMetric(relativeTo: .body) private var typeScale: CGFloat = 1
 
@@ -215,9 +222,9 @@ struct JerseyBadge: View {
         Text(number.isEmpty ? "–" : number)
             .font(.system(size: dimension * 0.42, weight: .bold, design: .rounded))
             .monospacedDigit()
-            .foregroundStyle(.white)
+            .foregroundStyle(kit.onSwatch)
             .frame(width: dimension, height: dimension)
-            .background(Circle().fill(Color.teamAccent))
+            .background(Circle().fill(kit.swatch))
     }
 }
 
@@ -329,5 +336,27 @@ extension Date {
         let elapsed = Date().timeIntervalSince(self)
         guard elapsed >= 60 else { return "Updated Just Now" }
         return "Updated \(formatted(.relative(presentation: .named)))"
+    }
+}
+
+
+// MARK: - Team kit colour
+
+/// The colour of the team whose screen this is, so shared components can pick
+/// it up without every caller passing it down.
+///
+/// Deliberately scoped to **solid fills** — jersey bubbles — where `onSwatch`
+/// guarantees a readable foreground. The scoreboard banner stays fixed navy: a
+/// light kit has to be darkened so far to carry white text that it stops being
+/// the team's colour, and that banner is the one element tuned for reading
+/// across a bright gym.
+private struct TeamKitColorKey: EnvironmentKey {
+    static let defaultValue: JerseyColor = .blue
+}
+
+extension EnvironmentValues {
+    var teamKitColor: JerseyColor {
+        get { self[TeamKitColorKey.self] }
+        set { self[TeamKitColorKey.self] = newValue }
     }
 }

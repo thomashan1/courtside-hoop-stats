@@ -36,6 +36,9 @@ struct FollowingView: View {
             // system-styled, and costs no room above the scores. Mail and
             // Podcasts show last-updated the same way.
             .navigationSubtitle(selected.map { $0.updatedAt.updatedLabel } ?? "")
+            // The team being watched, not the active one — a follower's jersey
+            // bubbles belong to someone else's team.
+            .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
             .toolbar {
                 // Only a real choice when there's more than one team to pick.
                 if store.followedTeams.count > 1 {
@@ -227,6 +230,7 @@ private struct FollowedGameView: View {
         // stale, so there the same line would be noise.
         .navigationSubtitle(game?.lifecycle == .inProgress
                             ? (followed?.updatedAt.updatedLabel ?? "") : "")
+        .environment(\.teamKitColor, followed?.team.kitColor ?? .blue)
         .navigationBarTitleDisplayMode(.inline)
         .scoreToast($flash)
         .toolbar {
@@ -301,7 +305,8 @@ private struct FollowedGameView: View {
             pdfURL = nil
             return
         }
-        pdfURL = GameSummaryPDF.render(game: game, teamName: teamName, roster: roster)
+        pdfURL = GameSummaryPDF.render(game: game, teamName: teamName, roster: roster,
+                                       kit: followed?.team.kitColor ?? .blue)
     }
 
     private func refresh() async {
