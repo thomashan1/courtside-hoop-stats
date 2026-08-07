@@ -332,12 +332,25 @@ private struct FollowedGameView: View {
             // Log first, newest at the top: a follower is watching for the next
             // basket, and shouldn't have to scroll past a box score to find it.
             if !game.events.isEmpty {
-                Section("Score Log") {
+                Section {
                     EventLogView(game: .constant(game),
                                  players: roster,
                                  isEditable: false,
                                  newestFirst: true,
                                  persist: {})
+                } header: {
+                    // Says which way the log runs. It's the opposite of the
+                    // scoring screen, where the log is oldest-first and scrolls
+                    // to follow the game — and a log you can't tell the
+                    // direction of reads as one in the wrong order.
+                    HStack {
+                        Text("Score Log")
+                        Spacer()
+                        Text("Newest first")
+                            .font(.caption2)
+                            .textCase(nil)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
