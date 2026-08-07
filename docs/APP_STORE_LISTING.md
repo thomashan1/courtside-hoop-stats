@@ -279,6 +279,40 @@ No demo account needed (there is no login).
 - [x] App Privacy = *Data Not Collected*; Age rating = 4+
 - [x] v1.0 approved and live
 
+### TestFlight (beta, before a public release)
+
+Worth doing for anything touching sharing: **a TestFlight build runs against
+Production CloudKit**, and a development-signed build never does. The
+environment is chosen by the signature, so everything tested from Xcode has only
+ever exercised the Development schema.
+
+1. **Merge first.** Archive from `main`, not a branch — what you upload should be
+   what's committed.
+2. **Bump `CURRENT_PROJECT_VERSION`** if this build number was already uploaded.
+   `MARKETING_VERSION` only changes for a new version.
+3. In Xcode set the run destination to **Any iOS Device (arm64)** — Archive is
+   greyed out while a simulator is selected.
+4. **Product ▸ Archive**, then in the Organizer: **Distribute App ▸ App Store
+   Connect ▸ Upload**. The Organizer re-signs for distribution, so a
+   development-signed archive is fine.
+5. Wait **~15–30 minutes** for processing before the build is selectable.
+6. App Store Connect ▸ **TestFlight**: add testers.
+   - **Internal** (up to 100, must be users on the App Store Connect account):
+     available immediately, **no Beta App Review**.
+   - **External**: needs Beta App Review first, usually about a day.
+7. Testers install through the **TestFlight app**.
+
+⚠️ **Production CloudKit is a different store.** Teams shared from a
+development build do not exist there — expect to re-share and re-accept. And
+because installing over a development-signed build generally means deleting it
+first, **export each team as a backup before switching** (Settings ▸ Teams ▸ ⓘ ▸
+Export Team); deleting the app takes its local games with it.
+
+If an **Xcode Cloud** workflow is configured, it replaces steps 3–4: it archives
+on push and can distribute to TestFlight automatically. The workflow lives in
+App Store Connect, not this repo — there's no `ci_scripts/` here — so check what
+it's set to build from before relying on it.
+
 ### Per-release checklist
 
 **Upload:** `Product ▸ Archive` in Xcode, then in the Organizer
