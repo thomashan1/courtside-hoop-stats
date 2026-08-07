@@ -158,12 +158,7 @@ struct LiveScoringView: View {
             .padding(.horizontal)
             .padding(.top, 12)
             .padding(.bottom, 2)
-            .background(
-                UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22)
-                    .fill(Color(.systemBackground))
-                    .ignoresSafeArea(edges: [.horizontal, .bottom])
-                    .shadow(color: .black.opacity(0.18), radius: 10, y: -3)
-            )
+            .background(deckSurface)
         }
         .background(
             GeometryReader { proxy in
@@ -214,6 +209,38 @@ struct LiveScoringView: View {
                 onBench: { bench(player.id) }
             )
         }
+    }
+
+    /// The raised surface the player deck sits on.
+    ///
+    /// `secondarySystemGroupedBackground`, not `systemBackground`: in **dark
+    /// mode** the latter is pure black — and so is the grouped background
+    /// behind the Score Log, so the deck and the log were both `(0,0,0)` with
+    /// nothing between them. The shadow didn't help either, being black on
+    /// black. This colour is elevated against the grouped background in both
+    /// appearances.
+    ///
+    /// The hairline does the rest of the work. A shadow only reads when the
+    /// surface below is lighter than it; a stroke reads regardless, which
+    /// matters here because this edge is the boundary between the part of the
+    /// screen you read and the part you tap.
+    private var deckSurface: some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22)
+        return shape
+            .fill(Color(.secondarySystemGroupedBackground))
+            // A team-colour rule along the top edge. The elevation alone is a
+            // couple of RGB points in dark mode — technically separate, easy to
+            // miss. A coloured edge names the boundary outright, and this is the
+            // one line on the screen that says "below here, taps score".
+            .overlay(alignment: .top) {
+                shape
+                    .strokeBorder(store.team.kitColor.swatch, lineWidth: 3)
+                    .mask(alignment: .top) {
+                        Rectangle().frame(height: 26)
+                    }
+            }
+            .ignoresSafeArea(edges: [.horizontal, .bottom])
+            .shadow(color: .black.opacity(0.18), radius: 10, y: -3)
     }
 
     // MARK: - Scoreboard top bar (replaces the system nav bar)
