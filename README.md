@@ -43,18 +43,18 @@ schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
 ### Your team
 
-| 7. Games | 8. Roster | 9. Teams (Settings) |
-|---|---|---|
-| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/09-settings.png" width="240"> |
+| 7. Games | 8. Roster | 9. Teams (Settings) | 10. Jerseys |
+|---|---|---|---|
+| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/09-settings.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
 
 ### Following a shared team
 
 What a **follower** sees — the same scores and stats, with no way to change
 anything. The tab appears only once a team has actually been shared with you.
 
-| 10. Teams you follow | 11. Watching a game |
+| 11. Teams you follow | 12. Watching a game |
 |---|---|
-| <img src="docs/img/10-following.png" width="240"> | <img src="docs/img/11-following-game.png" width="240"> |
+| <img src="docs/img/11-following.png" width="240"> | <img src="docs/img/12-following-game.png" width="240"> |
 
 ## What it does
 

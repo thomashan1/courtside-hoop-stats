@@ -124,14 +124,15 @@ the image is used and the directory sorts the way the README reads.
 | `07-games.png` | Your team | `01-games-list` |
 | `08-roster.png` | Your team | `04-roster` |
 | `09-settings.png` | Your team | `08-settings-teams` — the Teams list in Settings |
-| `10-following.png` | Following a shared team | `20-following-list` — teams shared with you |
-| `11-following-game.png` | Following a shared team | `21-following-game` — a follower watching a game |
+| `10-team-jerseys.png` | Your team | `09-team-detail` — the team editor, where the colour and home kit are picked |
+| `11-following.png` | Following a shared team | `20-following-list` — teams shared with you |
+| `12-following-game.png` | Following a shared team | `21-following-game` — a follower watching a game |
 | `app-icon.png` | header | not a screenshot; unnumbered |
 
 Renumber the whole set if the README order changes — the prefix *is* the order,
-so a stale number is worse than none. Keep it **under 12 images**: past that the
+so a stale number is worse than none. Keep it to **12 images**: past that the
 README reads as a catalogue rather than a tour, and only the critical screens
-earn a slot.
+earn a slot. The set is at that limit now, so a new screen has to displace one.
 
 The live-scoring image is deliberately the **bench** capture (`11-bench`) — the
 live scoring screen with the "Not playing" strip open, so one image shows both.
