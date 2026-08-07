@@ -311,6 +311,18 @@ extension Date {
     /// time into an ellipsis — the time matters more on a schedule than a year
     /// you can already infer. Past seasons keep the year, so an old game is
     /// never ambiguous.
+    /// Day without the time: `Tue, Aug 4` — and the year for a past season.
+    /// For tight horizontal space, like the game banner, where the tip-off time
+    /// is what pushes the line to wrap.
+    var gameDayShort: String {
+        let calendar = Calendar.current
+        let sameYear = calendar.component(.year, from: self)
+            == calendar.component(.year, from: Date())
+        return sameYear
+            ? formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+            : gameDay
+    }
+
     var gameDayCompact: String {
         let calendar = Calendar.current
         let sameYear = calendar.component(.year, from: self)
