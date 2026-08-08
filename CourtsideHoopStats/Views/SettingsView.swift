@@ -74,6 +74,22 @@ struct SettingsView: View {
                         Text(store.alertCadence.detail)
                     }
                 }
+
+                // Which build this is, and — the part that actually causes
+                // confusion — which CloudKit database it talks to. Two phones
+                // on different routes can't see each other's shares (#111).
+                // A plain row, not `Section { EmptyView() } footer:` — an
+                // empty section renders nothing at all, footer included.
+                Section {
+                    Text(BuildInfo.summary)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .textSelection(.enabled)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .accessibilityLabel("App version \(BuildInfo.version), build \(BuildInfo.build), installed from \(BuildInfo.channel.label), using \(BuildInfo.channel.cloudKitEnvironment) iCloud")
+                }
             }
             .navigationTitle("Settings")
             .alert("New Team", isPresented: $showAddTeam) {
