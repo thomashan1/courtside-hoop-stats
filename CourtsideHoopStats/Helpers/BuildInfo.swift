@@ -84,14 +84,20 @@ enum BuildInfo {
     /// direct install from another. A distribution build shows its **build
     /// number**, which is how Xcode Cloud and App Store Connect identify it.
     static var summary: String {
-        let trailing: String
         switch channel {
         case .xcode:
-            trailing = builtStamp.map { "\(channel.label) \($0)" } ?? channel.label
-        case .testFlight, .appStore:
-            trailing = "\(channel.label) (\(build))"
+            let stamp = builtStamp.map { " \($0)" } ?? ""
+            return "v\(version) · \(channel.cloudKitEnvironment) · Xcode\(stamp)"
+        case .testFlight:
+            return "v\(version) · \(channel.cloudKitEnvironment) · TestFlight (\(build))"
+        case .appStore:
+            // No CloudKit label on the shipping build. It's the answer to a
+            // question only a tester asks, and there's nothing to disambiguate
+            // — an App Store build is always Production. To a parent on the
+            // sideline it's jargon in the one line that should just say which
+            // version they have.
+            return "v\(version) (\(build))"
         }
-        return "v\(version) · \(channel.cloudKitEnvironment) · \(trailing)"
     }
 }
 
@@ -109,8 +115,10 @@ extension BuildInfo {
             trailing = builtAt.map {
                 "built by Xcode \($0.formatted(.dateTime.month(.wide).day().hour().minute()))"
             } ?? "built by Xcode"
-        case .testFlight, .appStore:
-            trailing = "installed from \(channel.label), build \(build)"
+        case .testFlight:
+            trailing = "installed from TestFlight, build \(build)"
+        case .appStore:
+            return "App version \(version), build \(build)"
         }
         return "App version \(version), \(channel.cloudKitEnvironment), \(trailing)"
     }
