@@ -41,6 +41,13 @@ final class FollowingScreenshotTests: XCTestCase {
         let liveGame = app.staticTexts["vs Harbor Sharks"]
         XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
         liveGame.tap()
+
+        // Wait for the detail screen before capturing. Snapping straight after
+        // the tap is a race, and it lost: the committed screenshot was the
+        // Following *list* for a while, because nothing here failed when the
+        // push hadn't landed yet.
+        XCTAssertTrue(app.staticTexts["Most recent on top"].waitForExistence(timeout: 10),
+                      "Should be on the followed game's detail before capturing")
         snap("21-following-game")
 
         // A live game must NOT offer the PDF: the page stamps FINAL and a

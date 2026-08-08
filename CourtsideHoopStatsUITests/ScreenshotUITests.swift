@@ -181,7 +181,6 @@ final class ScreenshotUITests: XCTestCase {
                        "Exactly one kit is the home kit")
 
         snap(app, "09-team-detail")
-
         // Tapping the other kit moves HOME to it — the whole point of the
         // control, and the part a static screenshot can't vouch for.
         whiteKit.tap()
