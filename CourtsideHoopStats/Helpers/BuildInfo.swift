@@ -26,7 +26,7 @@ enum BuildInfo {
         /// development-signed build gets Development, and any distribution
         /// build — TestFlight or App Store — gets Production.
         var cloudKitEnvironment: String {
-            self == .xcode ? "Development" : "Production"
+            self == .xcode ? "CloudKit Dev" : "CloudKit Prod"
         }
     }
 
@@ -77,7 +77,7 @@ enum BuildInfo {
     ///   its own sequence, and that number is how a build is identified in App
     ///   Store Connect.
     static var summary: String {
-        let tail = "\(channel.label) · \(channel.cloudKitEnvironment) iCloud"
+        let tail = "\(channel.label) · \(channel.cloudKitEnvironment)"
         switch channel {
         case .xcode:
             let stamp = builtAt.map {

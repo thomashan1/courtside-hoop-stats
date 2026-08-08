@@ -26,14 +26,14 @@ final class BuildInfoTests: XCTestCase {
         // Matched on the accessibility label, which is spelled out for
         // VoiceOver rather than the interpunct-separated line on screen.
         let footer = app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS[c] 'version' AND label CONTAINS 'iCloud'")).firstMatch
+            NSPredicate(format: "label CONTAINS[c] 'version' AND label CONTAINS 'CloudKit'")).firstMatch
 
         app.swipeUp()
         XCTAssertTrue(footer.waitForExistence(timeout: 5),
                       "Settings should name the build and its iCloud environment")
 
         let label = footer.label
-        XCTAssertTrue(label.contains("Development") || label.contains("Production"),
+        XCTAssertTrue(label.contains("CloudKit Dev") || label.contains("CloudKit Prod"),
                       "Footer should name the CloudKit environment, got: \(label)")
 
         // A directly-installed build must show *when* it was built. Its build
