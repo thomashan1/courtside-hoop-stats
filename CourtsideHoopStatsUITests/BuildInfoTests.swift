@@ -36,6 +36,16 @@ final class BuildInfoTests: XCTestCase {
         XCTAssertTrue(label.contains("CloudKit Dev") || label.contains("CloudKit Prod"),
                       "Footer should name the CloudKit environment, got: \(label)")
 
+        // Spoken, not the compact on-screen line: "v1.2" is read as
+        // "vee one point two" and the interpuncts as nothing.
+        XCTAssertTrue(label.hasPrefix("App version "),
+                      "VoiceOver should get the spelled-out form, got: \(label)")
+
+        // Deliberately not asserting the height: the frame reported here is the
+        // list row's (a constant 52pt), not the text's, so it says nothing
+        // about whether the line wrapped. Wrapping is checked by eye against
+        // the attached screenshot.
+
         // A directly-installed build must show *when* it was built. Its build
         // number is a static value in the project file that nothing
         // increments, so it can't tell one direct install from another — which

@@ -82,8 +82,14 @@ struct SettingsView: View {
                 // empty section renders nothing at all, footer included.
                 Section {
                     Text(BuildInfo.summary)
-                        .font(.footnote)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
+                        // One line: it's a diagnostic to read back or paste,
+                        // and it reads as one fact. Shrinks rather than wraps
+                        // if the text size grows — it's reference text, not
+                        // something anyone reads through.
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .textSelection(.enabled)
                         .listRowBackground(Color.clear)

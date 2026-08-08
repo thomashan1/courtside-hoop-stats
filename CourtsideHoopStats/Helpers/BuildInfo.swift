@@ -64,42 +64,54 @@ enum BuildInfo {
         return attributes[.modificationDate] as? Date
     }
 
-    /// One line for the bottom of Settings.
+    /// A short time stamp, e.g. `Aug 7, 8:15 PM`.
+    private static var builtStamp: String? {
+        builtAt.map {
+            $0.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+        }
+    }
+
+    /// One line for the bottom of Settings, short enough to stay on one line
+    /// at ordinary text sizes:
     ///
-    /// Which identifier is shown depends on how the app got here, because they
-    /// answer different questions:
+    ///     v1.2 · CloudKit Dev · Xcode Aug 7, 8:15 PM
+    ///     v1.2 · CloudKit Prod · TestFlight (76)
     ///
-    /// - **Xcode** → the **build time**. `CURRENT_PROJECT_VERSION` is a static
-    ///   number in the project file; nothing increments it, so every direct
-    ///   install reports the same build and it can't tell today's from
-    ///   yesterday's. The link time changes with every build.
-    /// - **TestFlight / App Store** → the **build number**. Xcode Cloud assigns
-    ///   its own sequence, and that number is how a build is identified in App
-    ///   Store Connect.
+    /// Which identifier trails the channel depends on how the app got here,
+    /// because they answer different questions. A directly-installed build
+    /// shows **when it was built** — `CURRENT_PROJECT_VERSION` is a static
+    /// number in the project file that nothing increments, so it can't tell one
+    /// direct install from another. A distribution build shows its **build
+    /// number**, which is how Xcode Cloud and App Store Connect identify it.
     static var summary: String {
-        let tail = "\(channel.label) · \(channel.cloudKitEnvironment)"
+        let trailing: String
         switch channel {
         case .xcode:
-            let stamp = builtAt.map {
-                $0.formatted(.dateTime.month(.abbreviated).day().hour().minute())
-            } ?? "build \(build)"
-            return "Version \(version) · \(tail) · built \(stamp)"
+            trailing = builtStamp.map { "\(channel.label) \($0)" } ?? channel.label
         case .testFlight, .appStore:
-            return "Version \(version) (\(build)) · \(tail)"
+            trailing = "\(channel.label) (\(build))"
         }
+        return "v\(version) · \(channel.cloudKitEnvironment) · \(trailing)"
     }
 }
 
 extension BuildInfo {
-    /// The same facts, spelled out for VoiceOver — the on-screen line separates
-    /// them with interpuncts, which read poorly.
+    /// The same facts spelled out for VoiceOver.
     ///
-    /// Derived from `summary` rather than written out again: the two had
-    /// drifted the moment the build time was added, and the version line is
-    /// exactly the thing that must not lie.
+    /// Built from the fields rather than rewritten from `summary`: the compact
+    /// line starts "v1.2", which a screen reader says as "vee one point two",
+    /// and the interpuncts read as nothing at all. Derived by string
+    /// replacement they also drifted the moment the format changed.
     static var accessibilitySummary: String {
-        summary
-            .replacingOccurrences(of: " · ", with: ", ")
-            .replacingOccurrences(of: "Version ", with: "App version ")
+        let trailing: String
+        switch channel {
+        case .xcode:
+            trailing = builtAt.map {
+                "built by Xcode \($0.formatted(.dateTime.month(.wide).day().hour().minute()))"
+            } ?? "built by Xcode"
+        case .testFlight, .appStore:
+            trailing = "installed from \(channel.label), build \(build)"
+        }
+        return "App version \(version), \(channel.cloudKitEnvironment), \(trailing)"
     }
 }
