@@ -36,6 +36,15 @@ final class BuildInfoTests: XCTestCase {
         XCTAssertTrue(label.contains("Development") || label.contains("Production"),
                       "Footer should name the CloudKit environment, got: \(label)")
 
+        // A directly-installed build must show *when* it was built. Its build
+        // number is a static value in the project file that nothing
+        // increments, so it can't tell one direct install from another — which
+        // is the whole question this footer exists to answer.
+        if label.contains("Xcode") {
+            XCTAssertTrue(label.contains("built"),
+                          "An Xcode build should show its build time, got: \(label)")
+        }
+
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "17-version-footer"
         attachment.lifetime = .keepAlways

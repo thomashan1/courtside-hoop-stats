@@ -52,9 +52,54 @@ enum BuildInfo {
         #endif
     }
 
-    /// One line for the bottom of Settings, e.g.
-    /// `Version 1.2 (19) · Xcode · Development iCloud`.
+    /// When this binary was linked — which for a directly-installed build is
+    /// when it was built and pushed to the phone.
+    ///
+    /// Read from the executable rather than baked in at compile time, so it
+    /// needs no build phase and can't drift from the binary it describes.
+    static var builtAt: Date? {
+        guard let path = Bundle.main.executablePath,
+              let attributes = try? FileManager.default.attributesOfItem(atPath: path)
+        else { return nil }
+        return attributes[.modificationDate] as? Date
+    }
+
+    /// One line for the bottom of Settings.
+    ///
+    /// Which identifier is shown depends on how the app got here, because they
+    /// answer different questions:
+    ///
+    /// - **Xcode** → the **build time**. `CURRENT_PROJECT_VERSION` is a static
+    ///   number in the project file; nothing increments it, so every direct
+    ///   install reports the same build and it can't tell today's from
+    ///   yesterday's. The link time changes with every build.
+    /// - **TestFlight / App Store** → the **build number**. Xcode Cloud assigns
+    ///   its own sequence, and that number is how a build is identified in App
+    ///   Store Connect.
     static var summary: String {
-        "Version \(version) (\(build)) · \(channel.label) · \(channel.cloudKitEnvironment) iCloud"
+        let tail = "\(channel.label) · \(channel.cloudKitEnvironment) iCloud"
+        switch channel {
+        case .xcode:
+            let stamp = builtAt.map {
+                $0.formatted(.dateTime.month(.abbreviated).day().hour().minute())
+            } ?? "build \(build)"
+            return "Version \(version) · \(tail) · built \(stamp)"
+        case .testFlight, .appStore:
+            return "Version \(version) (\(build)) · \(tail)"
+        }
+    }
+}
+
+extension BuildInfo {
+    /// The same facts, spelled out for VoiceOver — the on-screen line separates
+    /// them with interpuncts, which read poorly.
+    ///
+    /// Derived from `summary` rather than written out again: the two had
+    /// drifted the moment the build time was added, and the version line is
+    /// exactly the thing that must not lie.
+    static var accessibilitySummary: String {
+        summary
+            .replacingOccurrences(of: " · ", with: ", ")
+            .replacingOccurrences(of: "Version ", with: "App version ")
     }
 }

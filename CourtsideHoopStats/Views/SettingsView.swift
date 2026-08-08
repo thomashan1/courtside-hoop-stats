@@ -88,7 +88,7 @@ struct SettingsView: View {
                         .textSelection(.enabled)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
-                        .accessibilityLabel("App version \(BuildInfo.version), build \(BuildInfo.build), installed from \(BuildInfo.channel.label), using \(BuildInfo.channel.cloudKitEnvironment) iCloud")
+                        .accessibilityLabel(BuildInfo.accessibilitySummary)
                 }
             }
             .navigationTitle("Settings")
