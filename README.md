@@ -22,39 +22,39 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 The main event: two taps per basket, big targets, and the score log always
 visible. Absent players are benched so the grid stays uncluttered.
 
-| 1. Live scoring | 2. Tap a player, then the basket | 3. Fix anything, anytime |
-|---|---|---|
-| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> | <img src="docs/img/03-game-score-log.png" width="240"> |
+| Live scoring | Tap a player, then the basket |
+|---|---|
+| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> |
 
 ### Starting a game
 
 Every field is optional — **Start Game** to score right now, or **Save** to
 schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
-| 4. New game |
+| New game |
 |---|
-| <img src="docs/img/04-new-game.png" width="240"> |
+| <img src="docs/img/09-new-game.png" width="240"> |
 
 ### After the game
 
-| 5. Game summary | 6. Box score PDF — preview, then send to the group chat |
+| Game summary | Box score PDF — preview, then send to the group chat |
 |---|---|
-| <img src="docs/img/05-game-summary.png" width="240"> | <img src="docs/img/06-game-summary-share-pdf.png" width="240"> |
+| <img src="docs/img/04-game-summary.png" width="240"> | <img src="docs/img/05-game-summary-share-pdf.png" width="240"> |
 
 ### Your team
 
-| 7. Games | 8. Roster | 9. Teams (Settings) | 10. Jerseys |
-|---|---|---|---|
-| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/09-settings.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
+| Games | Roster | Jerseys |
+|---|---|---|
+| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
 
 ### Following a shared team
 
 What a **follower** sees — the same scores and stats, with no way to change
 anything. The tab appears only once a team has actually been shared with you.
 
-| 11. Teams you follow | 12. Watching a game |
+| Teams you follow | Watching a game |
 |---|---|
-| <img src="docs/img/11-following.png" width="240"> | <img src="docs/img/12-following-game.png" width="240"> |
+| <img src="docs/img/06-following.png" width="240"> | <img src="docs/img/03-following-game.png" width="240"> |
 
 ## What it does
 

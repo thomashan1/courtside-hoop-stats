@@ -109,30 +109,38 @@ the README renders (at `width="240"`, so resolution costs nothing visually).
 Don't keep a second, smaller README-only set; that drift is what caused the
 confusion above.
 
-Each file is `NN-<section>-<screen>.png`: **`NN` is README display order** and
-`<section>` is the README heading it sits under, so a filename alone says where
-the image is used and the directory sorts the way the README reads.
+Each file is `NN-<screen>.png`, and **`NN` is App Store upload order** — so
+`ls docs/img` gives the sequence to work top-to-bottom in App Store Connect,
+where the order is manual and easy to get wrong.
 
-| File | README section | Captured from |
+It is *not* README order. The README places images by explicit `<img src>` and
+groups them by theme, so it doesn't care what the numbers say; only the
+directory listing sorts, and it's the upload that needs sorting. That's why the
+README captions carry no numbers — a caption reading "3." under the *sixth*
+image in the page is worse than no number at all.
+
+| # | File | Captured from |
 |---|---|---|
-| `01-game-live-scoring.png` | Scoring courtside | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
-| `02-game-score-pad.png` | Scoring courtside | `12-score-pad` |
-| `03-game-score-log.png` | Scoring courtside | `07-score-log-editor` |
-| `04-new-game.png` | Starting a game | `13-new-game` |
-| `05-game-summary.png` | After the game | `02-game-summary` |
-| `06-game-summary-share-pdf.png` | After the game | `14-box-score-pdf` |
-| `07-games.png` | Your team | `01-games-list` |
-| `08-roster.png` | Your team | `04-roster` |
-| `09-settings.png` | Your team | `08-settings-teams` — the Teams list in Settings |
-| `10-team-jerseys.png` | Your team | `09-team-detail` — the team editor, where the colour and home kit are picked |
-| `11-following.png` | Following a shared team | `20-following-list` — teams shared with you |
-| `12-following-game.png` | Following a shared team | `21-following-game` — a follower watching a game |
-| `app-icon.png` | header | not a screenshot; unnumbered |
+| 1 | `01-game-live-scoring.png` | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
+| 2 | `02-game-score-pad.png` | `12-score-pad` |
+| 3 | `03-following-game.png` | `21-following-game` — a follower watching a game |
+| 4 | `04-game-summary.png` | `02-game-summary` |
+| 5 | `05-game-summary-share-pdf.png` | `14-box-score-pdf` |
+| 6 | `06-following.png` | `20-following-list` — teams shared with you |
+| 7 | `07-games.png` | `01-games-list` |
+| 8 | `08-roster.png` | `04-roster` |
+| 9 | `09-new-game.png` | `13-new-game` |
+| 10 | `10-team-jerseys.png` | `09-team-detail` — the team editor, where the colour and home kit are picked |
+| — | `app-icon.png` | not a screenshot; unnumbered |
 
-Renumber the whole set if the README order changes — the prefix *is* the order,
-so a stale number is worse than none. Keep it to **12 images**: past that the
-README reads as a catalogue rather than a tour, and only the critical screens
-earn a slot. The set is at that limit now, so a new screen has to displace one.
+**Ten, because App Store Connect takes ten.** That's a hard cap, not a taste
+call — so a new screen has to displace one, and the reasoning for the current
+ten (and for the two that were cut) lives in
+[`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) §9, next to the upload it serves.
+
+If the order changes, renumber the whole set and update the README's `src`
+paths in the same commit — a stale number is worse than none, and a renumber
+that skips the README leaves it rendering files that no longer exist.
 
 The live-scoring image is deliberately the **bench** capture (`11-bench`) — the
 live scoring screen with the "Not playing" strip open, so one image shows both.

@@ -231,29 +231,32 @@ upload to be rejected.
 
 ### Which ten, and in what order
 
-`docs/img/` holds **twelve**; App Store Connect takes **ten**. So two are cut,
-and the order is not the file order — the first three are what show in search
-results, before anyone taps through to the listing.
+App Store Connect takes **ten**, and `docs/img/` holds exactly ten, **numbered
+in upload order**. Work down the directory listing and the sequence is right —
+there's nothing to reorder by hand, which is the step that goes wrong.
+
+The first three matter most: they're what shows in search results, before anyone
+taps through to the listing.
 
 | # | File | Why it's here |
 |---|---|---|
 | 1 | `01-game-live-scoring` | The hero: scoring mid-game, bench strip open. The one screen the app exists for. |
 | 2 | `02-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
-| 3 | `12-following-game` | This release's headline. Family watching a live score from their own phone. |
-| 4 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
-| 5 | `06-game-summary-share-pdf` | The box score people actually send around. |
-| 6 | `11-following` | Sets up #3 — what a follower's list looks like. |
+| 3 | `03-following-game` | This release's headline. Family watching a live score from their own phone. |
+| 4 | `04-game-summary` | The payoff: final score, linescore, per-player stats. |
+| 5 | `05-game-summary-share-pdf` | The box score people actually send around. |
+| 6 | `06-following` | Sets up #3 — what a follower's list looks like. |
 | 7 | `07-games` | Season shape: past, live and scheduled together. |
 | 8 | `08-roster` | Answers "how much setup is this?" |
-| 9 | `04-new-game` | Every field optional; Start Game gets straight to scoring. |
+| 9 | `09-new-game` | Every field optional; Start Game gets straight to scoring. |
 | 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
 
-**Cut:** `03-game-score-log` (the reorder editor — a dozen near-identical rows;
-it's a maintenance screen, not a reason to download) and `09-settings` (a
-settings list; #3 and #6 sell sharing far better than a "Shared" pill does).
+**Two screens were dropped to reach ten**, and it's worth recording why so they
+don't get added back: the score-log **reorder editor** (a dozen near-identical
+rows — a maintenance screen, not a reason to download) and the **Settings teams
+list** (#3 and #6 sell sharing far better than a "Shared" pill does).
 
-Both stay in the directory for the README, which isn't limited to ten and gains
-from showing them.
+Since the cap is hard, adding a screen means choosing one of these ten to lose.
 
 App preview video: optional, still skipped.
 
