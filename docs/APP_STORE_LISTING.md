@@ -40,12 +40,16 @@ screenshots or iPad review required.**
 > New: share your team so family can follow the game live from their own iPhone
 > — view-only, no account to make, just like a shared photo album.
 
-_(158 chars.)_
+_(142 chars.)_
 
-Editable anytime without review, so it should lead with whatever is newest.
+Editable anytime without review, so it should lead with whatever is newest —
+and it can be swapped the day something changes, without waiting on a
+submission. It sits above the description on the App Store page, so it's read
+first and often instead.
+
 The evergreen fallback, for when nothing is new: "Tap a player, tap the basket —
 the team score adds itself. The fastest way to keep youth-basketball stats from
-the sideline, one-handed."
+the sideline, one-handed." (136 chars.)
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
