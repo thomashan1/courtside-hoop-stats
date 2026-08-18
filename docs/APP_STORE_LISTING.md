@@ -229,9 +229,31 @@ size and **numbered in display order** — see [`SCREENSHOTS.md`](SCREENSHOTS.md
 Don't regenerate a second, smaller README-only set; that drift is what caused an
 upload to be rejected.
 
-Upload hero-first: `01-game-live-scoring` → `02-game-score-pad` →
-`06-game-summary-share-pdf` → `10-following` (the headline for this
-release) → `05-game-summary` → `07-games`.
+### Which ten, and in what order
+
+`docs/img/` holds **twelve**; App Store Connect takes **ten**. So two are cut,
+and the order is not the file order — the first three are what show in search
+results, before anyone taps through to the listing.
+
+| # | File | Why it's here |
+|---|---|---|
+| 1 | `01-game-live-scoring` | The hero: scoring mid-game, bench strip open. The one screen the app exists for. |
+| 2 | `02-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
+| 3 | `12-following-game` | This release's headline. Family watching a live score from their own phone. |
+| 4 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
+| 5 | `06-game-summary-share-pdf` | The box score people actually send around. |
+| 6 | `11-following` | Sets up #3 — what a follower's list looks like. |
+| 7 | `07-games` | Season shape: past, live and scheduled together. |
+| 8 | `08-roster` | Answers "how much setup is this?" |
+| 9 | `04-new-game` | Every field optional; Start Game gets straight to scoring. |
+| 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
+
+**Cut:** `03-game-score-log` (the reorder editor — a dozen near-identical rows;
+it's a maintenance screen, not a reason to download) and `09-settings` (a
+settings list; #3 and #6 sell sharing far better than a "Shared" pill does).
+
+Both stay in the directory for the README, which isn't limited to ten and gains
+from showing them.
 
 App preview video: optional, still skipped.
 
