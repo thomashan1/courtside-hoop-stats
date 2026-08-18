@@ -24,9 +24,10 @@ tap targets, and error recovery are the top UX priorities.**
 <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
 Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` for
-what's in a release. **v1.2 is code-complete: read-only followers and their
-notifications.** It needs the CloudKit schema deployed to Production before
-submission (see `docs/SHARING.md`).
+what's in a release. **v1.2 is code-complete and ready to submit: read-only
+followers and their notifications.** The CloudKit schema is deployed to
+Production and verified — two TestFlight builds shared and followed each other's
+teams end to end (see `docs/SHARING.md`).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 (`scripts/screenshots.sh`). **iPhone-only** (`TARGETED_DEVICE_FAMILY = 1`); #32
@@ -142,14 +143,13 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-1. **Submit v1.2.** Before uploading, **deploy the CloudKit schema to
-   Production** in the CloudKit Console: Development auto-creates record types,
-   Production does not, so sharing fails on a TestFlight or App Store build
-   otherwise. Description, keywords, screenshots and "What's New" all need a
-   version *with a build attached* — only promotional text is editable without
-   review, so metadata rides along with the submission. Expect more review
-   friction than usual: new iCloud/push entitlements plus a changed privacy
-   declaration is the profile that draws scrutiny.
+1. **Submit v1.2.** Everything in the repo is ready; what's left is App Store
+   Connect work — see `docs/APP_STORE_LISTING.md` §11. Description, keywords,
+   screenshots and "What's New" all need a version *with a build attached* —
+   only promotional text is editable without review, so metadata rides along
+   with the submission. Expect more review friction than usual: new iCloud/push
+   entitlements plus a changed privacy declaration is the profile that draws
+   scrutiny.
 2. **#57 — co-trackers.** Read-write participants, so two people can score the
    same team. Roughly 3–4x the followers work and it *changes* code followers
    depend on, so it's a v1.3 candidate rather than a v1.2 addition.

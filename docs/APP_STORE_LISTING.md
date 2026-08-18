@@ -114,7 +114,7 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
-### v1.2 — submitted _(fill in on upload)_
+### v1.2 — submitted 2026-08-17
 
 > NEW
 >
@@ -146,7 +146,7 @@ adds iCloud and push entitlements.
 Keep it while the sharing feature is still new to users; it can drop out of a
 later release's notes once it isn't news.
 
-### v1.1 — submitted 2026-08-04 (confirmed in App Store Connect)
+### v1.1 — submitted 2026-08-04, approved 2026-08-17
 
 > NEW
 >
@@ -277,7 +277,13 @@ No demo account needed (there is no login).
 - [x] Signing **Team** set to the paid team + Distribution profile
 - [x] Host the Privacy Policy at a public HTTPS URL
 - [x] App Privacy = *Data Not Collected*; Age rating = 4+
-- [x] v1.0 approved and live
+- [x] v1.0 approved and live; v1.1 approved and live
+- [x] **CloudKit schema deployed to Production** — a one-time promotion in the
+  CloudKit Console, because Development auto-creates record types and Production
+  doesn't. Verified rather than assumed: two TestFlight builds (which run against
+  Production) shared a team and followed each other's games end to end. Only
+  needs redoing when the schema changes — a new record type or field is
+  Development-only until it's promoted again.
 
 ### TestFlight (beta, before a public release)
 
@@ -327,15 +333,22 @@ duplicate build number is rejected.
 
 ### Per-release checklist
 
-**Upload:** `Product ▸ Archive` in Xcode, then in the Organizer
-`Distribute App ▸ App Store Connect ▸ Upload`. Organizer re-signs for
-distribution, so a development-signed archive is fine. Processing takes roughly
-15–30 minutes before the build is selectable in App Store Connect.
+**Getting a build up:** there's nothing to upload. Xcode Cloud already built
+every push to `main`, so the release build is one of the ones sitting in
+TestFlight — pick it in App Store Connect rather than archiving a new one. That
+also means the build you ship is the build that was beta-tested, which is the
+point. `Product ▸ Archive` is the fallback above, for when Xcode Cloud isn't
+available.
 
 - [ ] Bump **`MARKETING_VERSION`** (not just the build) — a closed train rejects
   uploads with `ITMS-90186` / `ITMS-90062`
-- [ ] `Product ▸ Archive`, upload via Organizer (or `xcodebuild -exportArchive`)
+- [ ] Confirm the Xcode Cloud build for the release commit reached TestFlight
 - [ ] Re-capture store screenshots if the UI changed
-  (`scripts/screenshots.sh "iPhone 14 Plus"`)
-- [ ] Update **What's New** from the milestone's closed issues
+  (`scripts/screenshots.sh "iPhone 14 Plus"`, then refresh `docs/img/` per the
+  mapping table in `SCREENSHOTS.md`)
+- [ ] Update **What's New** from the milestone's closed issues, and date the
+  section
+- [ ] Close out the milestone: every shipped issue actually *on* it, anything
+  deferred moved to the next one. It's the release-notes source, so an
+  unmilestoned issue is invisible here.
 - [ ] One real game of use (validate with the actual courtside user) before release
