@@ -381,3 +381,9 @@ available.
   deferred moved to the next one. It's the release-notes source, so an
   unmilestoned issue is invisible here.
 - [ ] One real game of use (validate with the actual courtside user) before release
+- [ ] **After approval, bump `MARKETING_VERSION` again — to the *next* version —
+  before the next push to `main`.** Approval closes that train, and Xcode Cloud
+  builds every push, so the first commit after approval bounces with
+  `ITMS-90186` / `ITMS-90062` even if it only touched Markdown. TestFlight
+  delivery stays broken until the version moves. (Hit for real on v1.2: a
+  docs-only commit produced a failed build 84.)
