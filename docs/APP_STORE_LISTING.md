@@ -118,7 +118,7 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
-### v1.2 — submitted 2026-08-17
+### v1.2 — submitted 2026-08-17, approved and released 2026-08-18
 
 > NEW
 >
