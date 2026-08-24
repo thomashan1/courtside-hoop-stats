@@ -580,14 +580,9 @@ private struct PlayerCard: View {
 /// records it and dismisses; benching is a secondary action here.
 struct ScorePadSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let player: Player
     let onScore: (EventType) -> Void
     let onBench: () -> Void
-
-    /// Brief 🎉 after a three. Kept to the score pad — a moment, not a label —
-    /// so it stays a reward instead of becoming wallpaper in the score log.
-    @State private var celebrating = false
 
     var body: some View {
         VStack(spacing: 18) {
@@ -621,33 +616,12 @@ struct ScorePadSheet: View {
         .padding()
         .presentationDetents([.height(360)])
         .presentationDragIndicator(.visible)
-        .overlay {
-            if celebrating {
-                Text("🎉")
-                    .font(.system(size: 130))
-                    .shadow(radius: 12)
-                    .transition(.scale(scale: 0.4).combined(with: .opacity))
-                    .allowsHitTesting(false)
-            }
-        }
-        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: celebrating)
     }
 
     private func padButton(_ label: String, _ type: EventType) -> some View {
         Button {
-            // Record first: the celebration must never be able to lose a point
-            // if the sheet is dismissed early.
             onScore(type)
-
-            guard type == .threePoint, !reduceMotion else {
-                dismiss()
-                return
-            }
-            celebrating = true
-            Task {
-                try? await Task.sleep(for: .milliseconds(500))
-                dismiss()
-            }
+            dismiss()
         } label: {
             Text(label)
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
