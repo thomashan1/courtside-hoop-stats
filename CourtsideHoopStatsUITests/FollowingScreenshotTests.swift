@@ -39,6 +39,30 @@ final class FollowingScreenshotTests: XCTestCase {
                       "Following should say who shared the team")
         snap("20-following-list")
 
+        // Two followed teams (#120, #121) — the "Switch Team" menu should
+        // offer both, and picking the other one should update the title and
+        // "Shared by" line. Regression coverage for #121: the previous
+        // ToolbarTitleMenu-based switcher never actually opened.
+        let switchTeam = app.buttons["Switch Team"]
+        XCTAssertTrue(switchTeam.waitForExistence(timeout: 10))
+        switchTeam.tap()
+        let otherTeam = app.buttons["Eastside Eagles"]
+        XCTAssertTrue(otherTeam.waitForExistence(timeout: 10),
+                      "The switcher should list the other followed team")
+        snap("20a-following-switcher")
+        otherTeam.tap()
+        XCTAssertTrue(app.navigationBars["Eastside Eagles"].waitForExistence(timeout: 10),
+                      "Picking the other team should switch to it")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Shared by Mike'"))
+                        .firstMatch.waitForExistence(timeout: 10),
+                      "Switching teams should update who shared it")
+        snap("20b-following-second-team")
+
+        // Back to the first team for the rest of the flow below.
+        app.buttons["Switch Team"].tap()
+        app.buttons["Swish Warriors"].tap()
+        XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10))
+
         // Open the live game a follower would most likely be here to watch.
         // Rows reuse GameRowView, so the label matches the Games tab's wording.
         let liveGame = app.staticTexts["vs Harbor Sharks"]
