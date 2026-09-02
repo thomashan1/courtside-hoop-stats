@@ -2,9 +2,12 @@ import SwiftUI
 
 /// What a follower sees: a team shared with them, read-only (#57).
 ///
-/// Shows **one team at a time**, titled like the Games tab, with a title menu to
-/// switch when you follow more than one — most people follow exactly one, and
-/// that case shouldn't look like managing a collection (#69).
+/// Shows **one team at a time**, titled like the Games tab, with a toolbar menu
+/// to switch when you follow more than one — most people follow exactly one,
+/// and that case shouldn't look like managing a collection (#69). A plain
+/// `Menu` in a `ToolbarItem`, not `ToolbarTitleMenu`: the latter never opened
+/// when tapped (#121), for reasons that didn't isolate to anything in this
+/// file's own code.
 ///
 /// Game rows reuse `GameRowView`, the same component the Games tab uses, so the
 /// two lists can't drift apart in font, badge, or layout. Only the destination
@@ -42,16 +45,27 @@ struct FollowingView: View {
             .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
             .toolbar {
                 // Only a real choice when there's more than one team to pick.
+                // A plain toolbar `Menu` (#121) rather than `ToolbarTitleMenu`:
+                // the latter never actually opened when tapped — confirmed with
+                // hardcoded content, no subtitle, no sibling toolbar item, and
+                // unconditionally rendered, so the fix is a menu we control and
+                // can verify opens, not a further attempt at the built-in one.
                 if store.followedTeams.count > 1 {
-                    ToolbarTitleMenu {
-                        ForEach(store.followedTeams) { followed in
-                            Button {
-                                selectedTeamID = followed.id
-                            } label: {
-                                Label(followed.team.name,
-                                      systemImage: followed.id == selected?.id ? "checkmark" : "")
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            ForEach(store.followedTeams) { followed in
+                                Button {
+                                    selectedTeamID = followed.id
+                                } label: {
+                                    Label(followed.team.name,
+                                          systemImage: followed.id == selected?.id ? "checkmark" : "")
+                                }
                             }
+                        } label: {
+                            Image(systemName: "person.2.fill")
+                                .minimumTapTarget()
                         }
+                        .accessibilityLabel("Switch Team")
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
