@@ -19,6 +19,10 @@ struct FollowingView: View {
     @State private var selectedTeamID: String?
     @State private var isRefreshing = false
     @State private var refreshError: String?
+    /// Set while confirming an unfollow (#123); presenting the dialog.
+    @State private var pendingUnfollow: FollowedTeam?
+    @State private var isUnfollowing = false
+    @State private var unfollowError: String?
 
     /// The team being viewed — the chosen one, or the first followed team.
     private var selected: FollowedTeam? {
@@ -82,6 +86,24 @@ struct FollowingView: View {
                     .disabled(isRefreshing)
                     .accessibilityLabel("Refresh")
                 }
+                // Only once there's a team to act on — matches every other
+                // toolbar item here in reading `selected`, not `store` directly.
+                if let selected {
+                    ToolbarItem(placement: .primaryAction) {
+                        Menu {
+                            Button(role: .destructive) {
+                                pendingUnfollow = selected
+                            } label: {
+                                Label("Unfollow \(selected.team.name)",
+                                      systemImage: "binoculars.fill")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                                .minimumTapTarget()
+                        }
+                        .accessibilityLabel("More")
+                    }
+                }
             }
             .alert("Couldn't Refresh", isPresented: Binding(
                 get: { refreshError != nil },
@@ -91,7 +113,47 @@ struct FollowingView: View {
             } message: {
                 Text(refreshError ?? "")
             }
+            .confirmationDialog(
+                "Unfollow \"\(pendingUnfollow?.team.name ?? "")\"?",
+                isPresented: Binding(get: { pendingUnfollow != nil },
+                                     set: { if !$0 { pendingUnfollow = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Unfollow", role: .destructive) {
+                    if let team = pendingUnfollow {
+                        Task { await unfollow(team) }
+                    }
+                    pendingUnfollow = nil
+                }
+                Button("Cancel", role: .cancel) { pendingUnfollow = nil }
+            } message: {
+                Text("You'll stop seeing their games and stats. They can invite you again anytime.")
+            }
+            .alert("Couldn't Unfollow", isPresented: Binding(
+                get: { unfollowError != nil },
+                set: { if !$0 { unfollowError = nil } }
+            )) {
+                Button("OK", role: .cancel) { unfollowError = nil }
+            } message: {
+                Text(unfollowError ?? "")
+            }
+            .disabled(isUnfollowing)
             .task { await refresh() }
+        }
+    }
+
+    /// Removes just this device's acceptance (#123) — the owner's copy and
+    /// any other follower are untouched. Local state only updates on success,
+    /// so a failed unfollow leaves the team right where it was.
+    private func unfollow(_ team: FollowedTeam) async {
+        isUnfollowing = true
+        defer { isUnfollowing = false }
+        do {
+            try await sharing.unfollow(team)
+            store.removeFollowedTeam(id: team.id)
+            if selectedTeamID == team.id { selectedTeamID = nil }
+        } catch {
+            unfollowError = error.localizedDescription
         }
     }
 
