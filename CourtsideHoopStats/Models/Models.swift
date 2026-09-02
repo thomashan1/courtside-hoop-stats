@@ -46,7 +46,7 @@ struct Team: Identifiable, Codable {
     /// and keep the blue they had.
     var teamColor: JerseyColor? = nil
 
-    static let empty = Team(name: "My Team", players: [])
+    static let empty = Team(name: "My Test Team", players: [])
 
     /// The colour of this team's non-white kit.
     var kitColor: JerseyColor { teamColor ?? .blue }
