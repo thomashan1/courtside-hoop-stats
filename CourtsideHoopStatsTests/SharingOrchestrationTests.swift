@@ -43,6 +43,9 @@ struct SharingOrchestrationTests {
 
         func acceptShare(_ metadata: CKShare.Metadata) async throws {}
         func fetchFollowedTeams() async throws -> [FollowedTeam] { fetchResult }
+        func unfollow(_ team: FollowedTeam) async throws {
+            fetchResult.removeAll { $0.id == team.id }
+        }
         func participants(for team: Team) async throws -> [SharedParticipant] { [] }
         func shareURL(for team: Team) async throws -> URL? { nil }
         func subscribeToFollowedTeamChanges() async throws {}

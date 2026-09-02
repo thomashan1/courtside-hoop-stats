@@ -111,6 +111,12 @@ protocol TeamSharingService {
     /// Every team currently shared *with* this user, as read-only snapshots.
     func fetchFollowedTeams() async throws -> [FollowedTeam]
 
+    /// Stop following a team (#123) — removes just this participant's
+    /// acceptance, leaving the owner's copy and every other follower
+    /// untouched. Distinct from `stopSharing`, which is owner-only and
+    /// removes the share for everyone at once.
+    func unfollow(_ team: FollowedTeam) async throws
+
     /// Ask CloudKit to notify this device when anything in the shared database
     /// changes, so a follower doesn't have to open the app to find out.
     /// Idempotent — safe to call on every launch.
@@ -151,6 +157,9 @@ struct NoopSharingService: TeamSharingService {
         throw SharingError.unavailable
     }
     func fetchFollowedTeams() async throws -> [FollowedTeam] { [] }
+    func unfollow(_ team: FollowedTeam) async throws {
+        throw SharingError.unavailable
+    }
     func participants(for team: Team) async throws -> [SharedParticipant] { [] }
     func isSharing(_ team: Team) async throws -> Bool { false }
     func shareURL(for team: Team) async throws -> URL? { nil }
@@ -199,6 +208,7 @@ struct DemoSharingService: TeamSharingService {
     func fetchFollowedTeams() async throws -> [FollowedTeam] {
         [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
     }
+    func unfollow(_ team: FollowedTeam) async throws {}
     func isSharing(_ team: Team) async throws -> Bool { team.id == sharedTeamID }
     func participants(for team: Team) async throws -> [SharedParticipant] {
         team.id == sharedTeamID ? DemoData.makeParticipants() : []

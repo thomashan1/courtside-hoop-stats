@@ -98,4 +98,39 @@ final class FollowingScreenshotTests: XCTestCase {
         snap("22-following-pdf")
         app.buttons["Done"].tap()
     }
+
+    /// Unfollowing (#123) removes just this device's copy of one team,
+    /// leaving the other followed team and the tab itself in place.
+    func testUnfollowRemovesTeam() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestSeedDemo"]
+        app.launch()
+
+        app.tabBars.buttons["Following"].tap()
+        XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10))
+
+        // Switch to the second team before unfollowing it, so the assertions
+        // below can't accidentally pass by looking at the wrong team.
+        app.buttons["Switch Team"].tap()
+        app.buttons["Eastside Eagles"].tap()
+        XCTAssertTrue(app.navigationBars["Eastside Eagles"].waitForExistence(timeout: 10))
+
+        app.buttons["More"].tap()
+        let unfollow = app.buttons["Unfollow Eastside Eagles"]
+        XCTAssertTrue(unfollow.waitForExistence(timeout: 10))
+        unfollow.tap()
+
+        let confirm = app.buttons["Unfollow"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10),
+                      "Unfollowing should ask for confirmation first")
+        snap("23-following-unfollow")
+        confirm.tap()
+
+        // Back down to one followed team: the switcher (only shown for 2+)
+        // should disappear, and the remaining team should be what's left.
+        XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10),
+                      "Unfollowing the second team should fall back to the first")
+        XCTAssertFalse(app.buttons["Switch Team"].exists,
+                       "The switcher shouldn't show for only one followed team")
+    }
 }

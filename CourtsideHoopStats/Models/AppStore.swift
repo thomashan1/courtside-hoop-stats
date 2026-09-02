@@ -198,6 +198,14 @@ final class AppStore: ObservableObject {
         await FollowerNotifier.shared.post(alerts)
     }
 
+    /// Drop a team from the local followed list (#123) — called after a
+    /// successful `TeamSharingService.unfollow(_:)`, so CloudKit and local
+    /// state don't drift apart even briefly.
+    @MainActor
+    func removeFollowedTeam(id: String) {
+        followedTeams.removeAll { $0.id == id }
+    }
+
     /// Ask CloudKit which of my teams are actually shared, and publish those.
     ///
     /// Local state can't be trusted on its own: a team shared from an earlier

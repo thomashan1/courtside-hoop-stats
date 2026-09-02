@@ -129,6 +129,18 @@ final class CloudKitSharingService: TeamSharingService {
         return followed.sorted { $0.team.name < $1.team.name }
     }
 
+    /// Remove just this participant's acceptance of `team`'s share (#123).
+    ///
+    /// Deletes the zone from the **shared** database — the follower's own
+    /// view of it — rather than `stopSharing`'s delete against the **owner's
+    /// private** database. The owner's copy and every other follower are
+    /// untouched; only this device stops seeing it.
+    func unfollow(_ team: FollowedTeam) async throws {
+        try await requireAccount()
+        let zoneID = CKRecordZone.ID(zoneName: team.zoneName, ownerName: team.ownerName)
+        _ = try await container.sharedCloudDatabase.modifyRecordZones(saving: [], deleting: [zoneID])
+    }
+
     /// The owner's first name for a followed team's "Shared by Jean" line
     /// (#120), read off the `CKShare` referenced by its team record.
     ///
