@@ -92,7 +92,10 @@ final class AppStore: ObservableObject {
             // `UserDefaults` picks up `-key value` launch arguments directly, so
             // the value arrives already parsed; 0 when absent.
             textSizeIndex = UserDefaults.standard.integer(forKey: "uiTestTextSizeIndex")
-            followedTeams = [DemoData.makeFollowedTeam()]
+            // Two followed teams (#120), not one: exercises the switcher menu
+            // and the "Shared by" line distinguishing them, not just the
+            // single-team case every other screenshot already covered.
+            followedTeams = [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
             // The demo team is presented as shared, so the owner-side sharing
             // markers (#93) appear in screenshots rather than the unshared
             // default. Paired with `DemoSharingService`, which supplies the

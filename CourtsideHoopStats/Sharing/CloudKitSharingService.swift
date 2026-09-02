@@ -102,11 +102,13 @@ final class CloudKitSharingService: TeamSharingService {
             let changes = try await database.recordZoneChanges(inZoneWith: zone.zoneID, since: nil)
 
             var team: Team?
+            var teamRecord: CKRecord?
             var games: [Game] = []
             for (_, result) in changes.modificationResultsByID {
                 guard let record = try? result.get().record else { continue }
                 if let decoded = CloudKitSchema.team(from: record) {
                     team = decoded
+                    teamRecord = record
                 } else if let decoded = CloudKitSchema.game(from: record) {
                     games.append(decoded)
                 }
@@ -115,14 +117,30 @@ final class CloudKitSharingService: TeamSharingService {
             // A zone with no team record is one we can't render — skip it
             // rather than surfacing a nameless placeholder.
             guard let team else { continue }
+            let sharedByName = await ownerFirstName(of: teamRecord, in: database)
             followed.append(FollowedTeam(team: team,
                                          games: games,
                                          zoneName: zone.zoneID.zoneName,
                                          ownerName: zone.zoneID.ownerName,
+                                         sharedByName: sharedByName,
                                          updatedAt: Date()))
         }
 
         return followed.sorted { $0.team.name < $1.team.name }
+    }
+
+    /// The owner's first name for a followed team's "Shared by Jean" line
+    /// (#120), read off the `CKShare` referenced by its team record.
+    ///
+    /// Best-effort: `try?` throughout, because a name that can't be resolved
+    /// should fall back to no "Shared by" line (`FollowedTeam.subtitle`
+    /// already handles `nil`), not fail the whole fetch over one zone.
+    private func ownerFirstName(of teamRecord: CKRecord?, in database: CKDatabase) async -> String? {
+        guard let reference = teamRecord?.share,
+              let share = try? await database.record(for: reference.recordID) as? CKShare,
+              let owner = share.participants.first(where: { $0.role == .owner })
+        else { return nil }
+        return owner.userIdentity.nameComponents?.givenName
     }
 
     func isSharing(_ team: Team) async throws -> Bool {

@@ -266,7 +266,52 @@ enum DemoData {
             games: [live, past, loss],
             zoneName: "team-demo",
             ownerName: "_demoOwner_",
+            sharedByName: "Jean",
             updatedAt: Date().addingTimeInterval(-12)
+        )
+    }
+
+    /// A second followed team (#120) — a different tracker's team, so the
+    /// switcher menu and "Shared by" line have more than one case to show.
+    /// Reuses `makeSecondTeam()`'s roster; carries just one finished game,
+    /// since this one exists to exercise "following more than one team," not
+    /// to add more game-state coverage (`makeFollowedTeam()` already does).
+    static func makeSecondFollowedTeam() -> FollowedTeam {
+        let team = makeSecondTeam()
+        let p = team.players
+
+        var events: [GameEvent] = []
+        for (index, type, period): (Int, EventType, Int) in [
+            (0, .threePoint, 1), (1, .twoPoint, 1),
+            (2, .twoPoint, 2), (0, .threePoint, 2),
+            (3, .twoPoint, 3), (1, .ftMade, 3),
+            (0, .threePoint, 4), (2, .twoPoint, 4),
+        ] {
+            events.append(GameEvent(playerID: p[index].id, type: type, period: period))
+        }
+        let game = Game(
+            date: gameDate(daysFromRef: 6, hour: 3),
+            opponent: "Northgate Falcons",
+            league: "Metro Youth League",
+            location: "Northgate High",
+            isHome: true,
+            periodFormat: .quarters,
+            events: events,
+            periodEndScores: [1: PeriodEndScore(ourRunningTotal: 5, opponentRunningTotal: 4),
+                              2: PeriodEndScore(ourRunningTotal: 10, opponentRunningTotal: 9),
+                              3: PeriodEndScore(ourRunningTotal: 15, opponentRunningTotal: 13),
+                              4: PeriodEndScore(ourRunningTotal: 20, opponentRunningTotal: 17)],
+            isComplete: true,
+            hasStarted: true
+        )
+
+        return FollowedTeam(
+            team: team,
+            games: [game],
+            zoneName: "team-demo-2",
+            ownerName: "_demoOwner2_",
+            sharedByName: "Mike",
+            updatedAt: Date().addingTimeInterval(-600)
         )
     }
 

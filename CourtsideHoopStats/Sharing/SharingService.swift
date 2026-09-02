@@ -196,7 +196,9 @@ struct DemoSharingService: TeamSharingService {
     func publish(team: Team, games: [Game]) async throws {}
     func stopSharing(_ team: Team) async throws {}
     func acceptShare(_ metadata: CKShare.Metadata) async throws {}
-    func fetchFollowedTeams() async throws -> [FollowedTeam] { [DemoData.makeFollowedTeam()] }
+    func fetchFollowedTeams() async throws -> [FollowedTeam] {
+        [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
+    }
     func isSharing(_ team: Team) async throws -> Bool { team.id == sharedTeamID }
     func participants(for team: Team) async throws -> [SharedParticipant] {
         team.id == sharedTeamID ? DemoData.makeParticipants() : []

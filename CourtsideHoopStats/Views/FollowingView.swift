@@ -32,10 +32,11 @@ struct FollowingView: View {
                 }
             }
             .navigationTitle(selected?.team.name ?? "Following")
-            // Freshness belongs in chrome, not content: it's always visible,
-            // system-styled, and costs no room above the scores. Mail and
-            // Podcasts show last-updated the same way.
-            .navigationSubtitle(selected.map { $0.updatedAt.updatedLabel } ?? "")
+            // Freshness (and who shared it, #120) belongs in chrome, not
+            // content: it's always visible, system-styled, and costs no room
+            // above the scores. Mail and Podcasts show last-updated the same
+            // way.
+            .navigationSubtitle(selected?.subtitle ?? "")
             // The team being watched, not the active one — a follower's jersey
             // bubbles belong to someone else's team.
             .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
