@@ -118,6 +118,20 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
+### v1.3 — submitted 2026-09-02
+
+> NEW
+>
+> 1. Following a team now looks simpler — just Following and Settings, no
+>    unused Games/Roster tabs cluttering things up.
+>
+> FIXES
+>
+> 1. Tapping a shared team invite now shows it's working instead of looking
+>    stuck, and takes you straight to the game.
+> 2. Scoring a three no longer pauses for a celebration animation — faster,
+>    uninterrupted scoring.
+
 ### v1.2 — submitted 2026-08-17, approved and released 2026-08-18
 
 > NEW
