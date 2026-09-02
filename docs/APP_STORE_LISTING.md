@@ -118,6 +118,15 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
+### v1.4 — submitted 2026-09-02
+
+> NEW
+>
+> 1. See who shared a team with you — "Shared by Jean."
+> 2. Follow more than one team and switch between them right from the
+>    Following tab.
+> 3. Unfollow a team you no longer want to follow.
+
 ### v1.3 — submitted 2026-09-02
 
 > NEW
