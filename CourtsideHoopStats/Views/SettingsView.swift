@@ -19,7 +19,18 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                teamsSection
+                // A pure follower (#115) doesn't get the full teams list —
+                // it'd just be "My Test Team, 0 players" plus Share/Export
+                // entries for a team they never created — but Add/Import
+                // must stay reachable (#118), or there'd be no way back to
+                // tracking a team of their own. Adding or importing one
+                // flips `isPureFollower` false immediately, which is what
+                // brings the full section (and Roster) back.
+                if store.isPureFollower {
+                    pureFollowerTeamsSection
+                } else {
+                    teamsSection
+                }
 
                 Section {
                     HStack(spacing: 16) {
@@ -127,6 +138,30 @@ struct SettingsView: View {
     }
 
     // MARK: - Teams
+
+    /// The only Teams affordance a pure follower sees (#118): just the way
+    /// back to tracking a team of their own. No list — that would be the
+    /// single hidden default team ("My Test Team", 0 players).
+    private var pureFollowerTeamsSection: some View {
+        Section {
+            Button {
+                newTeamName = ""
+                showAddTeam = true
+            } label: {
+                Label("Add Team", systemImage: "plus")
+            }
+
+            Button {
+                showImporter = true
+            } label: {
+                Label("Import Team…", systemImage: "square.and.arrow.down")
+            }
+        } header: {
+            Text("Teams")
+        } footer: {
+            Text("Add or import a team whenever you're ready to track games of your own.")
+        }
+    }
 
     private var teamsSection: some View {
         Section {

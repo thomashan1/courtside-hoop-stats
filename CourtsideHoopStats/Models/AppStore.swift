@@ -136,7 +136,7 @@ final class AppStore: ObservableObject {
             activeTeamID = saved.teams.contains(where: { $0.id == saved.activeTeamID })
                 ? saved.activeTeamID : saved.teams[0].id
         } else {
-            let first = Team(name: "My Team", players: [])
+            let first = Team(name: "My Test Team", players: [])
             teams = [first]
             activeTeamID = first.id
         }
@@ -289,13 +289,18 @@ final class AppStore: ObservableObject {
     /// alert, then cleared. `nil` means nothing to show.
     @Published var shareAcceptanceError: String?
 
-    /// True for someone who only follows other people's teams (#115): every
-    /// local team is still the untouched default (no players, no games), and
-    /// at least one team is actually followed. `teams` itself is never empty —
-    /// a fresh install auto-creates one blank team — so emptiness has to be
-    /// read off its contents rather than the array.
+    /// True for someone who only follows other people's teams (#115): the
+    /// only local team is still the untouched default (no players, no
+    /// games), and at least one team is actually followed. `teams` itself is
+    /// never empty — a fresh install auto-creates one blank team — so
+    /// emptiness has to be read off its contents rather than the array.
+    ///
+    /// Gated on `teams.count == 1`, not "every team is empty", so there's
+    /// always a way out: adding or importing a second team (#118) flips this
+    /// false immediately, before that team has any players, which is what
+    /// un-hides Roster so they can actually add players to it.
     var isPureFollower: Bool {
-        !followedTeams.isEmpty && games.isEmpty && teams.allSatisfy { $0.players.isEmpty }
+        !followedTeams.isEmpty && games.isEmpty && teams.count == 1 && (teams.first?.players.isEmpty ?? true)
     }
 
     /// The active team — what Roster shows and new games default to. Existing
