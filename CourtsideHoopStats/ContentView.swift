@@ -2,26 +2,41 @@ import SwiftUI
 
 /// Root tab container: games, roster, and app settings.
 struct ContentView: View {
+    private enum Tab: Hashable {
+        case games, roster, following, settings
+    }
+
     @EnvironmentObject var store: AppStore
     @Environment(\.teamSharingService) private var sharing
 
-    var body: some View {
-        TabView {
-            GamesListView()
-                .tabItem { Label("Games", systemImage: "list.clipboard") }
+    @State private var selectedTab: Tab = .games
 
-            RosterView()
-                .tabItem { Label("Roster", systemImage: "person.3.fill") }
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            // Hidden for a pure follower (#115) — someone who only watches
+            // others' teams and has never touched their own local, blank
+            // default team. Reappears the moment they add a player or a game.
+            if !store.isPureFollower {
+                GamesListView()
+                    .tabItem { Label("Games", systemImage: "list.clipboard") }
+                    .tag(Tab.games)
+
+                RosterView()
+                    .tabItem { Label("Roster", systemImage: "person.3.fill") }
+                    .tag(Tab.roster)
+            }
 
             // Only for people actually following someone (#57) — a tracker
             // running their own team should never see an empty extra tab.
             if !store.followedTeams.isEmpty {
                 FollowingView()
                     .tabItem { Label("Following", systemImage: "binoculars") }
+                    .tag(Tab.following)
             }
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(Tab.settings)
         }
         // Apply the in-app Text Size as a Dynamic Type floor for the whole app.
         .dynamicTypeSize(AppTextSize.floor(for: store.textSizeIndex)...)
@@ -29,6 +44,11 @@ struct ContentView: View {
         // active team. A follower's screens override this with the team they're
         // watching, which is someone else's.
         .environment(\.teamKitColor, store.team.kitColor)
+        // A pure follower reopening the app has no Games/Roster tabs, so start
+        // them on Following rather than a tab that no longer exists (#115).
+        .onAppear {
+            if store.isPureFollower { selectedTab = .following }
+        }
         .task { await discoverFollowedTeams() }
         // CloudKit woke us: re-fetch, which posts any alerts worth posting.
         .onReceive(NotificationCenter.default.publisher(for: .sharedDataChanged)) { note in
@@ -37,6 +57,28 @@ struct ContentView: View {
                 let refreshed = await refreshFollowedTeams()
                 completion?(refreshed ? .newData : .noData)
             }
+        }
+        // A share invite just got accepted — jump straight to it rather than
+        // leaving the person to notice a new tab appeared on its own (#116).
+        .onChange(of: store.followedTeams.count) { old, new in
+            if new > old { selectedTab = .following }
+        }
+        // The tap that opened the app is doing real network work; without
+        // this the app just looks stuck until it finishes (#116).
+        .overlay {
+            if store.isAcceptingShare {
+                ProgressView("Adding shared team…")
+                    .padding(20)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
+        }
+        .alert("Couldn't Add Shared Team", isPresented: Binding(
+            get: { store.shareAcceptanceError != nil },
+            set: { if !$0 { store.shareAcceptanceError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.shareAcceptanceError ?? "")
         }
     }
 
