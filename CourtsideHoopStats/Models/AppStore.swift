@@ -282,6 +282,22 @@ final class AppStore: ObservableObject {
 
     // MARK: - Active team
 
+    /// Set while a tapped share invite is being accepted (#116) — lets the app
+    /// show a progress overlay instead of appearing to hang after the tap.
+    @Published var isAcceptingShare = false
+    /// Set when accepting a tapped share invite fails (#116); shown as an
+    /// alert, then cleared. `nil` means nothing to show.
+    @Published var shareAcceptanceError: String?
+
+    /// True for someone who only follows other people's teams (#115): every
+    /// local team is still the untouched default (no players, no games), and
+    /// at least one team is actually followed. `teams` itself is never empty —
+    /// a fresh install auto-creates one blank team — so emptiness has to be
+    /// read off its contents rather than the array.
+    var isPureFollower: Bool {
+        !followedTeams.isEmpty && games.isEmpty && teams.allSatisfy { $0.players.isEmpty }
+    }
+
     /// The active team — what Roster shows and new games default to. Existing
     /// views read/write this exactly as they did the old single `team`.
     var team: Team {

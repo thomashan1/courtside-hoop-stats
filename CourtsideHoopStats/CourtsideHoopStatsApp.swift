@@ -54,12 +54,13 @@ struct CourtsideHoopStatsApp: App {
     /// Accept an invitation, then pull the shared team straight away so it
     /// shows up without the follower having to hunt for a refresh button.
     private func accept(_ metadata: CKShare.Metadata) async {
+        store.isAcceptingShare = true
+        defer { store.isAcceptingShare = false }
         do {
             try await sharing.acceptShare(metadata)
             await store.applyFollowedTeams(try await sharing.fetchFollowedTeams())
         } catch {
-            // Nothing actionable for the user mid-launch; the Following tab's
-            // own refresh reports errors where they can be seen.
+            store.shareAcceptanceError = "Check your connection and try the invite link again."
         }
     }
 }
