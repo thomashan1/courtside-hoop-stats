@@ -102,13 +102,11 @@ final class CloudKitSharingService: TeamSharingService {
             let changes = try await database.recordZoneChanges(inZoneWith: zone.zoneID, since: nil)
 
             var team: Team?
-            var teamRecord: CKRecord?
             var games: [Game] = []
             for (_, result) in changes.modificationResultsByID {
                 guard let record = try? result.get().record else { continue }
                 if let decoded = CloudKitSchema.team(from: record) {
                     team = decoded
-                    teamRecord = record
                 } else if let decoded = CloudKitSchema.game(from: record) {
                     games.append(decoded)
                 }
@@ -117,12 +115,10 @@ final class CloudKitSharingService: TeamSharingService {
             // A zone with no team record is one we can't render — skip it
             // rather than surfacing a nameless placeholder.
             guard let team else { continue }
-            let sharedByName = await ownerFirstName(of: teamRecord, in: database)
             followed.append(FollowedTeam(team: team,
                                          games: games,
                                          zoneName: zone.zoneID.zoneName,
                                          ownerName: zone.zoneID.ownerName,
-                                         sharedByName: sharedByName,
                                          updatedAt: Date()))
         }
 
@@ -139,30 +135,6 @@ final class CloudKitSharingService: TeamSharingService {
         try await requireAccount()
         let zoneID = CKRecordZone.ID(zoneName: team.zoneName, ownerName: team.ownerName)
         _ = try await container.sharedCloudDatabase.modifyRecordZones(saving: [], deleting: [zoneID])
-    }
-
-    /// The owner's first name for a followed team's "Shared by Jean" line
-    /// (#120), read off the `CKShare` referenced by its team record.
-    ///
-    /// Best-effort: `try?` throughout, because a name that can't be resolved
-    /// should fall back to no "Shared by" line (`FollowedTeam.subtitle`
-    /// already handles `nil`), not fail the whole fetch over one zone.
-    private func ownerFirstName(of teamRecord: CKRecord?, in database: CKDatabase) async -> String? {
-        guard let reference = teamRecord?.share,
-              let share = try? await database.record(for: reference.recordID) as? CKShare
-        else { return nil }
-        // TEMPORARY (#128): the nickname fallback didn't fix it either, so
-        // dump every field instead of guessing a third one blind.
-        let identity = share.owner.userIdentity
-        let c = identity.nameComponents
-        func f(_ s: String?) -> String { s.map { "\"\($0)\"" } ?? "nil" }
-        let dump = "given=\(f(c?.givenName)) family=\(f(c?.familyName)) " +
-            "nick=\(f(c?.nickname)) middle=\(f(c?.middleName)) " +
-            "prefix=\(f(c?.namePrefix)) suffix=\(f(c?.nameSuffix)) " +
-            "fmt=\(f(c.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) })) " +
-            "email=\(f(identity.lookupInfo?.emailAddress)) phone=\(f(identity.lookupInfo?.phoneNumber)) " +
-            "hasUserRecordID=\(identity.userRecordID != nil)"
-        return "[debug: \(dump)]"
     }
 
     /// `givenName` isn't always populated (#128, confirmed on a real device):

@@ -342,6 +342,7 @@ struct TeamDetailView: View {
     @State private var name = ""
     @State private var jersey: JerseyColor = .white
     @State private var teamColor: JerseyColor = .blue
+    @State private var ownerDisplayName = ""
     @State private var confirmingDelete = false
     @State private var showingFollowers = false
 
@@ -430,6 +431,20 @@ struct TeamDetailView: View {
                 } footer: {
                     Text("Invite family and friends by Apple Account to follow this team's games and stats. They'll need an iPhone signed into iCloud, and can view but not edit.\n\nUpdates arrive within seconds when you have signal. In a gym with no reception they'll catch up once you're back online.")
                 }
+
+                // A follower's device can't reliably get a display name for
+                // you from CloudKit itself (#128, confirmed on a real
+                // device) — sharing an Apple ID's name isn't guaranteed even
+                // between accepted participants — so it's set here instead,
+                // by you, and published with the team.
+                Section {
+                    TextField("Your name", text: $ownerDisplayName)
+                        .textInputAutocapitalization(.words)
+                } header: {
+                    Text("Your Name")
+                } footer: {
+                    Text("Shown to followers so they know whose team this is. For example, entering \"Jean (Nicky's mom)\" appears on a follower's Following tab as \"Shared by Jean (Nicky's mom)\". Leave blank to show nothing.")
+                }
             }
 
             if let team {
@@ -472,6 +487,7 @@ struct TeamDetailView: View {
                 name = team.name
                 jersey = team.homeJersey ?? .white
                 teamColor = team.kitColor
+                ownerDisplayName = team.ownerDisplayName ?? ""
             }
         }
         .confirmationDialog("Delete \(team?.name ?? "team")?",
@@ -494,6 +510,8 @@ struct TeamDetailView: View {
         team.name = trimmedName
         team.homeJersey = jersey
         team.teamColor = teamColor
+        let trimmedOwnerName = ownerDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        team.ownerDisplayName = trimmedOwnerName.isEmpty ? nil : trimmedOwnerName
         store.updateTeam(team)
         dismiss()
     }

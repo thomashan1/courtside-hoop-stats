@@ -176,17 +176,6 @@ struct FollowingView: View {
 
     private func gameList(for followed: FollowedTeam) -> some View {
         List {
-            // TEMPORARY (#128): the nav subtitle truncates this to one line,
-            // too short for a full field dump — shown here instead, where it
-            // can wrap. Remove once the real cause is confirmed.
-            if let name = followed.sharedByName, name.hasPrefix("[debug:") {
-                Section {
-                    Text(name)
-                        .font(.footnote.monospaced())
-                        .textSelection(.enabled)
-                }
-            }
-
             // Same section titles as the Games tab.
             ForEach(gameGroups(for: followed), id: \.title) { group in
                 Section(group.title) {

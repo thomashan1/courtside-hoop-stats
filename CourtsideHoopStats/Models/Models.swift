@@ -45,6 +45,13 @@ struct Team: Identifiable, Codable {
     /// backward compatibility: teams saved before this existed decode as nil
     /// and keep the blue they had.
     var teamColor: JerseyColor? = nil
+    /// The owner's own name, shown to followers as "Shared by Jean" (#128).
+    /// Set by the owner, not derived from CloudKit: `CKShare.owner.userIdentity`
+    /// turned out to carry no usable name, email, or phone for a real pair of
+    /// accounts — confirmed on a real device, not just a theoretical gap — so
+    /// there's nothing there to fall back to. Optional/nil-default since most
+    /// teams are never shared.
+    var ownerDisplayName: String? = nil
 
     static let empty = Team(name: "My Test Team", players: [])
 
