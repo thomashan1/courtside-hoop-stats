@@ -149,10 +149,13 @@ final class CloudKitSharingService: TeamSharingService {
     /// already handles `nil`), not fail the whole fetch over one zone.
     private func ownerFirstName(of teamRecord: CKRecord?, in database: CKDatabase) async -> String? {
         guard let reference = teamRecord?.share,
-              let share = try? await database.record(for: reference.recordID) as? CKShare,
-              let owner = share.participants.first(where: { $0.role == .owner })
+              let share = try? await database.record(for: reference.recordID) as? CKShare
         else { return nil }
-        return owner.userIdentity.nameComponents?.givenName
+        // `.owner`, not filtering `.participants` for `role == .owner`: it's
+        // CKShare's own documented accessor for exactly this, and cheaper
+        // insurance against `.participants` ever coming back in an order or
+        // shape filtering doesn't expect.
+        return share.owner.userIdentity.nameComponents?.givenName
     }
 
     func isSharing(_ team: Team) async throws -> Bool {
