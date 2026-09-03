@@ -19,24 +19,21 @@ struct FollowedTeam: Identifiable, Codable {
     /// people could share differently-named teams from identically-named zones.
     ///
     /// This is CloudKit's opaque `CKRecordZone.ID.ownerName`, not a display
-    /// name — good for uniqueness only. See `sharedByName` for the human name.
+    /// name — good for uniqueness only. See `Team.ownerDisplayName` for the
+    /// human name.
     var ownerName: String
-    /// The owner's first name, for "Shared by Jean" (#120). Optional and
-    /// separate from `ownerName`: iCloud only supplies name components once an
-    /// invite is accepted, and older cached snapshots decode this as `nil`.
-    var sharedByName: String? = nil
     /// When this snapshot was last fetched, for the honest "updated N ago" line.
     var updatedAt: Date
 
     var id: String { "\(ownerName)|\(zoneName)" }
 
     /// "Shared by Jean · Updated 5 minutes ago" — first name only, and only
-    /// when CloudKit actually gave one; otherwise just the freshness line, so
-    /// there's no half-blank "Shared by · Updated…" while an invite is
-    /// mid-flight or a name never resolved.
+    /// when the owner actually set one (`Team.ownerDisplayName`, #128);
+    /// otherwise just the freshness line, so there's no half-blank
+    /// "Shared by · Updated…".
     var subtitle: String {
-        guard let sharedByName, !sharedByName.isEmpty else { return updatedAt.updatedLabel }
-        return "Shared by \(sharedByName) · \(updatedAt.updatedLabel)"
+        guard let name = team.ownerDisplayName, !name.isEmpty else { return updatedAt.updatedLabel }
+        return "Shared by \(name) · \(updatedAt.updatedLabel)"
     }
 
     /// Games newest-first, matching how the owner's own list is ordered.

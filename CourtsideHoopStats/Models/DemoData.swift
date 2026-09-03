@@ -171,7 +171,8 @@ enum DemoData {
     /// Carries its own game scripts rather than reusing `finishedGame` /
     /// `inProgressGame` so the two sides of the app don't show identical games.
     static func makeFollowedTeam() -> FollowedTeam {
-        let team = makeTeam()
+        var team = makeTeam()
+        team.ownerDisplayName = "Jean (Nicky's mom)"
         let p = team.players   // index 8 = Nicholas H. (#77)
 
         // Live, partway through Q3. Quarter sums: 10, 9, then 7 so far = 26.
@@ -266,7 +267,6 @@ enum DemoData {
             games: [live, past, loss],
             zoneName: "team-demo",
             ownerName: "_demoOwner_",
-            sharedByName: "Jean",
             updatedAt: Date().addingTimeInterval(-12)
         )
     }
@@ -277,7 +277,8 @@ enum DemoData {
     /// since this one exists to exercise "following more than one team," not
     /// to add more game-state coverage (`makeFollowedTeam()` already does).
     static func makeSecondFollowedTeam() -> FollowedTeam {
-        let team = makeSecondTeam()
+        var team = makeSecondTeam()
+        team.ownerDisplayName = "Mike (Tyler's dad)"
         let p = team.players
 
         var events: [GameEvent] = []
@@ -310,7 +311,6 @@ enum DemoData {
             games: [game],
             zoneName: "team-demo-2",
             ownerName: "_demoOwner2_",
-            sharedByName: "Mike",
             updatedAt: Date().addingTimeInterval(-600)
         )
     }

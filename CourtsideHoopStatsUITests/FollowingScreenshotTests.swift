@@ -34,8 +34,9 @@ final class FollowingScreenshotTests: XCTestCase {
         // (#69). The tab bar already says where you are.
         XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10),
                       "Following should be titled with the followed team's name")
-        // "Shared by Jean" (#120) — who shared it, not just when it last synced.
-        XCTAssertTrue(app.staticTexts["Shared by Jean · Updated Just Now"].waitForExistence(timeout: 10),
+        // "Shared by Jean (Nicky's mom)" (#120, #128) — who shared it, not
+        // just when it last synced.
+        XCTAssertTrue(app.staticTexts["Shared by Jean (Nicky's mom) · Updated Just Now"].waitForExistence(timeout: 10),
                       "Following should say who shared the team")
         snap("20-following-list")
 
