@@ -144,18 +144,32 @@ final class CloudKitSharingService: TeamSharingService {
     /// The owner's first name for a followed team's "Shared by Jean" line
     /// (#120), read off the `CKShare` referenced by its team record.
     ///
-    /// Best-effort: `try?` throughout, because a name that can't be resolved
-    /// should fall back to no "Shared by" line (`FollowedTeam.subtitle`
-    /// already handles `nil`), not fail the whole fetch over one zone.
+    /// TEMPORARY (#128): a real device shows no "Shared by" line at all, and
+    /// every failure point here was silently swallowed by `try?`, making it
+    /// impossible to tell which one is actually hit without console access.
+    /// Returns a `"[debug: ...]"` string identifying the failure instead of
+    /// `nil`, so it's visible right in the subtitle — revert to silent `nil`
+    /// once the real cause is known.
     private func ownerFirstName(of teamRecord: CKRecord?, in database: CKDatabase) async -> String? {
-        guard let reference = teamRecord?.share,
-              let share = try? await database.record(for: reference.recordID) as? CKShare
-        else { return nil }
-        // `.owner`, not filtering `.participants` for `role == .owner`: it's
-        // CKShare's own documented accessor for exactly this, and cheaper
-        // insurance against `.participants` ever coming back in an order or
-        // shape filtering doesn't expect.
-        return share.owner.userIdentity.nameComponents?.givenName
+        guard let reference = teamRecord?.share else {
+            return "[debug: team record has no share reference]"
+        }
+        let fetched: CKRecord
+        do {
+            fetched = try await database.record(for: reference.recordID)
+        } catch {
+            return "[debug: share fetch failed — \(error.localizedDescription)]"
+        }
+        guard let share = fetched as? CKShare else {
+            return "[debug: fetched record wasn't a CKShare (\(fetched.recordType))]"
+        }
+        guard let components = share.owner.userIdentity.nameComponents else {
+            return "[debug: owner has no nameComponents]"
+        }
+        guard let given = components.givenName, !given.isEmpty else {
+            return "[debug: nameComponents has no givenName]"
+        }
+        return given
     }
 
     func isSharing(_ team: Team) async throws -> Bool {
