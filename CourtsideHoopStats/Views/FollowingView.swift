@@ -57,12 +57,21 @@ struct FollowingView: View {
                 if store.followedTeams.count > 1 {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
-                            ForEach(store.followedTeams) { followed in
-                                Button {
-                                    selectedTeamID = followed.id
-                                } label: {
-                                    Label(followed.team.name,
-                                          systemImage: followed.id == selected?.id ? "checkmark" : "")
+                            // A `Picker`, not a hand-built `ForEach` of
+                            // `Button`s with a conditional checkmark: passing
+                            // `systemImage: ""` for the unselected rows
+                            // doesn't reserve icon space the way an actual
+                            // (even hidden) icon would, so those rows' text
+                            // started further left than the checked one —
+                            // visibly misaligned. A native `Picker` inside a
+                            // `Menu` renders its own consistent checkmark
+                            // column, the same way Files' "Sort By" menu does.
+                            Picker("Team", selection: Binding(
+                                get: { selected?.id ?? "" },
+                                set: { selectedTeamID = $0 }
+                            )) {
+                                ForEach(store.followedTeams) { followed in
+                                    Text(followed.team.name).tag(followed.id)
                                 }
                             }
                         } label: {
