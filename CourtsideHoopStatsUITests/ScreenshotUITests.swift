@@ -208,4 +208,39 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Riverside Community Gym"].waitForExistence(timeout: 10))
         snap(app, "06-location-autocomplete")
     }
+
+    /// A game started by mistake, with nothing scored yet, can be moved back
+    /// to Scheduled (#133) — narrower than "un-start any game": once a single
+    /// event exists the option disappears, since reverting then would orphan
+    /// real data rather than undo a stray tap.
+    func testMoveBackToScheduled() {
+        let app = launchSeeded()
+        app.tabBars.buttons["Games"].tap()
+
+        app.buttons["New Game"].tap()
+        let startGame = app.buttons["Start Game"]
+        XCTAssertTrue(startGame.waitForExistence(timeout: 10))
+        startGame.tap()
+
+        // Now live, with zero events recorded — open Details.
+        let details = app.buttons["Details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 10))
+        details.tap()
+
+        let moveBack = app.buttons["Move Back to Scheduled"]
+        XCTAssertTrue(moveBack.waitForExistence(timeout: 10),
+                      "A just-started, unscored game should offer to move back to Scheduled")
+        snap(app, "14-move-back-to-scheduled")
+        moveBack.tap()
+
+        let confirm = app.buttons["Move Back"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 10),
+                      "Reverting should ask for confirmation first")
+        confirm.tap()
+
+        // Back on the Games list, not still on the scoring screen.
+        XCTAssertTrue(app.tabBars.buttons["Games"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Coming Up"].waitForExistence(timeout: 10),
+                      "The reverted game should be scheduled again, not live")
+    }
 }
