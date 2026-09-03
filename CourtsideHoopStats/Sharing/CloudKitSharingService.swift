@@ -151,7 +151,18 @@ final class CloudKitSharingService: TeamSharingService {
         guard let reference = teamRecord?.share,
               let share = try? await database.record(for: reference.recordID) as? CKShare
         else { return nil }
-        return firstName(from: share.owner.userIdentity.nameComponents)
+        // TEMPORARY (#128): the nickname fallback didn't fix it either, so
+        // dump every field instead of guessing a third one blind.
+        let identity = share.owner.userIdentity
+        let c = identity.nameComponents
+        func f(_ s: String?) -> String { s.map { "\"\($0)\"" } ?? "nil" }
+        let dump = "given=\(f(c?.givenName)) family=\(f(c?.familyName)) " +
+            "nick=\(f(c?.nickname)) middle=\(f(c?.middleName)) " +
+            "prefix=\(f(c?.namePrefix)) suffix=\(f(c?.nameSuffix)) " +
+            "fmt=\(f(c.map { PersonNameComponentsFormatter.localizedString(from: $0, style: .default) })) " +
+            "email=\(f(identity.lookupInfo?.emailAddress)) phone=\(f(identity.lookupInfo?.phoneNumber)) " +
+            "hasUserRecordID=\(identity.userRecordID != nil)"
+        return "[debug: \(dump)]"
     }
 
     /// `givenName` isn't always populated (#128, confirmed on a real device):
