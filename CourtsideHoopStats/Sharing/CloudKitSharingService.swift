@@ -144,32 +144,29 @@ final class CloudKitSharingService: TeamSharingService {
     /// The owner's first name for a followed team's "Shared by Jean" line
     /// (#120), read off the `CKShare` referenced by its team record.
     ///
-    /// TEMPORARY (#128): a real device shows no "Shared by" line at all, and
-    /// every failure point here was silently swallowed by `try?`, making it
-    /// impossible to tell which one is actually hit without console access.
-    /// Returns a `"[debug: ...]"` string identifying the failure instead of
-    /// `nil`, so it's visible right in the subtitle — revert to silent `nil`
-    /// once the real cause is known.
+    /// Best-effort: `try?` throughout, because a name that can't be resolved
+    /// should fall back to no "Shared by" line (`FollowedTeam.subtitle`
+    /// already handles `nil`), not fail the whole fetch over one zone.
     private func ownerFirstName(of teamRecord: CKRecord?, in database: CKDatabase) async -> String? {
-        guard let reference = teamRecord?.share else {
-            return "[debug: team record has no share reference]"
-        }
-        let fetched: CKRecord
-        do {
-            fetched = try await database.record(for: reference.recordID)
-        } catch {
-            return "[debug: share fetch failed — \(error.localizedDescription)]"
-        }
-        guard let share = fetched as? CKShare else {
-            return "[debug: fetched record wasn't a CKShare (\(fetched.recordType))]"
-        }
-        guard let components = share.owner.userIdentity.nameComponents else {
-            return "[debug: owner has no nameComponents]"
-        }
-        guard let given = components.givenName, !given.isEmpty else {
-            return "[debug: nameComponents has no givenName]"
-        }
-        return given
+        guard let reference = teamRecord?.share,
+              let share = try? await database.record(for: reference.recordID) as? CKShare
+        else { return nil }
+        return firstName(from: share.owner.userIdentity.nameComponents)
+    }
+
+    /// `givenName` isn't always populated (#128, confirmed on a real device):
+    /// an Apple ID can carry only a `nickname` — e.g. someone who set a
+    /// display name for sharing without a formal given/family split — in
+    /// which case `givenName` comes back nil even though a perfectly good
+    /// name exists elsewhere on the same `PersonNameComponents`. Falls back
+    /// to `nickname`, then the first word of whatever
+    /// `PersonNameComponentsFormatter` can produce, before giving up.
+    private func firstName(from components: PersonNameComponents?) -> String? {
+        guard let components else { return nil }
+        if let given = components.givenName, !given.isEmpty { return given }
+        if let nickname = components.nickname, !nickname.isEmpty { return nickname }
+        let formatted = PersonNameComponentsFormatter.localizedString(from: components, style: .default)
+        return formatted.split(separator: " ").first.map(String.init)
     }
 
     func isSharing(_ team: Team) async throws -> Bool {
