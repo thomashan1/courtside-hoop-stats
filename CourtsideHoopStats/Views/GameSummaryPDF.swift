@@ -175,6 +175,7 @@ struct GameSummaryPrintout: View {
                 }
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
                 .padding(.bottom, 6)
 
                 linescoreRow(teamName, rows.map(\.our), bold: true)
