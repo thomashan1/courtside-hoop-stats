@@ -183,6 +183,11 @@ struct LiveScoringView: View {
             EditGameSheet(game: game, allowsFormatChange: false) { updated in
                 game = updated
                 store.updateGame(game)
+                // The sheet's own "Move Back to Scheduled" (#133) hands back
+                // a game with hasStarted cleared — this is the one place
+                // that notices and leaves the scoring screen, since the
+                // game genuinely isn't live anymore.
+                if updated.lifecycle == .scheduled { dismiss() }
             }
         }
         .sheet(isPresented: $showEndPeriod) {

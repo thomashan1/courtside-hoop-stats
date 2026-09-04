@@ -117,6 +117,8 @@ struct EditGameSheet: View {
     @State private var isHome: Bool
     @State private var periodFormat: PeriodFormat
     @State private var notes: String
+    /// Confirming "Move Back to Scheduled" (#133).
+    @State private var confirmingRevert = false
 
     init(game: Game, allowsFormatChange: Bool = true, onSave: @escaping (Game) -> Void) {
         self.game = game
@@ -171,6 +173,22 @@ struct EditGameSheet: View {
                     TextField("Scouting notes, observations…", text: $notes, axis: .vertical)
                         .lineLimit(3...10)
                 }
+
+                // Only the "oops, tapped Start Game by mistake" case (#133):
+                // once anything's actually been recorded, reverting would
+                // silently orphan those events rather than undo a mistake, so
+                // this is deliberately narrower than "un-start any game".
+                if game.lifecycle == .inProgress && game.events.isEmpty {
+                    Section {
+                        Button(role: .destructive) {
+                            confirmingRevert = true
+                        } label: {
+                            Label("Move Back to Scheduled", systemImage: "arrow.uturn.backward")
+                        }
+                    } footer: {
+                        Text("Undoes starting this game. Only offered before anything's been scored.")
+                    }
+                }
             }
             .navigationTitle("Edit Game")
             .navigationBarTitleDisplayMode(.inline)
@@ -183,6 +201,13 @@ struct EditGameSheet: View {
                     // have its details filled in (or left blank) later (#44).
                     Button("Save") { save() }
                 }
+            }
+            .confirmationDialog("Move back to Scheduled?",
+                                isPresented: $confirmingRevert, titleVisibility: .visible) {
+                Button("Move Back", role: .destructive) { revert() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This undoes starting the game. Nothing's been scored yet, so there's nothing to lose.")
             }
         }
     }
@@ -197,6 +222,17 @@ struct EditGameSheet: View {
         updated.isHome = isHome
         if allowsFormatChange { updated.periodFormat = periodFormat }
         updated.notes = notes
+        onSave(updated)
+        dismiss()
+    }
+
+    /// Clears `hasStarted` and hands the reverted game to `onSave` — the
+    /// caller (`LiveScoringView`) is what notices `lifecycle == .scheduled`
+    /// on the result and navigates back to the Games list, since this sheet
+    /// doesn't own that navigation itself.
+    private func revert() {
+        var updated = game
+        updated.hasStarted = false
         onSave(updated)
         dismiss()
     }
