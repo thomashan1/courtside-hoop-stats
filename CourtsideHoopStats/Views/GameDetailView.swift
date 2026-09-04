@@ -48,8 +48,15 @@ struct GameDetailView: View {
                 Button {
                     start()
                 } label: {
-                    Label("Start Game", systemImage: "play.fill")
-                        .frame(maxWidth: .infinity)
+                    // A Label wrapped directly in .frame(maxWidth: .infinity)
+                    // silently drops its icon here — rebuilt as an explicit
+                    // Image + Text, grouped tight and centered as a pair (#137).
+                    HStack(spacing: 8) {
+                        Image(systemName: "play.fill")
+                            .accessibilityHidden(true)
+                        Text("Start Game")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
             }

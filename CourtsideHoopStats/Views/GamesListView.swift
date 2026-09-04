@@ -249,12 +249,16 @@ struct NewGameSheet: View {
                     Button {
                         start()
                     } label: {
-                        HStack {
-                            Spacer()
-                            Label("Start Game", systemImage: "play.fill")
-                                .labelStyle(.titleAndIcon)
-                            Spacer()
+                        // A Label wrapped in the old Spacer/Spacer HStack
+                        // shifted the text right of true center by the
+                        // icon's width — grouped tight and centered as a
+                        // pair instead (#137).
+                        HStack(spacing: 8) {
+                            Image(systemName: "play.fill")
+                                .accessibilityHidden(true)
+                            Text("Start Game")
                         }
+                        .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
