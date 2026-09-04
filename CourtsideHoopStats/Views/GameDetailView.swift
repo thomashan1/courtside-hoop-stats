@@ -70,6 +70,12 @@ struct GameDetailView: View {
                 Button("Edit") { editing = true }
             }
         }
+        // Inline titles center between the leading and trailing toolbar
+        // items, not the screen — the automatic back button mirrors the
+        // Games list's title text, which is far wider than "Edit" and
+        // pushes the centered title visibly left (#135). Trimming the back
+        // button to just its chevron shrinks that width mismatch.
+        .toolbarRole(.editor)
         .onAppear(perform: load)
         .sheet(isPresented: $editing) {
             EditGameSheet(game: game) { updated in

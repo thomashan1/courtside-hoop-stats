@@ -243,4 +243,27 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Coming Up"].waitForExistence(timeout: 10),
                       "The reverted game should be scheduled again, not live")
     }
+
+    /// The scheduled-game detail screen's inline title used to look
+    /// off-center — the automatic back button mirrored the Games list's
+    /// title text, much wider than the trailing "Edit" button (#135).
+    /// `.toolbarRole(.editor)` trims the back button to just its chevron.
+    func testScheduledGameDetailCentering() {
+        let app = launchSeeded()
+        app.tabBars.buttons["Games"].tap()
+        app.buttons["New Game"].tap()
+        let opponent = app.textFields["Opponent (optional)"]
+        XCTAssertTrue(opponent.waitForExistence(timeout: 10))
+        opponent.tap()
+        opponent.typeText("Riverside")
+        app.buttons["Save"].tap()
+
+        let row = app.staticTexts["vs Riverside"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        snap(app, "15-scheduled-game-detail")
+    }
+
 }
