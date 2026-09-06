@@ -118,6 +118,20 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
+### v1.5 — submitted 2026-09-05
+
+> NEW
+>
+> 1. Started a game by mistake? Move it back to Scheduled — as long as
+>    nothing's been scored yet.
+>
+> FIXES
+>
+> 1. The scheduled game screen's title is now properly centered.
+> 2. The Start Game button's icon is back, sitting next to a centered label.
+> 3. The box score PDF's quarter-by-quarter table now lines up correctly
+>    with the scores underneath it.
+
 ### v1.4 — submitted 2026-09-02
 
 > NEW
