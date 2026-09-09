@@ -155,7 +155,14 @@ struct FollowersView: View {
             } header: {
                 Text("Invite Link")
             } footer: {
-                Text("Only people you invite by Apple Account can open this — it isn't a public link.")
+                // Explicitly red, and this view forces `.foregroundStyle(.primary)`
+                // above (see the note on the navigation title), which would
+                // otherwise flatten this to the default footer gray. This link
+                // only works for someone already added as a participant —
+                // CloudKit checks the opener's Apple Account against that list —
+                // so copying it to a brand-new person silently does nothing (#141).
+                Text("This link only works for people already added above. Add their Apple Account (email or phone) with **Invite People…** first — copying it to someone new won't give them access.")
+                    .foregroundStyle(.red)
             }
         }
     }
