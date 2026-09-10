@@ -22,9 +22,9 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 The main event: two taps per basket, big targets, and the score log always
 visible. Absent players are benched so the grid stays uncluttered.
 
-| Live scoring | Tap a player, then the basket |
-|---|---|
-| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> |
+| Live scoring | Tap a player, then the basket | Credit the assist, or skip |
+|---|---|---|
+| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> | <img src="docs/img/03-game-assist.png" width="240"> |
 
 ### Starting a game
 
@@ -39,7 +39,7 @@ schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
 | Game summary | Box score PDF — preview, then send to the group chat |
 |---|---|
-| <img src="docs/img/04-game-summary.png" width="240"> | <img src="docs/img/05-game-summary-share-pdf.png" width="240"> |
+| <img src="docs/img/05-game-summary.png" width="240"> | <img src="docs/img/06-game-summary-share-pdf.png" width="240"> |
 
 ### Your team
 
@@ -52,9 +52,9 @@ schedule it. Locations autocomplete from Maps and from gyms you've used before.
 What a **follower** sees — the same scores and stats, with no way to change
 anything. The tab appears only once a team has actually been shared with you.
 
-| Teams you follow | Watching a game |
-|---|---|
-| <img src="docs/img/06-following.png" width="240"> | <img src="docs/img/03-following-game.png" width="240"> |
+| Watching a game |
+|---|
+| <img src="docs/img/04-following-game.png" width="240"> |
 
 ## What it does
 

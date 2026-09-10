@@ -283,14 +283,20 @@ taps through to the listing.
 |---|---|---|
 | 1 | `01-game-live-scoring` | The hero: scoring mid-game, bench strip open. The one screen the app exists for. |
 | 2 | `02-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
-| 3 | `03-following-game` | This release's headline. Family watching a live score from their own phone. |
-| 4 | `04-game-summary` | The payoff: final score, linescore, per-player stats. |
-| 5 | `05-game-summary-share-pdf` | The box score people actually send around. |
-| 6 | `06-following` | Sets up #3 — what a follower's list looks like. |
+| 3 | `03-game-assist` | v1.6's headline: the optional assist step, one tap after a make. Follows #2 because it's the same flow a beat later. |
+| 4 | `04-following-game` | Family watching a live score from their own phone. |
+| 5 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
+| 6 | `06-game-summary-share-pdf` | The box score people actually send around. |
 | 7 | `07-games` | Season shape: past, live and scheduled together. |
 | 8 | `08-roster` | Answers "how much setup is this?" |
 | 9 | `09-new-game` | Every field optional; Start Game gets straight to scoring. |
 | 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
+
+**Cut in v1.6 to make room for the assist step:** `06-following`, the
+follower's team *list*. Following was already carried by
+`04-following-game` — the live score being watched, which is the far stronger
+image of the same feature — so the list was the softest of the ten, and two
+slots on one feature was the least defensible spend once assists needed one.
 
 **Two screens were dropped to reach ten**, and it's worth recording why so they
 don't get added back: the score-log **reorder editor** (a dozen near-identical

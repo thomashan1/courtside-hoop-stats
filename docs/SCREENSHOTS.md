@@ -123,10 +123,10 @@ image in the page is worse than no number at all.
 |---|---|---|
 | 1 | `01-game-live-scoring.png` | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
 | 2 | `02-game-score-pad.png` | `12-score-pad` |
-| 3 | `03-following-game.png` | `21-following-game` — a follower watching a game |
-| 4 | `04-game-summary.png` | `02-game-summary` |
-| 5 | `05-game-summary-share-pdf.png` | `14-box-score-pdf` |
-| 6 | `06-following.png` | `20-following-list` — teams shared with you |
+| 3 | `03-game-assist.png` | `17-score-pad-assist` — the optional assist step, one tap after a make |
+| 4 | `04-following-game.png` | `21-following-game` — a follower watching a game |
+| 5 | `05-game-summary.png` | `02-game-summary` |
+| 6 | `06-game-summary-share-pdf.png` | `14-box-score-pdf` |
 | 7 | `07-games.png` | `01-games-list` |
 | 8 | `08-roster.png` | `04-roster` |
 | 9 | `09-new-game.png` | `13-new-game` |
