@@ -195,6 +195,7 @@ struct PlayerStatsTable: View {
                     Text("2P")
                     Text("3P")
                     Text("FT")
+                    Text("AST")
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -210,6 +211,7 @@ struct PlayerStatsTable: View {
                         Text("\(stat.twoPointers)")
                         Text("\(stat.threePointers)")
                         Text(stat.freeThrowDisplay)
+                        Text("\(stat.assists)")
                     }
                     .font(.subheadline)
                     .monospacedDigit()
@@ -225,7 +227,7 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 120, alignment: .leading)
                         Text("DNP")
-                            .gridCellColumns(4)
+                            .gridCellColumns(5)
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

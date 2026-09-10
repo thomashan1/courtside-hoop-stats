@@ -210,7 +210,9 @@ struct LiveScoringView: View {
         .sheet(item: $scoringPlayer) { player in
             ScorePadSheet(
                 player: player,
+                teammates: activePlayers.filter { $0.id != player.id },
                 onScore: { recordScore($0, for: player.id) },
+                onAssist: { eventID, assistPlayerID in recordAssist(assistPlayerID, for: eventID) },
                 onBench: { bench(player.id) }
             )
         }
@@ -503,13 +505,23 @@ struct LiveScoringView: View {
         }
     }
 
-    /// Record a scoring event for a player directly (from the card's long-press
-    /// menu). A haptic confirms the tap landed on the right player.
-    private func recordScore(_ type: EventType, for playerID: UUID) {
+    /// Record a scoring event for a player. Returns the new event's id so the
+    /// score pad can attach an assist to it a moment later (#143) — the point
+    /// itself is already recorded and persisted by the time this returns.
+    @discardableResult
+    private func recordScore(_ type: EventType, for playerID: UUID) -> UUID {
         let event = GameEvent(playerID: playerID, type: type, period: game.currentPeriod)
         game.events.append(event)
         store.updateGame(game)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        return event.id
+    }
+
+    /// Attaches an assist to an already-recorded basket (#143).
+    private func recordAssist(_ assistPlayerID: UUID, for eventID: UUID) {
+        guard let index = game.events.firstIndex(where: { $0.id == eventID }) else { return }
+        game.events[index].assistPlayerID = assistPlayerID
+        store.updateGame(game)
     }
 
     private func endPeriod(opponentTotal: Int) {
@@ -582,12 +594,26 @@ private struct PlayerCard: View {
 // MARK: - Score pad (tap a player → big point buttons, #33)
 
 /// A big, high-contrast point pad for one player. Tapping a point button
-/// records it and dismisses; benching is a secondary action here.
+/// records it immediately; benching is a secondary action here.
+///
+/// A made basket (not a free throw) doesn't dismiss right away — the sheet
+/// stays open one more optional step to ask who assisted (#143). The basket
+/// is already scored by then, so this step never blocks or delays the point:
+/// tap a teammate, tap "No Assist", or just swipe the sheet away — all three
+/// leave the score exactly as recorded.
 struct ScorePadSheet: View {
     @Environment(\.dismiss) private var dismiss
     let player: Player
-    let onScore: (EventType) -> Void
+    /// On-court teammates, offered as assist candidates. Never includes
+    /// `player` themself — you can't assist your own basket.
+    let teammates: [Player]
+    let onScore: (EventType) -> UUID
+    let onAssist: (_ eventID: UUID, _ assistPlayerID: UUID) -> Void
     let onBench: () -> Void
+
+    /// Set once a made basket has been recorded — switches the sheet into
+    /// the assist step. `nil` means "still choosing what happened".
+    @State private var madeEvent: (id: UUID, label: String)?
 
     var body: some View {
         VStack(spacing: 18) {
@@ -596,37 +622,58 @@ struct ScorePadSheet: View {
                 Text(player.firstName)
                     .font(.title2).bold()
                     .lineLimit(1).minimumScaleFactor(0.6)
+                if let madeEvent {
+                    Spacer()
+                    Text("\(madeEvent.label) recorded")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.green)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(Color.green.opacity(0.15)))
+                }
             }
             .padding(.top, 8)
 
-            Grid(horizontalSpacing: 14, verticalSpacing: 14) {
-                GridRow {
-                    padButton("+2", .twoPoint)
-                    padButton("+3", .threePoint)
+            if let madeEvent {
+                assistStep(for: madeEvent.id)
+            } else {
+                pointGrid
+                Button(role: .destructive) {
+                    onBench()
+                    dismiss()
+                } label: {
+                    Label("Not playing", systemImage: "person.slash")
                 }
-                GridRow {
-                    padButton("FT ✓", .ftMade)
-                    padButton("FT ✗", .ftMissed)
-                }
+                .padding(.top, 2)
             }
-
-            Button(role: .destructive) {
-                onBench()
-                dismiss()
-            } label: {
-                Label("Not playing", systemImage: "person.slash")
-            }
-            .padding(.top, 2)
         }
         .padding()
-        .presentationDetents([.height(360)])
+        .presentationDetents(madeEvent == nil ? [.height(360)] : [.medium])
         .presentationDragIndicator(.visible)
+    }
+
+    private var pointGrid: some View {
+        Grid(horizontalSpacing: 14, verticalSpacing: 14) {
+            GridRow {
+                padButton("+2", .twoPoint)
+                padButton("+3", .threePoint)
+            }
+            GridRow {
+                padButton("FT ✓", .ftMade)
+                padButton("FT ✗", .ftMissed)
+            }
+        }
     }
 
     private func padButton(_ label: String, _ type: EventType) -> some View {
         Button {
-            onScore(type)
-            dismiss()
+            let id = onScore(type)
+            let isMake = type == .twoPoint || type == .threePoint
+            if isMake && !teammates.isEmpty {
+                madeEvent = (id, label)
+            } else {
+                dismiss()
+            }
         } label: {
             Text(label)
                 .font(.system(size: 34, weight: .heavy, design: .rounded))
@@ -635,6 +682,49 @@ struct ScorePadSheet: View {
                 .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
+    }
+
+    private func assistStep(for eventID: UUID) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("ASSIST BY")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Color.teamAccent)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    ForEach(teammates) { teammate in
+                        Button {
+                            onAssist(eventID, teammate.id)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                JerseyBadge(number: teammate.number, size: 28)
+                                Text(teammate.firstName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(1).minimumScaleFactor(0.7)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(10)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10)))
+                        }
+                        .buttonStyle(.plain)
+                        // Otherwise VoiceOver (and UI tests) see the jersey
+                        // number and name concatenated into one label.
+                        .accessibilityLabel(teammate.firstName)
+                    }
+                }
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("No Assist — Skip")
+                        .font(.subheadline.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(12)
+                }
+                .buttonStyle(.bordered)
+            }
+        }
     }
 }
 

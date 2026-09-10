@@ -177,6 +177,11 @@ struct GameEvent: Identifiable, Codable {
     var type: EventType
     var period: Int             // 1-based
     var timestamp: Date = Date()
+    /// Who passed for this basket, if the tracker recorded one. Only
+    /// meaningful on `.twoPoint`/`.threePoint` — optional so it decodes fine
+    /// on games saved before assists existed, and because the whole point is
+    /// that it stays unset unless the tracker taps a teammate (#143).
+    var assistPlayerID: UUID? = nil
 }
 
 /// One row in the reorderable score log (#9): a scoring event, or a period-end
@@ -457,10 +462,16 @@ struct Game: Identifiable, Codable {
                 stats.fouls += 1
             }
             map[event.playerID] = stats
+
+            if let assistID = event.assistPlayerID, var assistStats = map[assistID] {
+                assistStats.assists += 1
+                map[assistID] = assistStats
+            }
         }
-        // "Was at the game" = appears anywhere in the log, including a foul or a
-        // missed free throw (both are things only a present player can do).
-        let playersWithEvents = Set(events.map(\.playerID))
+        // "Was at the game" = appears anywhere in the log, including a foul, a
+        // missed free throw, or an assist on someone else's basket (all things
+        // only a present player can do).
+        let playersWithEvents = Set(events.map(\.playerID) + events.compactMap(\.assistPlayerID))
         return players
             .filter { !benchedPlayerIDs.contains($0.id) || playersWithEvents.contains($0.id) }
             .compactMap { map[$0.id] }
@@ -478,6 +489,7 @@ struct PlayerStats: Identifiable {
     var ftMade: Int = 0
     var ftAttempts: Int = 0
     var fouls: Int = 0
+    var assists: Int = 0
 
     var id: UUID { player.id }
 

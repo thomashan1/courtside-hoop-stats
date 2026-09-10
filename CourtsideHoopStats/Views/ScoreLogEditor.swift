@@ -62,6 +62,7 @@ struct ScoreLogEditor: View {
             } label: {
                 EventLogRow(event: event,
                             player: player(for: event.playerID),
+                            assistPlayer: event.assistPlayerID.flatMap(player(for:)),
                             format: game.periodFormat,
                             runningTotal: cumulativeTotals[event.id] ?? 0)
             }

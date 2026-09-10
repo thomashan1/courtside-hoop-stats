@@ -218,10 +218,11 @@ struct GameSummaryPrintout: View {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     Text("Player").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("PTS").frame(width: 52)
-                    Text("2P").frame(width: 44)
-                    Text("3P").frame(width: 44)
-                    Text("FT").frame(width: 96)
+                    Text("PTS").frame(width: 44)
+                    Text("2P").frame(width: 38)
+                    Text("3P").frame(width: 38)
+                    Text("FT").frame(width: 80)
+                    Text("AST").frame(width: 40)
                 }
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.secondary)
@@ -241,10 +242,11 @@ struct GameSummaryPrintout: View {
                                 .minimumScaleFactor(0.8)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        statCell("\(stat.points)", width: 52, bold: true)
-                        statCell("\(stat.twoPointers)", width: 44)
-                        statCell("\(stat.threePointers)", width: 44)
-                        statCell(stat.freeThrowDisplay, width: 96)
+                        statCell("\(stat.points)", width: 44, bold: true)
+                        statCell("\(stat.twoPointers)", width: 38)
+                        statCell("\(stat.threePointers)", width: 38)
+                        statCell(stat.freeThrowDisplay, width: 80)
+                        statCell("\(stat.assists)", width: 40)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -274,7 +276,7 @@ struct GameSummaryPrintout: View {
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .tracking(0.5)
-                                .frame(width: 236)
+                                .frame(width: 240)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -304,10 +306,11 @@ struct GameSummaryPrintout: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            statCell("\(stats.reduce(0) { $0 + $1.points })", width: 52, bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", width: 44, bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.threePointers })", width: 44, bold: true)
-            statCell(ftText, width: 96, bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.points })", width: 44, bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", width: 38, bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.threePointers })", width: 38, bold: true)
+            statCell(ftText, width: 80, bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.assists })", width: 40, bold: true)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)

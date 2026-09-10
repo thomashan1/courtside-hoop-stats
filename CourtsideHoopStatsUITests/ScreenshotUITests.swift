@@ -119,7 +119,15 @@ final class ScreenshotUITests: XCTestCase {
         app.buttons["Nicholas #77"].tap()
         XCTAssertTrue(app.buttons["+2"].waitForExistence(timeout: 5))
         snap(app, "12-score-pad")
-        app.buttons["+2"].tap()   // records + dismisses
+        app.buttons["+2"].tap()   // records the basket, then offers an assist (#143)
+
+        // 3a-i) The assist step: the basket is already scored by this point —
+        // this second step never blocks it, it only offers to credit a pass.
+        XCTAssertTrue(app.staticTexts["ASSIST BY"].waitForExistence(timeout: 5))
+        snap(app, "17-score-pad-assist")
+        app.buttons["Bradley"].tap()
+        XCTAssertTrue(app.staticTexts["ast. Bradley"].waitForExistence(timeout: 5),
+                      "The recorded assist should surface in the Score Log")
 
         // 3b) Bench players via the pad's "Not playing"; they collapse into a strip.
         app.buttons["Wesley #88"].tap()
