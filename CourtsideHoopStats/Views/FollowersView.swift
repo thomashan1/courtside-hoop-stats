@@ -24,6 +24,7 @@ struct FollowersView: View {
     @State private var didCopyLink = false
     @State private var confirmingStop = false
     @State private var actionError: String?
+    @State private var isSyncing = false
 
     /// Everyone except you.
     private var followers: [SharedParticipant] {
@@ -56,6 +57,24 @@ struct FollowersView: View {
             .foregroundStyle(.primary)
             .tint(Color.teamAccent)
             .toolbar {
+                // Only once there's a live share to re-publish — matches
+                // `stopSharingSection`'s own guard.
+                if store.isShared(team.id) {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            syncNow()
+                        } label: {
+                            if isSyncing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                                    .minimumTapTarget()
+                            }
+                        }
+                        .disabled(isSyncing)
+                        .accessibilityLabel("Sync Now")
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
@@ -193,6 +212,20 @@ struct FollowersView: View {
                 preparedShare = try await sharing.prepareShare(for: team, games: games)
                 store.markShared(team.id)
                 inviteURL = try? await sharing.shareURL(for: team)
+            } catch {
+                actionError = error.localizedDescription
+            }
+        }
+    }
+
+    /// Re-publish this team on demand (#151) — the non-destructive
+    /// alternative to Stop Sharing + re-invite for clearing a stuck sync.
+    private func syncNow() {
+        isSyncing = true
+        Task {
+            defer { isSyncing = false }
+            do {
+                try await store.syncNow(team)
             } catch {
                 actionError = error.localizedDescription
             }

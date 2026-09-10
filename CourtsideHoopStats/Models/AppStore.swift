@@ -233,6 +233,22 @@ final class AppStore: ObservableObject {
         }
     }
 
+    /// Re-publish one already-shared team on demand — the owner's
+    /// non-destructive alternative to Stop Sharing + re-invite for clearing a
+    /// stuck sync (#151). `publish(team:games:)` always re-diffs and deletes
+    /// any CloudKit game record the owner's local copy no longer has, so this
+    /// is a real fix, not just a retry of the same state.
+    ///
+    /// Unlike `syncSharedState()` — silent by design, since launch has no
+    /// sensible place to report a failure — this throws, so a failed sync
+    /// doesn't quietly look like it worked.
+    @MainActor
+    func syncNow(_ team: Team) async throws {
+        guard let service = sharingService else { return }
+        let teamGames = games.filter { ($0.teamID ?? team.id) == team.id }
+        try await service.publish(team: team, games: teamGames)
+    }
+
     func markNotShared(_ teamID: UUID) {
         sharedTeamIDs.remove(teamID)
     }
