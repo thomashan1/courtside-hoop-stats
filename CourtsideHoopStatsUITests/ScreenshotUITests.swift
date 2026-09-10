@@ -55,6 +55,14 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Swish Warriors"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Grandma Chen"].waitForExistence(timeout: 5))
         snap(app, "16-followers")
+
+        // 1b-i) Sync Now (#151) — the owner's non-destructive alternative to
+        // Stop Sharing + re-invite for clearing a stuck follower sync.
+        XCTAssertTrue(app.buttons["Sync Now"].waitForExistence(timeout: 5))
+        app.buttons["Sync Now"].tap()
+        XCTAssertFalse(app.alerts["Sharing"].waitForExistence(timeout: 3),
+                       "A successful sync shouldn't show an error alert")
+
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
