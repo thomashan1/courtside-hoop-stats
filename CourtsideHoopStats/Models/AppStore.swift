@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 /// How the roster can be sorted (#27).
 enum PlayerSort {
@@ -267,10 +268,34 @@ final class AppStore: ObservableObject {
         guard let service = sharingService, !sharedTeamIDs.isEmpty else { return }
 
         publishTask?.cancel()
-        publishTask = Task { @MainActor [weak self] in
+
+        // Backgrounding within the debounce window used to silently drop the
+        // publish — and with it any pending game deletion — since iOS
+        // suspends the app before the 3-second timer ever fires (#155). This
+        // assertion buys ~30s so the debounce and publish can actually
+        // finish after the app leaves the foreground, instead of being
+        // killed mid-wait with nothing to show for it.
+        var backgroundTaskID = UIBackgroundTaskIdentifier.invalid
+        var hasEndedBackgroundTask = false
+        func endBackgroundTaskOnce() {
+            guard !hasEndedBackgroundTask, backgroundTaskID != .invalid else { return }
+            hasEndedBackgroundTask = true
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        }
+
+        let task = Task { @MainActor [weak self] in
+            defer { endBackgroundTaskOnce() }
             try? await Task.sleep(for: self?.publishDebounce ?? .seconds(3))
             guard !Task.isCancelled, let self else { return }
             await self.publishSharedTeams(using: service)
+        }
+        publishTask = task
+
+        // If we still somehow run out of background time, cancel the task
+        // rather than let iOS kill the app mid-network-call.
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "PublishSharedTeams") {
+            task.cancel()
+            endBackgroundTaskOnce()
         }
     }
 
