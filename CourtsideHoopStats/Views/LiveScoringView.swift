@@ -615,6 +615,15 @@ struct ScorePadSheet: View {
     /// the assist step. `nil` means "still choosing what happened".
     @State private var madeEvent: (id: UUID, label: String)?
 
+    /// The assist step's natural content height, so the sheet can be sized
+    /// to fit a typical roster instead of a fixed `.medium` detent leaving a
+    /// slab of empty space below the grid (#148, same trap as #145 — but
+    /// this is a plain `VStack`, not a `List`, so a background
+    /// `GeometryReader` (the same technique the player deck's
+    /// `DeckHeightKey` already uses) reports it reliably with no
+    /// List-scroll-geometry feedback loop to worry about.
+    @State private var assistContentHeight: CGFloat = 420
+
     var body: some View {
         VStack(spacing: 18) {
             HStack(spacing: 12) {
@@ -648,7 +657,14 @@ struct ScorePadSheet: View {
             }
         }
         .padding()
-        .presentationDetents(madeEvent == nil ? [.height(360)] : [.medium])
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear { assistContentHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, new in assistContentHeight = new }
+            }
+        )
+        .presentationDetents(madeEvent == nil ? [.height(360)] : [.height(assistContentHeight)])
         .presentationDragIndicator(.visible)
     }
 
@@ -685,45 +701,50 @@ struct ScorePadSheet: View {
     }
 
     private func assistStep(for eventID: UUID) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("ASSIST BY")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(Color.teamAccent)
+        // Not a ScrollView: it would greedily fill whatever height the sheet
+        // currently is, making this VStack report that *available* height
+        // back to the GeometryReader above instead of its own natural size —
+        // exactly the measurement trap #145 hit on the Following list (#148).
+        // A plain VStack always reports its own hugging height regardless of
+        // how much room its parent offers, which is what makes that
+        // GeometryReader trustworthy here.
+        VStack(alignment: .leading, spacing: 14) {
+            Text("ASSIST BY")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Color.teamAccent)
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                    ForEach(teammates) { teammate in
-                        Button {
-                            onAssist(eventID, teammate.id)
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 8) {
-                                JerseyBadge(number: teammate.number, size: 28)
-                                Text(teammate.firstName)
-                                    .font(.subheadline.weight(.semibold))
-                                    .lineLimit(1).minimumScaleFactor(0.7)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10)))
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(teammates) { teammate in
+                    Button {
+                        onAssist(eventID, teammate.id)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 8) {
+                            JerseyBadge(number: teammate.number, size: 28)
+                            Text(teammate.firstName)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1).minimumScaleFactor(0.7)
                         }
-                        .buttonStyle(.plain)
-                        // Otherwise VoiceOver (and UI tests) see the jersey
-                        // number and name concatenated into one label.
-                        .accessibilityLabel(teammate.firstName)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.teamAccent.opacity(0.10)))
                     }
+                    .buttonStyle(.plain)
+                    // Otherwise VoiceOver (and UI tests) see the jersey
+                    // number and name concatenated into one label.
+                    .accessibilityLabel(teammate.firstName)
                 }
-
-                Button {
-                    dismiss()
-                } label: {
-                    Text("No Assist — Skip")
-                        .font(.subheadline.weight(.bold))
-                        .frame(maxWidth: .infinity)
-                        .padding(12)
-                }
-                .buttonStyle(.bordered)
             }
+
+            Button {
+                dismiss()
+            } label: {
+                Text("No Assist — Skip")
+                    .font(.subheadline.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .padding(12)
+            }
+            .buttonStyle(.bordered)
         }
     }
 }
