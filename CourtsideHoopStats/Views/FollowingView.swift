@@ -24,6 +24,17 @@ struct FollowingView: View {
     @State private var isUnfollowing = false
     @State private var unfollowError: String?
 
+    /// Extra top content-margin that centers a short, all-finished season
+    /// instead of leaving it pinned to the top with empty space below (#145).
+    /// Applied once from the list's real scroll geometry — see
+    /// `gameList(for:)` for why it can't just track every update live.
+    @State private var centeringTopInset: CGFloat = 0
+    @State private var hasAppliedCentering = false
+    /// Whatever `onScrollGeometryChange` has reported most recently — kept
+    /// up to date continuously, but only actually *read* once, after layout
+    /// has had time to settle. See `gameList(for:)`.
+    @State private var latestExtent = FollowingScrollExtent(content: 0, container: 0)
+
     /// The team being viewed — the chosen one, or the first followed team.
     private var selected: FollowedTeam? {
         store.followedTeams.first { $0.id == selectedTeamID } ?? store.followedTeams.first
@@ -208,7 +219,45 @@ struct FollowingView: View {
                 Text("You can see this team's games and stats, but can't change them.")
             }
         }
+        // Keeps the latest scroll geometry around, but never *acts* on it
+        // continuously — two things ruled that out. First, SwiftUI delivers
+        // several transient reports during initial layout (content briefly
+        // 0, then briefly equal to the container) before settling, so acting
+        // on any single early one left centering either permanently off or
+        // permanently wrong. Second, `contentSize` includes whatever top
+        // margin is already applied, so feeding a freshly-computed inset
+        // straight back into `.contentMargins` forms a feedback loop —
+        // confirmed by an actual hang. The `.task` below waits out the
+        // transients with a fixed settle delay instead of trying to detect
+        // one, then reads whatever's here exactly once.
+        .onScrollGeometryChange(for: FollowingScrollExtent.self) { geometry in
+            // `containerSize` is the *unclipped* scroll frame — the full
+            // screen, ignoring how much of it the nav bar and tab bar
+            // chrome actually cover. `contentInsets` is exactly that
+            // chrome's footprint, already computed for us.
+            FollowingScrollExtent(content: geometry.contentSize.height,
+                                  container: geometry.containerSize.height
+                                      - geometry.contentInsets.top
+                                      - geometry.contentInsets.bottom)
+        } action: { _, extent in
+            guard !hasAppliedCentering else { return }
+            latestExtent = extent
+        }
+        .task(id: "\(followed.id)#\(followed.games.count)") {
+            resetCentering()
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !hasAppliedCentering, latestExtent.container > 0 else { return }
+            hasAppliedCentering = true
+            centeringTopInset = max(0, (latestExtent.container - latestExtent.content) / 2)
+        }
+        .contentMargins(.top, centeringTopInset, for: .scrollContent)
         .refreshable { await refresh() }
+    }
+
+    private func resetCentering() {
+        hasAppliedCentering = false
+        latestExtent = FollowingScrollExtent(content: 0, container: 0)
+        centeringTopInset = 0
     }
 
     /// A team's games split exactly the way the Games tab splits them.
@@ -505,4 +554,11 @@ private struct FollowedGameView: View {
             }
         }
     }
+}
+
+/// The list's real vs. available height, for `FollowingView`'s centering
+/// (#145).
+private struct FollowingScrollExtent: Equatable {
+    var content: CGFloat
+    var container: CGFloat
 }
