@@ -320,26 +320,32 @@ enum DemoData {
     private static func finishedGame(team: Team) -> Game {
         let p = team.players
         var events: [GameEvent] = []
-        // (playerIndex, type, period). Nicholas (#77, index 8) is the standout —
-        // six made 3s and a game-high 27. Our per-quarter deltas: 12, 12, 11, 13 = 48.
-        let script: [(Int, EventType, Int)] = [
+        // (playerIndex, type, period, assistIndex). Scoring is spread the way a
+        // real youth roster's is: Nicholas (#77, index 8) still leads, at 13,
+        // but with Bradley on 9 and Mason on 7 behind him rather than one kid
+        // taking half the team's points. Per-quarter deltas: 12, 12, 11, 13 = 48.
+        // Assists (the fourth field) are on four different players' makes so
+        // the AST column and box-score PDF show something real, not zeroes.
+        let script: [(Int, EventType, Int, Int?)] = [
             // Q1 = 12
-            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1),
-            (7, .twoPoint, 1), (8, .ftMade, 1), (0, .ftMade, 1),
+            (8, .threePoint, 1, 2), (2, .twoPoint, 1, nil), (7, .twoPoint, 1, nil),
+            (4, .threePoint, 1, nil), (2, .ftMade, 1, nil), (0, .ftMade, 1, nil),
             // Q2 = 12
-            (8, .threePoint, 2), (3, .twoPoint, 2), (4, .twoPoint, 2),
-            (8, .twoPoint, 2), (1, .threePoint, 2),
+            (8, .twoPoint, 2, nil), (2, .threePoint, 2, 8), (6, .twoPoint, 2, nil),
+            (3, .twoPoint, 2, nil), (1, .threePoint, 2, nil),
             // Q3 = 11
-            (8, .threePoint, 3), (7, .twoPoint, 3), (8, .twoPoint, 3),
-            (6, .twoPoint, 3), (8, .ftMade, 3), (8, .ftMissed, 3), (2, .ftMade, 3),
+            (8, .threePoint, 3, 7), (7, .twoPoint, 3, nil), (6, .twoPoint, 3, nil),
+            (5, .twoPoint, 3, nil), (8, .ftMade, 3, nil), (8, .ftMissed, 3, nil),
+            (4, .ftMade, 3, nil),
             // Q4 = 13
-            (8, .threePoint, 4), (8, .threePoint, 4), (5, .twoPoint, 4),
-            (6, .twoPoint, 4), (8, .ftMade, 4), (8, .ftMade, 4), (8, .ftMade, 4),
-            (4, .ftMissed, 4),
+            (8, .threePoint, 4, nil), (8, .ftMade, 4, nil), (2, .threePoint, 4, nil),
+            (7, .twoPoint, 4, 6), (7, .ftMade, 4, nil), (6, .twoPoint, 4, nil),
+            (4, .ftMade, 4, nil), (5, .ftMissed, 4, nil),
         ]
-        for (idx, type, period) in script {
+        for (idx, type, period, assistIdx) in script {
             events.append(GameEvent(playerID: p[idx].id, type: type, period: period,
-                                    timestamp: refDate.addingTimeInterval(Double(period) * 600)))
+                                    timestamp: refDate.addingTimeInterval(Double(period) * 600),
+                                    assistPlayerID: assistIdx.map { p[$0].id }))
         }
         // Opponent running totals per quarter: 8, 19, 30, 41 (final 41 < our 48).
         let periodEnds: [Int: PeriodEndScore] = [

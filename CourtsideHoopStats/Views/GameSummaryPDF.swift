@@ -167,7 +167,7 @@ struct GameSummaryPrintout: View {
             sectionTitle("By Period (running score)")
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
-                    Text("").frame(width: 132, alignment: .leading)
+                    Text("").frame(width: Self.nameColumnWidth, alignment: .leading)
                     ForEach(rows, id: \.period) { row in
                         Text(game.periodFormat.periodLabel(row.period))
                             .frame(maxWidth: .infinity)
@@ -197,7 +197,7 @@ struct GameSummaryPrintout: View {
                 // Team names run long ("Lakeside Lightning"); shrink rather
                 // than truncate, since a clipped name looks like a bug.
                 .minimumScaleFactor(0.7)
-                .frame(width: 132, alignment: .leading)
+                .frame(width: Self.nameColumnWidth, alignment: .leading)
             ForEach(Array(values.enumerated()), id: \.offset) { _, value in
                 Text("\(value)")
                     .font(.system(size: 12, weight: bold ? .semibold : .regular))
@@ -216,13 +216,18 @@ struct GameSummaryPrintout: View {
         VStack(alignment: .leading, spacing: 6) {
             sectionTitle("Player Stats")
             VStack(spacing: 0) {
+                // The name column is fixed at the same 132 the by-period table
+                // above uses, so both tables' left edges line up — and the
+                // stat columns then split the rest evenly instead of being
+                // squeezed against the right margin by a name column that
+                // had claimed every spare point (#148 follow-up).
                 HStack(spacing: 0) {
-                    Text("Player").frame(maxWidth: .infinity, alignment: .leading)
-                    Text("PTS").frame(width: 44)
-                    Text("2P").frame(width: 38)
-                    Text("3P").frame(width: 38)
-                    Text("FT").frame(width: 80)
-                    Text("AST").frame(width: 40)
+                    Text("Player").frame(width: Self.nameColumnWidth, alignment: .leading)
+                    Text("PTS").frame(maxWidth: .infinity)
+                    Text("2P").frame(maxWidth: .infinity)
+                    Text("3P").frame(maxWidth: .infinity)
+                    Text("FT").frame(maxWidth: .infinity)
+                    Text("AST").frame(maxWidth: .infinity)
                 }
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.secondary)
@@ -241,12 +246,12 @@ struct GameSummaryPrintout: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        statCell("\(stat.points)", width: 44, bold: true)
-                        statCell("\(stat.twoPointers)", width: 38)
-                        statCell("\(stat.threePointers)", width: 38)
-                        statCell(stat.freeThrowDisplay, width: 80)
-                        statCell("\(stat.assists)", width: 40)
+                        .frame(width: Self.nameColumnWidth, alignment: .leading)
+                        statCell("\(stat.points)", bold: true)
+                        statCell("\(stat.twoPointers)")
+                        statCell("\(stat.threePointers)")
+                        statCell(stat.freeThrowDisplay)
+                        statCell("\(stat.assists)")
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -271,12 +276,12 @@ struct GameSummaryPrintout: View {
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(width: Self.nameColumnWidth, alignment: .leading)
                             Text("DNP")
                                 .font(.system(size: 10, weight: .semibold))
                                 .foregroundStyle(.secondary)
                                 .tracking(0.5)
-                                .frame(width: 240)
+                                .frame(maxWidth: .infinity)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
@@ -305,24 +310,28 @@ struct GameSummaryPrintout: View {
             Text("TEAM")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            statCell("\(stats.reduce(0) { $0 + $1.points })", width: 44, bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", width: 38, bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.threePointers })", width: 38, bold: true)
-            statCell(ftText, width: 80, bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.assists })", width: 40, bold: true)
+                .frame(width: Self.nameColumnWidth, alignment: .leading)
+            statCell("\(stats.reduce(0) { $0 + $1.points })", bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.threePointers })", bold: true)
+            statCell(ftText, bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.assists })", bold: true)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(Color.teamAccent.opacity(0.07))
     }
 
-    private func statCell(_ text: String, width: CGFloat, bold: Bool = false) -> some View {
+    /// Width of both tables' left-hand name column, so the by-period
+    /// linescore and the stats table share one left edge.
+    private static let nameColumnWidth: CGFloat = 132
+
+    private func statCell(_ text: String, bold: Bool = false) -> some View {
         Text(text)
             .font(.system(size: 12, weight: bold ? .bold : .regular))
             .monospacedDigit()
             .foregroundStyle(.black)
-            .frame(width: width)
+            .frame(maxWidth: .infinity)
     }
 
     // MARK: Chrome
