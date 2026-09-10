@@ -146,7 +146,11 @@ struct FollowersView: View {
         } header: {
             Text("Followers")
         } footer: {
-            Text("Followers can see this team's games and stats, but can't change anything.")
+            // Explains the toolbar's Sync Now button (#151) — it has no List
+            // row of its own to carry a footer, so its explanation rides
+            // here instead, next to the only other content on this screen
+            // it's actually relevant to.
+            Text("Followers can see this team's games and stats, but can't change anything. If someone says they're missing a recent game or still see one you deleted, tap Sync Now above to push the latest.")
         }
     }
 
