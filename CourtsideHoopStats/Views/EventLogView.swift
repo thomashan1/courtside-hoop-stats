@@ -89,6 +89,7 @@ struct EventLogView: View {
     private func eventRow(_ event: GameEvent) -> some View {
         let row = EventLogRow(event: event,
                               player: player(for: event.playerID),
+                              assistPlayer: event.assistPlayerID.flatMap(player(for:)),
                               format: game.periodFormat,
                               runningTotal: cumulativeTotals[event.id] ?? 0,
                               showsChevron: isEditable)
@@ -153,6 +154,9 @@ struct EventLogView: View {
 struct EventLogRow: View {
     let event: GameEvent
     let player: Player?
+    /// Looked up by `assistPlayerID` to render "ast. Bradley" (#143). `nil`
+    /// when there's no assist, or the assisting player no longer exists.
+    var assistPlayer: Player?
     let format: PeriodFormat
     /// Cumulative team points through this event.
     let runningTotal: Int
@@ -179,6 +183,11 @@ struct EventLogRow: View {
                 if event.type.points > 0 {
                     Text("\(runningTotal) pts")
                         .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if let assistPlayer {
+                    Text("ast. \(assistPlayer.firstName)")
+                        .font(.caption2.italic())
                         .foregroundStyle(.secondary)
                 }
             }
@@ -210,12 +219,16 @@ struct EventEditSheet: View {
 
     @State private var playerID: UUID
     @State private var type: EventType
+    @State private var assistPlayerID: UUID?
 
     /// Selectable actions, plus the event's own type if it's a legacy `foul`
     /// (so an old foul event can still be re-classified rather than stranded).
     private var actionOptions: [EventType] {
         EventType.selectable.contains(type) ? EventType.selectable : EventType.selectable + [type]
     }
+
+    /// Assists only make sense on a made basket, never a free throw (#143).
+    private var isAssistable: Bool { type == .twoPoint || type == .threePoint }
 
     init(event: GameEvent, players: [Player],
          onSave: @escaping (GameEvent) -> Void, onDelete: @escaping () -> Void) {
@@ -225,6 +238,7 @@ struct EventEditSheet: View {
         self.onDelete = onDelete
         _playerID = State(initialValue: event.playerID)
         _type = State(initialValue: event.type)
+        _assistPlayerID = State(initialValue: event.assistPlayerID)
     }
 
     var body: some View {
@@ -244,6 +258,22 @@ struct EventEditSheet: View {
                     Picker("Action", selection: $type) {
                         ForEach(actionOptions, id: \.self) { option in
                             Text(option.logLabel).tag(option)
+                        }
+                    }
+                }
+
+                // Only offered on a made basket — hidden rather than disabled,
+                // since a free throw showing a greyed-out assist row would
+                // still invite the question "assist on what?" (#143).
+                if isAssistable {
+                    Section("Assist") {
+                        Picker("Assisted By", selection: $assistPlayerID) {
+                            Text("No Assist").tag(UUID?.none)
+                            ForEach(players.filter { $0.id != playerID }) { teammate in
+                                Text(teammate.number.isEmpty ? teammate.name
+                                                              : "#\(teammate.number)  \(teammate.name)")
+                                    .tag(Optional(teammate.id))
+                            }
                         }
                     }
                 }
@@ -269,6 +299,11 @@ struct EventEditSheet: View {
                         var updated = event
                         updated.playerID = playerID
                         updated.type = type
+                        // Dropped rather than kept-but-hidden if the action
+                        // changed away from a made basket, or the assist ended
+                        // up pointing at the scorer after a player-picker edit.
+                        updated.assistPlayerID = (isAssistable && assistPlayerID != playerID)
+                            ? assistPlayerID : nil
                         onSave(updated)
                         dismiss()
                     }
