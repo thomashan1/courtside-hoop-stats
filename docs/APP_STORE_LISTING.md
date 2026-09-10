@@ -118,6 +118,22 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
+### v1.6 — not yet submitted (v1.5 still in review; date this on upload)
+
+> NEW
+>
+> 1. Assist support — tap a teammate right after a made basket to credit
+>    the pass, or skip it if you didn't catch who assisted.
+> 2. Team owners can now tap Sync Now to push the latest games to followers
+>    immediately, instead of waiting for the app to sync on its own.
+>
+> FIXES
+>
+> 1. The invite link screen now explains clearly that a person has to be
+>    added before the link will work for them.
+> 2. Games you delete now sync to followers more reliably, even if you close
+>    the app right after.
+
 ### v1.5 — submitted 2026-09-05
 
 > NEW
