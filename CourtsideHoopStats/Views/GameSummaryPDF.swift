@@ -248,11 +248,11 @@ struct GameSummaryPrintout: View {
                                 .minimumScaleFactor(0.8)
                         }
                         .frame(width: Self.nameColumnWidth, alignment: .leading)
-                        statCell("\(stat.points)", bold: true)
-                        statCell("\(stat.twoPointers)")
-                        statCell("\(stat.threePointers)")
-                        statCell("\(stat.assists)")
-                        statCell(stat.freeThrowDisplay)
+                        statCell("\(stat.points)", bold: true, isNothing: stat.points == 0)
+                        statCell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
+                        statCell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                        statCell("\(stat.assists)", isNothing: stat.assists == 0)
+                        statCell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -327,11 +327,15 @@ struct GameSummaryPrintout: View {
     /// linescore and the stats table share one left edge.
     private static let nameColumnWidth: CGFloat = 132
 
-    private func statCell(_ text: String, bold: Bool = false) -> some View {
+    /// `isNothing` fades a stat the player didn't record, matching the
+    /// on-screen table. Grey rather than absent: this is a box score people
+    /// print and hand around, and a blank cell reads as an omission.
+    private func statCell(_ text: String, bold: Bool = false,
+                          isNothing: Bool = false) -> some View {
         Text(text)
             .font(.system(size: 12, weight: bold ? .bold : .regular))
             .monospacedDigit()
-            .foregroundStyle(.black)
+            .foregroundStyle(isNothing ? Color(white: 0.62) : .black)
             .frame(maxWidth: .infinity)
     }
 
