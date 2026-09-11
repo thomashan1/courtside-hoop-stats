@@ -94,7 +94,10 @@ when someone has shared a team with you (§3.10).
 
 - **Player cards:** compact — **first name** + jersey number (e.g. `Ava #4`) over `N pts`. Grid widens with Dynamic Type. Absent players can be **benched** so they drop out of the grid.
 - **Scoreboard:** solid navy banner (both appearances); our score auto-calculated (blue), opponent score in white; period label. Score scales with Dynamic Type (capped). A compact top bar (Back / Details) replaces the system nav bar; nav + tab bars are hidden while scoring.
-- **Point pad:** tapping a player card raises a big point pad — **2 PT / 3 PT / FT ✓ / FT ✗** — recorded immediately; selection then clears. There is no floating action bar and no undo/redo.
+- **Point pad:** tapping a player card raises a big point pad — **2 PT / 3 PT / FT ✓ / FT ✗** — recorded immediately; selection then clears. There is no floating action bar and no undo/redo. After a made 2 or 3 the pad offers an optional **assist** — the basket is already scored, so tapping a teammate, tapping *No Assist*, or swiping the sheet away all leave the score as recorded (#143).
+- **On-court five (#144):** the deck can track who's actually on the floor. Once a lineup is set the grid shows only those players, with everyone else at the game as **Bench** chips beneath. **Subs** changes the whole five in one pass — tap who's going off and who's coming on in any order, then confirm once, so a three-for-three at a dead ball costs three taps rather than a modal per swap. Tracking is **opt-in**: a game where no lineup is ever set behaves exactly as it did before, showing every available player in the grid.
+  - The five also narrows the **assist picker** to the four teammates who were on the floor, instead of the whole roster.
+  - Marking someone **Not playing** takes them out of the lineup too, so they stop accruing time.
 - **End Period:** a tappable **quarter/half boundary at the top of the Score Log** opens a sheet to enter the opponent's cumulative total, then advances / finishes. (A pickup game has no period breaks — it just ends via **Finish Game**.)
 - **Score Log:** grouped by period with quarter/half separators + per-period points; each row shows a concise action label + running team total; **tap to edit** (player/action) or **swipe to delete**.
 
@@ -102,7 +105,8 @@ when someone has shared a team with you (§3.10).
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
-- Player stats table (sorted by points), first names: PTS, 2P, 3P, **AST**, then **FT** shown made/attempts with a whole-percent **FT%** when there's ≥1 attempt (e.g. `5/6 (83%)`). FT is deliberately **last**: it's three times the width of any other value, so anywhere else it pushes the columns to its right off the edge, and it's the least urgent number mid-game. The same table and order appear in the Game Summary, the live **Stats** panel and a follower's game view — the live panel is the narrowest of the three and the one a new column has to fit.
+- Player stats table (sorted by points), first names: PTS, 2P, 3P, **AST**, **MIN**, then **FT** shown made/attempts with a whole-percent **FT%** when there's ≥1 attempt (e.g. `5/6 (83%)`). FT is deliberately **last**: it's three times the width of any other value, so anywhere else it pushes the columns to its right off the edge, and it's the least urgent number mid-game. The same table and order appear in the Game Summary, the live **Stats** panel and a follower's game view — the live panel is the narrowest of the three and the one a new column has to fit.
+- **MIN** on court, but only for games that tracked a lineup (#144) — the column is absent entirely otherwise, since a column of dashes on every older game helps nobody. It is **wall clock inside each period**, not a game clock: the app has none, so an in-period stoppage counts. The break between periods does not — a period's clock opens when something is actually recorded in it, so halftime is never credited to whoever finished the previous quarter. Shown as **whole minutes** (`15`): with no clock, a seconds digit would claim a precision nothing measured, and it keeps a seventh column on a phone screen. The same history also yields which periods each player appeared in.
 - Players benched for the game are listed below the scorers as **DNP** rather
   than dropped — a roster that silently loses people reads as a bug, and zeroes
   would wrongly say "played, didn't score". A benched player who *did* record
@@ -168,11 +172,13 @@ Key types (see source for full detail):
 - `Player { id, name, number }` + `firstName`.
 - `JerseyColor { white, blue }` + `opposite`.
 - `EventType { twoPoint, threePoint, ftMade, ftMissed, foul }` (+ points, labels).
-- `GameEvent { id, playerID, type, period, timestamp }`.
+- `GameEvent { id, playerID, type, period, timestamp, assistPlayerID: UUID? }` — the assist is optional in both senses (#143).
+- `LineupChange { id, period, timestamp, onCourt: [UUID] }` — the **complete** five from that moment until the next change, not an in/out pair, so a half-recorded swap can't leave someone on the floor forever (#144).
 - `PeriodFormat { quarters, halves, pickup }` (pickup = 1 running period, no breaks).
 - `PeriodEndScore { ourRunningTotal, opponentRunningTotal }` (opponent side authoritative; our side derived from events).
-- `Game { id, date, opponent, league, location, isHome, periodFormat, events, periodEndScores, notes, isComplete, hasStarted: Bool? }`
-  - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, and **`lifecycle` { scheduled, inProgress, complete }**.
+- `Game { id, date, opponent, league, location, isHome, periodFormat, events, periodEndScores, lineupChanges, periodEndTimes, notes, isComplete, hasStarted: Bool? }`
+  - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, **`lifecycle` { scheduled, inProgress, complete }**, and the lineup set — `tracksLineup`, `currentLineup`, `lineupSegments(now:)`, `timeOnCourt(now:)`, `periodsPlayed(now:)`.
+  - **Decodes leniently.** `Game` has a hand-written `init(from:)` (in an extension, so the memberwise init survives) reading every field with `decodeIfPresent`. This is a data-loss guard, not style: `AppStore.load()` uses `try?`, so one missing key silently wipes every saved game, and Swift's synthesized decoder throws on a missing key *even when the property has a default*. **Adding a stored property to `Game` means adding a line there**, covered by `GameMigrationTests`.
 - `PlayerStats` (derived, never stored).
 
 ---

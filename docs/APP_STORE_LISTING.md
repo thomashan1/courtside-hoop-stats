@@ -297,11 +297,11 @@ taps through to the listing.
 
 | # | File | Why it's here |
 |---|---|---|
-| 1 | `01-game-live-scoring` | The hero: scoring mid-game, bench strip open. The one screen the app exists for. |
+| 1 | `01-game-live-scoring` | The hero: scoring mid-game, the five on the floor named above the bench. The one screen the app exists for. |
 | 2 | `02-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
 | 3 | `03-game-assist` | v1.6's headline: the optional assist step, one tap after a make. Follows #2 because it's the same flow a beat later. |
 | 4 | `04-following-game` | Family watching a live score from their own phone. |
-| 5 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
+| 5 | `05-game-summary` | The payoff: final score, linescore, per-player stats — points through to AST and MIN. |
 | 6 | `06-game-summary-share-pdf` | The box score people actually send around. |
 | 7 | `07-games` | Season shape: past, live and scheduled together. |
 | 8 | `08-roster` | Answers "how much setup is this?" |

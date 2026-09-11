@@ -133,15 +133,32 @@ final class ScreenshotUITests: XCTestCase {
         // this second step never blocks it, it only offers to credit a pass.
         XCTAssertTrue(app.staticTexts["ASSIST BY"].waitForExistence(timeout: 5))
         snap(app, "17-score-pad-assist")
+        // Only the four he was on the floor with are offered (#144) — the
+        // whole roster would be nine. Someone on the bench can't be credited.
+        XCTAssertFalse(app.buttons["Austin"].exists,
+                       "a player on the bench shouldn't be offered as an assist")
         app.buttons["Bradley"].tap()
         XCTAssertTrue(app.staticTexts["ast. Bradley"].waitForExistence(timeout: 5),
                       "The recorded assist should surface in the Score Log")
 
-        // 3b) Bench players via the pad's "Not playing"; they collapse into a strip.
-        app.buttons["Wesley #88"].tap()
+        // 3a-ii) Substitutions (#144): change the whole five in one pass and
+        // confirm once, rather than a modal per swap.
+        app.buttons["Subs"].tap()
+        XCTAssertTrue(app.navigationBars["Subs"].waitForExistence(timeout: 10))
+        app.buttons["Kaleb"].tap()      // going off
+        app.buttons["Jake"].tap()       // coming on
+        snap(app, "18-subs")
+        app.navigationBars["Subs"].buttons["Confirm"].tap()
+
+        XCTAssertTrue(app.buttons["Jake #7"].waitForExistence(timeout: 5),
+                      "a player subbed on should appear in the on-court grid")
+
+        // 3b) Bench players via the pad's "Not playing"; they collapse into a
+        // strip. Both are on the floor, since the grid only shows the five.
+        app.buttons["Adrian #19"].tap()
         XCTAssertTrue(app.buttons["Not playing"].waitForExistence(timeout: 5))
         app.buttons["Not playing"].tap()
-        app.buttons["Kaleb #24"].tap()
+        app.buttons["Mason #5"].tap()
         XCTAssertTrue(app.buttons["Not playing"].waitForExistence(timeout: 5))
         app.buttons["Not playing"].tap()
         let benchToggle = app.buttons["Not playing (2)"]

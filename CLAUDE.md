@@ -39,7 +39,16 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   floating action bar, no long-press, no undo/redo. The Score Log sits on top
   (oldest-first, sticky period headers, auto-scroll) and players sit in the
   bottom thumb zone; nav + tab bars hide while scoring. Bench absent players;
-  edit or reorder any entry.
+  edit or reorder any entry. A made 2 or 3 offers an optional **assist** —
+  always skippable, since the basket is already banked (#143).
+- **On-court five & time (#144).** Optional lineup tracking: the deck splits
+  into the five on the floor and the bench, **Subs** changes the whole five in
+  one confirm (a bulk swap at a whistle is one sheet, not a modal per player),
+  and the five narrows the assist picker to four names. Games that never set a
+  lineup behave exactly as before. The **MIN** column is **wall clock inside a
+  period** — no game clock exists, so stoppages count, but the break between
+  periods doesn't. Whole minutes only: a seconds digit would claim a precision
+  nothing measured.
 - **Games.** Tap **+** for a New Game form where **every field is optional**.
   **Start Game** begins scoring immediately; **Save** schedules it. Period
   format (quarters / halves / pickup) is chosen at creation.
@@ -73,8 +82,25 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **`Game.stats(for:)` takes the full roster** and applies benching itself.
   Passing a pre-filtered list makes the stats table disagree with the final
   score.
-- Models use **migration-safe optional `Codable` fields**: a `try?` decode
-  failure wipes saved data, so new fields must be optional or defaulted.
+- **Every change must be backward compatible. There are real saved games now** —
+  Jean's actual season, on her phone, not test data. A model change that can't
+  read what a previous build wrote doesn't fail loudly; `AppStore.load()`
+  decodes with `try?`, so a single unreadable field silently wipes *every*
+  game and roster. Assume any schema change is destroying real data until a
+  test proves otherwise.
+- **A default value does NOT make a `Codable` field safe.** Swift's synthesized
+  `init(from:)` throws `keyNotFound` for a missing key even when the property
+  has a default — verified, not assumed (`GameMigrationTests`). Only
+  `Optional` fields survive on their own. `Game` therefore has a hand-written
+  lenient `init(from:)` reading every field with `decodeIfPresent`: **adding a
+  stored property to `Game` means adding a line there**, and adding one
+  anywhere else means either making it `Optional` or giving that type the same
+  treatment. `locationAddress` had exactly this latent bug for months; it
+  never bit only because it landed before the v1.4 release, so no shipped
+  build ever wrote a `Game` without it.
+- Pair any schema change with a `GameMigrationTests`-style test that strips the
+  new keys and decodes what's left. It's the only thing standing between a
+  refactor and someone's season.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a

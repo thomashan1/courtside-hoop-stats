@@ -43,9 +43,9 @@ run's PNGs in place and looking like a successful capture.
 
 PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
 `NN-name.png` — e.g. `01-games-list`, `02-game-summary`, `03-live-scoring`,
-`04-roster`, `12-score-pad`, `13-new-game`, `17-score-pad-assist`,
-`19-live-stats-panel`, `20-following-list`,
-`21-following-game` (see the two test files for the full set).
+`04-roster`, `12-score-pad`, `13-new-game`, `17-score-pad-assist`, `18-subs`,
+`19-live-stats-panel`, `20-following-list`, `21-following-game` (see the two
+test files for the full set).
 
 ## What the demo data covers
 
@@ -122,7 +122,7 @@ image in the page is worse than no number at all.
 
 | # | File | Captured from |
 |---|---|---|
-| 1 | `01-game-live-scoring.png` | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
+| 1 | `01-game-live-scoring.png` | `03-live-scoring` — the deck showing the on-court five and the bench beneath it |
 | 2 | `02-game-score-pad.png` | `12-score-pad` |
 | 3 | `03-game-assist.png` | `17-score-pad-assist` — the optional assist step, one tap after a make |
 | 4 | `04-following-game.png` | `21-following-game` — a follower watching a game |
