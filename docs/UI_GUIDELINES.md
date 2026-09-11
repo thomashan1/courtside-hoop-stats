@@ -105,7 +105,20 @@ the OS-level `-UIPreferredContentSizeCategoryName` argument does **not** reach
 a SwiftUI app whose root applies its own `.dynamicTypeSize` floor, and a test
 that uses it silently exercises the default size instead.
 
-## 9. Owning a team and following one must look different
+## 9. A scrollable table hides columns silently — count the width
+
+`PlayerStatsTable` scrolls horizontally so large text sizes widen columns
+instead of clipping them. The cost: anything past the right edge is invisible
+at the *default* size too, because a horizontal scroll indicator only shows
+while scrolling. Nobody discovers a column they've never seen.
+
+AST was added, screenshotted, and off the edge in the Game Summary at the
+default text size. So when adding a column, add up the widths against the
+narrowest supported screen rather than trusting the scroll to save you, and
+read the column off a fresh screenshot. Two levers, in order: the column gaps,
+then the widest value's format.
+
+## 10. Owning a team and following one must look different
 
 The Games tab and the Following tab show the same team, the same games, the same
 stats. The only structural difference is that one accepts taps that change the

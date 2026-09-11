@@ -179,6 +179,13 @@ struct GameHeaderCard<Leading: View, Trailing: View>: View {
 /// columns grow and the table scrolls sideways instead of clipping the numbers
 /// or squeezing the player name (issue #12). `Grid` keeps header and rows
 /// column-aligned.
+///
+/// The spacing and name width are deliberately tight. Scrolling only rescues
+/// a column someone knows to look for: iOS shows a horizontal scroll
+/// indicator while scrolling, never at rest, so anything past the right edge
+/// is simply invisible. AST was added, screenshotted and off the edge here at
+/// the default text size. Six columns fit a 428pt screen at this spacing;
+/// count the width before adding a seventh.
 struct PlayerStatsTable: View {
     let stats: [PlayerStats]
     /// Players who sat the game out, listed below the scorers as **DNP**
@@ -188,9 +195,9 @@ struct PlayerStatsTable: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            Grid(alignment: .leading, horizontalSpacing: 18, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
-                    Text("Player").frame(minWidth: 120, alignment: .leading)
+                    Text("Player").frame(minWidth: 100, alignment: .leading)
                     Text("PTS")
                     Text("2P")
                     Text("3P")
@@ -206,7 +213,7 @@ struct PlayerStatsTable: View {
                             JerseyBadge(number: stat.player.number, size: 26)
                             Text(stat.player.firstName).lineLimit(1)
                         }
-                        .frame(minWidth: 120, alignment: .leading)
+                        .frame(minWidth: 100, alignment: .leading)
                         Text("\(stat.points)").bold()
                         Text("\(stat.twoPointers)")
                         Text("\(stat.threePointers)")
@@ -225,7 +232,7 @@ struct PlayerStatsTable: View {
                             JerseyBadge(number: player.number, size: 26)
                             Text(player.firstName).lineLimit(1)
                         }
-                        .frame(minWidth: 120, alignment: .leading)
+                        .frame(minWidth: 100, alignment: .leading)
                         Text("DNP")
                             .gridCellColumns(5)
                     }
