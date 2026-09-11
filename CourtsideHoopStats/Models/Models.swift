@@ -493,11 +493,25 @@ struct PlayerStats: Identifiable {
 
     var id: UUID { player.id }
 
-    /// Made/attempts, with a whole-percent FT% when there's at least one
-    /// attempt (e.g. "5/6 (83%)"). No percentage for 0 attempts — just "0/0".
+    /// Made/attempts — "5/6". The compact form, for the on-screen table.
+    ///
+    /// The percentage lives in `freeThrowDisplayWithPercent` and the PDF,
+    /// because on a phone this column is the widest thing in the table by
+    /// roughly three times, and it sets how much room is left for everything
+    /// to its right. The Player column is sized by the longest name on the
+    /// roster, so a team with a "Krithikesh" on it has ~25pt less to give than
+    /// one whose longest name is "Nicholas" — enough to push FT off the edge
+    /// entirely. `5/6` says what `5/6 (83%)` says, in a third of the width.
     var freeThrowDisplay: String {
-        guard ftAttempts > 0 else { return "\(ftMade)/\(ftAttempts)" }
+        "\(ftMade)/\(ftAttempts)"
+    }
+
+    /// Made/attempts with a whole-percent FT% when there's at least one
+    /// attempt (e.g. "5/6 (83%)"). No percentage for 0 attempts — just "0/0".
+    /// For the box score PDF, which has a full page to spend.
+    var freeThrowDisplayWithPercent: String {
+        guard ftAttempts > 0 else { return freeThrowDisplay }
         let percent = Int((Double(ftMade) / Double(ftAttempts) * 100).rounded())
-        return "\(ftMade)/\(ftAttempts) (\(percent)%)"
+        return "\(freeThrowDisplay) (\(percent)%)"
     }
 }

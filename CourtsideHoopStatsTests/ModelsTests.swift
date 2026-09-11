@@ -199,7 +199,23 @@ struct ModelsTests {
         #expect(lucasStats.ftMade == 1)
         #expect(lucasStats.ftAttempts == 2)      // made + missed
         #expect(lucasStats.fouls == 1)
-        #expect(lucasStats.freeThrowDisplay == "1/2 (50%)")   // FT% appended (#41)
+        // The on-screen column is the compact form; the percentage is the
+        // PDF's. Splitting them is what keeps FT on screen for a roster whose
+        // longest name is long enough to squeeze the table.
+        #expect(lucasStats.freeThrowDisplay == "1/2")
+        #expect(lucasStats.freeThrowDisplayWithPercent == "1/2 (50%)")   // FT% (#41)
+    }
+
+    /// No attempts reads the same either way — there's no percentage to show
+    /// and "0/0 (0%)" would claim a miss that never happened.
+    @Test func freeThrowDisplayWithNoAttempts() {
+        var game = Game(opponent: "Test", periodFormat: .quarters)
+        let p = player("Nobody")
+        game.events = [GameEvent(playerID: p.id, type: .twoPoint, period: 1)]
+        let stats = game.stats(for: [p])[0]
+
+        #expect(stats.freeThrowDisplay == "0/0")
+        #expect(stats.freeThrowDisplayWithPercent == "0/0")
     }
 
     @Test func statsSortedByPointsDescending() {
