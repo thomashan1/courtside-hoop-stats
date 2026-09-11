@@ -171,6 +171,18 @@ enum EventType: String, Codable, CaseIterable {
     }
 }
 
+/// One change to the on-court five (#144) — the complete set from this
+/// moment until the next change, not a single player going in or out.
+struct LineupChange: Identifiable, Codable {
+    var id: UUID = UUID()
+    /// The period it was made in. Kept for display; time accrual reads
+    /// `timestamp` against the game's period boundaries instead, so a lineup
+    /// carries across a period break without needing a fresh entry.
+    var period: Int
+    var timestamp: Date = Date()
+    var onCourt: [UUID]
+}
+
 struct GameEvent: Identifiable, Codable {
     var id: UUID = UUID()
     var playerID: UUID
@@ -266,6 +278,18 @@ struct Game: Identifiable, Codable {
     var periodFormat: PeriodFormat = .quarters
     var events: [GameEvent] = []
     var periodEndScores: [Int: PeriodEndScore] = [:]   // key = period number
+    /// Every change to the five on the floor, oldest first (#144). Each entry
+    /// is the *complete* on-court set from its timestamp until the next entry
+    /// — a snapshot rather than an in/out pair, so a missed half of a swap
+    /// can't silently leave someone on the floor forever.
+    ///
+    /// Empty means the tracker never set a lineup, which is a supported way to
+    /// use the app: everything falls back to the pre-lineup behaviour.
+    var lineupChanges: [LineupChange] = []
+    /// When each period was ended, so time on court can be bounded by the
+    /// periods it was actually accrued in — without this, halftime counts.
+    /// Keyed by period number, like `periodEndScores`.
+    var periodEndTimes: [Int: Date] = [:]
     var notes: String = ""
     /// Roster players sat out of this game (not at the game). Hidden from the
     /// live-scoring grid to save space; their existing events are untouched.
@@ -317,6 +341,127 @@ struct Game: Identifiable, Codable {
         if ourScore > opponentScore { return .win }
         if ourScore < opponentScore { return .loss }
         return .tie
+    }
+
+    // MARK: Lineup (#144)
+
+    /// Whether this game has a tracked lineup at all. When false every
+    /// lineup-derived number is absent rather than zero, and the UI falls
+    /// back to how it behaved before lineups existed.
+    var tracksLineup: Bool { !lineupChanges.isEmpty }
+
+    /// Who is on the floor right now — the most recent change.
+    var currentLineup: [UUID] {
+        lineupChanges.max { $0.timestamp < $1.timestamp }?.onCourt ?? []
+    }
+
+    /// The earliest thing recorded, which is when period 1's clock opens.
+    private var firstRecordedMoment: Date? {
+        (events.map(\.timestamp) + lineupChanges.map(\.timestamp)).min()
+    }
+
+    /// Each period's open and close. A period opens when the previous one was
+    /// ended (period 1 at the first thing recorded) and closes when it is
+    /// ended — or, for the one being played, right now. A period that can't
+    /// be placed at both ends is skipped rather than guessed at, which is
+    /// what keeps a game recorded before lineups existed from inventing time.
+    private func periodWindows(now: Date) -> [(period: Int, start: Date, end: Date)] {
+        guard let opening = firstRecordedMoment else { return [] }
+        var windows: [(period: Int, start: Date, end: Date)] = []
+
+        for period in 1...periodFormat.periodCount {
+            let previousEnd: Date? = period == 1 ? opening : periodEndTimes[period - 1]
+            guard let previousEnd else { continue }
+
+            // A period opens when something is actually recorded in it, not
+            // the instant the previous one ended. Otherwise the break between
+            // periods — and halftime especially — is credited to whichever
+            // five happened to be on the floor at the buzzer, which is the
+            // opposite of the fairness question this whole feature answers.
+            // Nothing recorded at all means nobody accrues, which is missing
+            // data rather than wrong data.
+            let start = firstActivity(in: period).map { max($0, previousEnd) } ?? previousEnd
+            // A live period runs to *now* — but only while the game is still
+            // being scored. Nothing says a game was finished except someone
+            // ending the period, so an unfinished one reopened the next day
+            // would otherwise credit everyone on the floor with a day of
+            // basketball. (The demo's in-progress game showed 93,599 minutes.)
+            // The clock therefore stops a grace window after the last thing
+            // actually recorded. While she's tapping, that's always ahead of
+            // now and the period ticks normally.
+            let liveEnd = min(now, (lastActivity(in: period) ?? start)
+                .addingTimeInterval(Self.liveAccrualGrace))
+            let end: Date? = periodEndTimes[period]
+                ?? ((period == currentPeriod && !isComplete) ? liveEnd : nil)
+            guard let end, end > start else { continue }
+            windows.append((period, start, end))
+        }
+        return windows
+    }
+
+    /// The first thing recorded in a period — a basket or a substitution.
+    private func firstActivity(in period: Int) -> Date? {
+        (events.filter { $0.period == period }.map(\.timestamp)
+            + lineupChanges.filter { $0.period == period }.map(\.timestamp)).min()
+    }
+
+    private func lastActivity(in period: Int) -> Date? {
+        (events.filter { $0.period == period }.map(\.timestamp)
+            + lineupChanges.filter { $0.period == period }.map(\.timestamp)).max()
+    }
+
+    /// How long a live period keeps accruing after the last thing recorded in
+    /// it. Longer than any plausible scoring drought inside a youth-basketball
+    /// period, short enough that an abandoned game can't run away.
+    private static let liveAccrualGrace: TimeInterval = 20 * 60
+
+    /// The game cut into stretches where the five didn't change, each tagged
+    /// with the period it fell in. Both `timeOnCourt` and `periodsPlayed`
+    /// read this, so the two can never disagree about who was out there.
+    ///
+    /// The lineup in force at any moment is the most recent change at or
+    /// before it, so one set in Q1 keeps accruing through Q2 without needing
+    /// a fresh entry — while the period windows keep the break itself out.
+    func lineupSegments(now: Date = Date()) -> [(period: Int, onCourt: [UUID], seconds: TimeInterval)] {
+        guard tracksLineup else { return [] }
+        let changes = lineupChanges.sorted { $0.timestamp < $1.timestamp }
+        var segments: [(period: Int, onCourt: [UUID], seconds: TimeInterval)] = []
+
+        for window in periodWindows(now: now) {
+            var marks = [window.start]
+            marks += changes.map(\.timestamp).filter { $0 > window.start && $0 < window.end }
+            marks.append(window.end)
+
+            for (from, to) in zip(marks, marks.dropFirst()) {
+                let seconds = to.timeIntervalSince(from)
+                guard seconds > 0,
+                      let lineup = changes.last(where: { $0.timestamp <= from })?.onCourt,
+                      !lineup.isEmpty else { continue }
+                segments.append((window.period, lineup, seconds))
+            }
+        }
+        return segments
+    }
+
+    /// Seconds on the floor per player. Wall clock inside each period — there
+    /// is no game clock, so an in-period stoppage counts. It inflates everyone
+    /// equally, which keeps the comparison between players honest.
+    func timeOnCourt(now: Date = Date()) -> [UUID: TimeInterval] {
+        var totals: [UUID: TimeInterval] = [:]
+        for segment in lineupSegments(now: now) {
+            for id in segment.onCourt { totals[id, default: 0] += segment.seconds }
+        }
+        return totals
+    }
+
+    /// Which periods each player appeared in — derived from the same history,
+    /// so the box score can carry whichever unit a league writes its rules in.
+    func periodsPlayed(now: Date = Date()) -> [UUID: Set<Int>] {
+        var played: [UUID: Set<Int>] = [:]
+        for segment in lineupSegments(now: now) {
+            for id in segment.onCourt { played[id, default: []].insert(segment.period) }
+        }
+        return played
     }
 
     /// Per-period score deltas. Our points are derived from events (so the
@@ -440,9 +585,18 @@ struct Game: Identifiable, Codable {
         }
     }
 
-    func stats(for players: [Player]) -> [PlayerStats] {
+    func stats(for players: [Player], now: Date = Date()) -> [PlayerStats] {
         var map: [UUID: PlayerStats] = [:]
         for player in players { map[player.id] = PlayerStats(player: player) }
+
+        let seconds = timeOnCourt(now: now)
+        let periods = periodsPlayed(now: now)
+        for player in players {
+            map[player.id]?.secondsOnCourt = seconds[player.id] ?? 0
+            map[player.id]?.periodsPlayed = periods[player.id] ?? []
+            map[player.id]?.tracksLineup = tracksLineup
+        }
+
         for event in events {
             guard var stats = map[event.playerID] else { continue }
             switch event.type {
@@ -479,6 +633,54 @@ struct Game: Identifiable, Codable {
     }
 }
 
+// MARK: - Decoding games written by older builds
+
+extension Game {
+    /// Decoded leniently: any field absent from the saved blob falls back to
+    /// its default instead of throwing.
+    ///
+    /// This is a data-loss guard, not a style choice. `AppStore.load()`
+    /// decodes with `try?`, so one missing key doesn't surface as an error —
+    /// it silently empties the user's entire game history. Swift's
+    /// *synthesized* `init(from:)` throws `keyNotFound` for a missing key
+    /// even when the property has a default value, so every field added after
+    /// 1.0 has to be read with `decodeIfPresent` here. Adding a stored
+    /// property to `Game` means adding a line to this initialiser.
+    ///
+    /// Written in an extension deliberately: declaring an initialiser in the
+    /// struct body would suppress the memberwise `init`, which the whole app
+    /// and every test construct games with.
+    ///
+    /// `GameMigrationTests` holds this line.
+    enum CodingKeys: String, CodingKey {
+        case id, teamID, date, opponent, league, location, locationAddress
+        case isHome, periodFormat, events, periodEndScores, lineupChanges
+        case periodEndTimes, notes, benchedPlayerIDs, isComplete, hasStarted
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        teamID = try container.decodeIfPresent(UUID.self, forKey: .teamID)
+        date = try container.decodeIfPresent(Date.self, forKey: .date) ?? Date()
+        opponent = try container.decodeIfPresent(String.self, forKey: .opponent) ?? ""
+        league = try container.decodeIfPresent(String.self, forKey: .league) ?? ""
+        location = try container.decodeIfPresent(String.self, forKey: .location) ?? ""
+        locationAddress = try container.decodeIfPresent(String.self, forKey: .locationAddress) ?? ""
+        isHome = try container.decodeIfPresent(Bool.self, forKey: .isHome) ?? true
+        periodFormat = try container.decodeIfPresent(PeriodFormat.self, forKey: .periodFormat) ?? .quarters
+        events = try container.decodeIfPresent([GameEvent].self, forKey: .events) ?? []
+        periodEndScores = try container.decodeIfPresent([Int: PeriodEndScore].self,
+                                                        forKey: .periodEndScores) ?? [:]
+        lineupChanges = try container.decodeIfPresent([LineupChange].self, forKey: .lineupChanges) ?? []
+        periodEndTimes = try container.decodeIfPresent([Int: Date].self, forKey: .periodEndTimes) ?? [:]
+        notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        benchedPlayerIDs = try container.decodeIfPresent([UUID].self, forKey: .benchedPlayerIDs) ?? []
+        isComplete = try container.decodeIfPresent(Bool.self, forKey: .isComplete) ?? false
+        hasStarted = try container.decodeIfPresent(Bool.self, forKey: .hasStarted)
+    }
+}
+
 // MARK: - Derived player stats (never stored)
 
 struct PlayerStats: Identifiable {
@@ -490,8 +692,27 @@ struct PlayerStats: Identifiable {
     var ftAttempts: Int = 0
     var fouls: Int = 0
     var assists: Int = 0
+    /// Wall-clock seconds on the floor (#144). Meaningless unless
+    /// `tracksLineup` — a game recorded without a lineup reports zero for
+    /// everyone, which is absence of data, not "never played".
+    var secondsOnCourt: TimeInterval = 0
+    var periodsPlayed: Set<Int> = []
+    var tracksLineup: Bool = false
 
     var id: UUID { player.id }
+
+    /// Whole minutes on the floor ("15"), or nil when this game has no lineup
+    /// to derive it from — so a caller shows a dash rather than a confident 0.
+    ///
+    /// Minutes, not "15:12". There is no game clock: time accrues by wall
+    /// clock between the period's first recorded activity and its end, so a
+    /// seconds digit would claim a precision the app never measured. It is
+    /// also what a box score calls the column, and it keeps a seventh column
+    /// on a phone screen.
+    var timeDisplay: String? {
+        guard tracksLineup else { return nil }
+        return "\(Int((secondsOnCourt / 60).rounded()))"
+    }
 
     /// Made/attempts, with a whole-percent FT% when there's at least one
     /// attempt (e.g. "5/6 (83%)"). No percentage for 0 attempts — just "0/0".

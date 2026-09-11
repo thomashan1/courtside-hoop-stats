@@ -105,6 +105,12 @@ the OS-level `-UIPreferredContentSizeCategoryName` argument does **not** reach
 a SwiftUI app whose root applies its own `.dynamicTypeSize` floor, and a test
 that uses it silently exercises the default size instead.
 
+When a UI test needs to swipe that deck, address it by
+`.accessibilityIdentifier`, never as "the lowest scroll view on screen". The
+deck now contains the bench chips' own horizontal `ScrollView`, and that
+heuristic silently started picking a 55pt-tall offscreen element no swipe can
+act on — a failure that reads as "the deck doesn't scroll".
+
 ## 9. A scrollable table hides columns silently — count the width
 
 `PlayerStatsTable` scrolls horizontally so large text sizes widen columns
@@ -113,16 +119,18 @@ at the *default* size too, because a horizontal scroll indicator only shows
 while scrolling. Nobody discovers a column they've never seen.
 
 AST was added, screenshotted, and off the edge in the Game Summary at the
-default text size. So when adding a column, add up the widths against the
-narrowest supported screen rather than trusting the scroll to save you, and
-read the column off a fresh screenshot — from the **live Stats panel**, which
-is narrower than the Game Summary's row. Fixing the Summary alone left AST
+default text size — found by trying to add another column, not by looking at
+the table. So when adding a column, add up the widths against the narrowest
+supported screen rather than trusting the scroll to save you, and read the
+column off a fresh screenshot — from the **live Stats panel**, which is
+narrower than the Game Summary's row. Fixing the Summary alone left AST
 needing a sideways scroll there, and the deck hid the evidence.
 
 Three levers, in order: put the widest column **last**, so a squeeze clips the
 least important value instead of hiding a whole column — FT's `1/1 (100%)` is
-three times any other width, which is why it sits after AST — then the column
-gaps, then that value's format.
+three times any other width, which is why it sits after AST and MIN — then the
+column gaps, then that value's format (`MIN` in whole minutes fits where
+`15:12` doesn't).
 
 ## 10. Owning a team and following one must look different
 

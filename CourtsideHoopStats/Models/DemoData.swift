@@ -358,6 +358,21 @@ enum DemoData {
         // costs no points — and it makes the demo realistic: a real roster
         // usually has an absentee. It's also what puts a **DNP** row in the
         // box-score PDF and the README screenshot (#55).
+        // A full game's worth of substitutions (#144), so the summary and the
+        // box-score PDF have real time on court to print rather than dashes.
+        //
+        // Six changes across four quarters — a believable youth rotation where
+        // everyone present gets a run and nobody plays all forty minutes. The
+        // period end times bracket each quarter, which is what keeps the break
+        // between them out of the totals.
+        let lineup: [(seconds: TimeInterval, period: Int, indices: [Int])] = [
+            (0,    1, [8, 2, 7, 6, 4]),   // starters
+            (420,  1, [2, 7, 1, 3, 5]),   // Nicholas, Lucas, Jake rest
+            (900,  2, [8, 6, 4, 0, 5]),
+            (1400, 3, [8, 2, 7, 6, 1]),
+            (1900, 4, [2, 4, 3, 0, 5]),   // Nicholas sits the start of the fourth
+            (2200, 4, [8, 2, 7, 6, 4]),   // starters back to close it out
+        ]
         return Game(
             date: refDate,
             opponent: "Lakeside Lightning",
@@ -368,6 +383,15 @@ enum DemoData {
             periodFormat: .quarters,
             events: events,
             periodEndScores: periodEnds,
+            lineupChanges: lineup.map { change in
+                LineupChange(period: change.period,
+                             timestamp: refDate.addingTimeInterval(change.seconds),
+                             onCourt: change.indices.map { p[$0].id })
+            },
+            periodEndTimes: [1: refDate.addingTimeInterval(660),
+                             2: refDate.addingTimeInterval(1260),
+                             3: refDate.addingTimeInterval(1860),
+                             4: refDate.addingTimeInterval(2460)],
             notes: "Great defensive third quarter. Watch #8 on the press next time.",
             benchedPlayerIDs: [p[9].id],
             isComplete: true,
@@ -493,13 +517,33 @@ enum DemoData {
 
     private static func inProgressGame(team: Team) -> Game {
         let p = team.players
+        // This game's clock is anchored to **now**, not to the fixed `refDate`
+        // the finished games use — it is, by definition, in progress. Tip-off
+        // 20 minutes ago puts it partway through Q2.
+        //
+        // The finished games can sit on a fixed date because every period of
+        // theirs is closed by `periodEndTimes`. A live period has no end, so
+        // it accrues until something stops it, and anyone scoring into this
+        // game (the screenshot harness does) adds events stamped `Date()`.
+        // Seeded on `refDate`, the open quarter therefore ran from July to
+        // now and MIN read 93,613 minutes.
+        let tipoff = Date().addingTimeInterval(-20 * 60)
+
         // Nicholas (index 8) opens with a 3; running total 7 at the Q1 break.
         let events: [GameEvent] = [
-            GameEvent(playerID: p[8].id, type: .threePoint, period: 1),
-            GameEvent(playerID: p[2].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[8].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
+            GameEvent(playerID: p[8].id, type: .threePoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(120)),
+            GameEvent(playerID: p[2].id, type: .twoPoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(300)),
+            GameEvent(playerID: p[8].id, type: .twoPoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(540)),
+            GameEvent(playerID: p[4].id, type: .twoPoint, period: 2,
+                      timestamp: tipoff.addingTimeInterval(900)),
         ]
+        // A tracked five so the deck shows On court / Bench (#144). Q1 opened
+        // with the starters; one swap early in Q2 puts Kaleb and Adrian on.
+        let starters = [8, 2, 7, 6, 4].map { p[$0].id }          // N, Bradley, Mason, Lucas, Jake
+        let afterSwap = [8, 2, 7, 5, 0].map { p[$0].id }         // Lucas, Jake off; Kaleb, Adrian on
         return Game(
             date: gameDate(daysFromRef: 7, hour: 1),      // 11:00 AM
             opponent: "Northgate Falcons",
@@ -509,6 +553,11 @@ enum DemoData {
             periodFormat: .quarters,
             events: events,
             periodEndScores: [1: PeriodEndScore(ourRunningTotal: 7, opponentRunningTotal: 9)],
+            lineupChanges: [
+                LineupChange(period: 1, timestamp: tipoff, onCourt: starters),
+                LineupChange(period: 2, timestamp: tipoff.addingTimeInterval(700), onCourt: afterSwap),
+            ],
+            periodEndTimes: [1: tipoff.addingTimeInterval(660)],
             isComplete: false,
             hasStarted: true
         )

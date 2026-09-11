@@ -137,28 +137,43 @@ final class AccessibilityTextSizeTests: XCTestCase {
         XCTAssertTrue(firstCard.waitForExistence(timeout: 5))
         XCTAssertTrue(firstCard.isHittable, "Player card unreachable at large text size")
 
-        // Capping the deck is only half the fix — the players it no longer has
-        // room for have to be reachable by scrolling, or benching someone is
-        // the only way to score for them. Nicholas is 9th of 10 alphabetically,
-        // so he's below the fold until the deck is scrolled.
+        // Capping the deck is only half the fix — whatever it no longer has
+        // room for has to be reachable by scrolling, or benching someone is
+        // the only way to score for them.
+        //
+        // This deliberately does *not* assert that a particular player starts
+        // below the fold. It used to, keyed to Nicholas being 9th of 10
+        // alphabetically, and that broke the moment the deck started showing
+        // only the on-court five (#144) — a fixture accident failing while
+        // every real guarantee still held. What matters is reachability, so
+        // that is what's asserted.
         let lastCard = app.buttons["Nicholas #77"]
-        XCTAssertFalse(lastCard.exists,
-                       "Precondition: Nicholas should start below the fold at this text size")
 
-        // The screen has two scroll views — the Score Log and the deck. The
-        // deck is the lower one.
-        let deck = app.scrollViews.allElementsBoundByIndex
-            .max { $0.frame.minY < $1.frame.minY }
-        let deckScroll = try XCTUnwrap(deck, "Player deck should be a scroll view")
+        // Addressed by identifier, not position. This used to pick "the lowest
+        // scroll view on screen", which silently started selecting the bench
+        // chips' own horizontal scroll view once that existed (#144) — an
+        // offscreen 55pt-tall element that no swipe can act on.
+        let deckScroll = app.scrollViews["PlayerDeck"]
+        XCTAssertTrue(deckScroll.waitForExistence(timeout: 5),
+                      "Player deck should be a scroll view")
 
-        // Roughly two cards fit in the capped deck, so reaching the 9th of 10
-        // takes several swipes. Bounded so a deck that doesn't scroll at all
-        // fails rather than spinning.
-        for _ in 0..<8 where !lastCard.exists {
+        // Bounded so a deck that doesn't scroll at all fails rather than spins.
+        for _ in 0..<8 where !lastCard.isHittable {
             deckScroll.swipeUp()
         }
-        XCTAssertTrue(lastCard.waitForExistence(timeout: 5),
+        XCTAssertTrue(lastCard.isHittable,
                       "Player deck does not scroll — players below the fold are unreachable")
+
+        // Changing the five has to stay possible at this text size (#144).
+        // The affordance is the Subs button in the deck header — the bench
+        // chips are only a shortcut to the same sheet — and reaching Nicholas
+        // above scrolled it off the top, so this scrolls back for it.
+        let subs = app.buttons["Subs"]
+        for _ in 0..<8 where !subs.isHittable {
+            deckScroll.swipeDown()
+        }
+        XCTAssertTrue(subs.isHittable,
+                      "Subs unreachable at large text size — the lineup couldn't be changed")
 
         // Tapping a card still opens the point pad — the whole purpose of the
         // screen, and worth confirming the scroll wrapper didn't break it.
@@ -176,7 +191,6 @@ final class AccessibilityTextSizeTests: XCTestCase {
     /// They stack instead now, so this asserts both halves stay on screen.
     func testGameBannersSurviveLargestTextSize() throws {
         let app = launchAtLargestText()
-        let screen = app.windows.firstMatch.frame
 
         // Owner: a finished game. At this text size the Final Scores section
         // starts below the fold, and a List doesn't realise rows it hasn't
