@@ -123,6 +123,42 @@ struct LineupTests {
         #expect(time[players[0]] == 300)
     }
 
+    /// A game left unfinished must not keep running.
+    ///
+    /// Nothing marks a game as abandoned — only ending a period stops the
+    /// clock — so a live period accruing straight to `now` credits everyone on
+    /// the floor for every hour since. Opening yesterday's forgotten game
+    /// showed 93,599 minutes, and it would have shipped looking like that.
+    @Test func anAbandonedGameStopsAccruingInsteadOfRunningForever() {
+        let players = ids(5)
+        var game = Game(opponent: "Test", periodFormat: .quarters)
+        game.lineupChanges = [LineupChange(period: 1, timestamp: start, onCourt: players)]
+
+        // Reopened two days later, nothing recorded since.
+        let time = game.timeOnCourt(now: start.addingTimeInterval(2 * 24 * 3600))
+
+        let minutes = (time[players[0]] ?? 0) / 60
+        #expect(minutes < 60, "An abandoned period accrued \(minutes) minutes")
+    }
+
+    /// …while a game that *is* being scored keeps ticking. The stop above is
+    /// keyed to the last thing recorded, not to wall-clock age, so a long
+    /// scoring drought inside a live period must not freeze the clock.
+    @Test func aLivePeriodKeepsTickingWhileItIsBeingScored() {
+        let players = ids(5)
+        var game = Game(opponent: "Test", periodFormat: .quarters)
+        game.lineupChanges = [LineupChange(period: 1, timestamp: start, onCourt: players)]
+        game.events = [
+            GameEvent(playerID: players[0], type: .twoPoint, period: 1,
+                      timestamp: start.addingTimeInterval(600)),
+        ]
+
+        // Five minutes after the last basket — a normal quiet spell.
+        let time = game.timeOnCourt(now: start.addingTimeInterval(900))
+
+        #expect(time[players[0]] == 900)
+    }
+
     /// The demo game the screenshots and the PDF are built from has to add up:
     /// five players on the floor for every second of every period.
     @Test func theDemoGamesTimeAddsUp() {
