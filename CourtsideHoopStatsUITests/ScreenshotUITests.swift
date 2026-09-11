@@ -149,6 +149,35 @@ final class ScreenshotUITests: XCTestCase {
         benchToggle.tap()   // expand the collapsed strip to show the chips
         snap(app, "11-bench")
 
+        // 3b-i) The in-game Stats panel. This is the *narrowest* place
+        // `PlayerStatsTable` renders — the card's own padding sits inside the
+        // Score Log's — so it's the container a new column has to survive, not
+        // the roomier Game Summary. Captured because AST fit the Summary and
+        // still needed a sideways scroll here.
+        let statsToggle = app.buttons["Stats"]
+        XCTAssertTrue(statsToggle.waitForExistence(timeout: 5),
+                      "The Stats panel should be reachable while scoring")
+        statsToggle.tap()
+
+        // The panel expands *below* the Score Log's fold, behind the deck, so
+        // scroll the log up to it. Dragged by coordinate inside the log's own
+        // region rather than `app.swipeUp()`, which lands on the deck.
+        let header = app.staticTexts["AST"]
+        XCTAssertTrue(header.waitForExistence(timeout: 5),
+                      "The in-game stats table should show the AST column")
+        let window = app.windows.firstMatch
+        let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
+        let to = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.16))
+        for _ in 0..<8 where !header.isHittable {
+            from.press(forDuration: 0.05, thenDragTo: to)
+        }
+        // `isHittable`, not `exists`: the whole point is that the table is
+        // *visible* here, in the narrowest container it renders in.
+        XCTAssertTrue(header.isHittable,
+                      "The AST column should be on screen in the live Stats panel")
+        snap(app, "19-live-stats-panel")
+        statsToggle.tap()   // collapse again; later steps expect the deck unobstructed
+
         // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.
         app.buttons["Details"].tap()
         XCTAssertTrue(app.navigationBars["Edit Game"].waitForExistence(timeout: 10))

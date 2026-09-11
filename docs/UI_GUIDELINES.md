@@ -115,8 +115,14 @@ while scrolling. Nobody discovers a column they've never seen.
 AST was added, screenshotted, and off the edge in the Game Summary at the
 default text size. So when adding a column, add up the widths against the
 narrowest supported screen rather than trusting the scroll to save you, and
-read the column off a fresh screenshot. Two levers, in order: the column gaps,
-then the widest value's format.
+read the column off a fresh screenshot — from the **live Stats panel**, which
+is narrower than the Game Summary's row. Fixing the Summary alone left AST
+needing a sideways scroll there, and the deck hid the evidence.
+
+Three levers, in order: put the widest column **last**, so a squeeze clips the
+least important value instead of hiding a whole column — FT's `1/1 (100%)` is
+three times any other width, which is why it sits after AST — then the column
+gaps, then that value's format.
 
 ## 10. Owning a team and following one must look different
 
