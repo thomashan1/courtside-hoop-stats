@@ -191,7 +191,6 @@ final class AccessibilityTextSizeTests: XCTestCase {
     /// They stack instead now, so this asserts both halves stay on screen.
     func testGameBannersSurviveLargestTextSize() throws {
         let app = launchAtLargestText()
-        let screen = app.windows.firstMatch.frame
 
         // Owner: a finished game. At this text size the Final Scores section
         // starts below the fold, and a List doesn't realise rows it hasn't
