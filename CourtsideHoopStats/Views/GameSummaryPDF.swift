@@ -252,7 +252,7 @@ struct GameSummaryPrintout: View {
                         statCell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         statCell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         statCell("\(stat.assists)", isNothing: stat.assists == 0)
-                        statCell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
+                        statCell(stat.freeThrowDisplayWithPercent, isNothing: stat.ftAttempts == 0)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)

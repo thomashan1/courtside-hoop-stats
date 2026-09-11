@@ -44,7 +44,7 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   **Start Game** begins scoring immediately; **Save** schedules it. Period
   format (quarters / halves / pickup) is chosen at creation.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
-  stats with **FT%** (`5/6 (83%)`), editable opponent totals, editable log.
+  stats with **FT** (`5/6`; the percentage is the PDF's, where there's room), editable opponent totals, editable log.
 - **Box score PDF.** Game Summary → share icon → a preview of a one-page PDF.
   Print-specific layout in `GameSummaryPDF.swift` (*not* a screen capture),
   NBA-style **DNP** rows, and a tappable App Store link attached via PDFKit
