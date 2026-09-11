@@ -517,12 +517,28 @@ enum DemoData {
 
     private static func inProgressGame(team: Team) -> Game {
         let p = team.players
+        // This game's clock is anchored to **now**, not to the fixed `refDate`
+        // the finished games use — it is, by definition, in progress. Tip-off
+        // 20 minutes ago puts it partway through Q2.
+        //
+        // The finished games can sit on a fixed date because every period of
+        // theirs is closed by `periodEndTimes`. A live period has no end, so
+        // it accrues until something stops it, and anyone scoring into this
+        // game (the screenshot harness does) adds events stamped `Date()`.
+        // Seeded on `refDate`, the open quarter therefore ran from July to
+        // now and MIN read 93,613 minutes.
+        let tipoff = Date().addingTimeInterval(-20 * 60)
+
         // Nicholas (index 8) opens with a 3; running total 7 at the Q1 break.
         let events: [GameEvent] = [
-            GameEvent(playerID: p[8].id, type: .threePoint, period: 1),
-            GameEvent(playerID: p[2].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[8].id, type: .twoPoint, period: 1),
-            GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
+            GameEvent(playerID: p[8].id, type: .threePoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(120)),
+            GameEvent(playerID: p[2].id, type: .twoPoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(300)),
+            GameEvent(playerID: p[8].id, type: .twoPoint, period: 1,
+                      timestamp: tipoff.addingTimeInterval(540)),
+            GameEvent(playerID: p[4].id, type: .twoPoint, period: 2,
+                      timestamp: tipoff.addingTimeInterval(900)),
         ]
         // A tracked five so the deck shows On court / Bench (#144). Q1 opened
         // with the starters; one swap early in Q2 puts Kaleb and Adrian on.
@@ -538,10 +554,10 @@ enum DemoData {
             events: events,
             periodEndScores: [1: PeriodEndScore(ourRunningTotal: 7, opponentRunningTotal: 9)],
             lineupChanges: [
-                LineupChange(period: 1, timestamp: refDate, onCourt: starters),
-                LineupChange(period: 2, timestamp: refDate.addingTimeInterval(700), onCourt: afterSwap),
+                LineupChange(period: 1, timestamp: tipoff, onCourt: starters),
+                LineupChange(period: 2, timestamp: tipoff.addingTimeInterval(700), onCourt: afterSwap),
             ],
-            periodEndTimes: [1: refDate.addingTimeInterval(660)],
+            periodEndTimes: [1: tipoff.addingTimeInterval(660)],
             isComplete: false,
             hasStarted: true
         )

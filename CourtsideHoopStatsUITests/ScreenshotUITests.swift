@@ -171,20 +171,43 @@ final class ScreenshotUITests: XCTestCase {
         // Score Log's — so it's the container a new column has to survive, not
         // the roomier Game Summary. Captured because AST fit the Summary and
         // still needed a sideways scroll here.
-        let statsToggle = app.buttons["Stats"]
-        XCTAssertTrue(statsToggle.waitForExistence(timeout: 5),
-                      "The Stats panel should be reachable while scoring")
-        statsToggle.tap()
-
-        // The panel expands *below* the Score Log's fold, behind the deck, so
-        // scroll the log up to it. Dragged by coordinate inside the log's own
-        // region rather than `app.swipeUp()`, which lands on the deck.
-        let header = app.staticTexts["AST"]
-        XCTAssertTrue(header.waitForExistence(timeout: 5),
-                      "The in-game stats table should show the AST column")
+        //
+        // Both steps below scroll the Score Log by dragging inside its own
+        // region. `app.swipeUp()` lands on the player deck instead, and the
+        // deck's height varies with the lineup — which is exactly how the
+        // first version of this passed on one branch and tapped thin air on
+        // another.
         let window = app.windows.firstMatch
         let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45))
         let to = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.16))
+
+        let statsToggle = app.buttons["Stats"]
+        XCTAssertTrue(statsToggle.waitForExistence(timeout: 5),
+                      "The Stats panel should exist while scoring")
+
+        // Scroll the log to its end so the card clears the deck.
+        //
+        // **Do not gate this on `isHittable`.** The card can sit almost
+        // entirely *under* the deck — 3pt of a 28pt row left showing — and
+        // XCUITest still calls it hittable; the tap then lands on the deck's
+        // bench strip and the panel never opens. That reads as "the table has
+        // no AST column", which is a badly wrong diagnosis. Scroll until the
+        // card stops moving instead, which is a fact about the log, not a
+        // guess about occlusion.
+        var lastY = statsToggle.frame.maxY
+        for _ in 0..<8 {
+            from.press(forDuration: 0.05, thenDragTo: to)
+            let y = statsToggle.frame.maxY
+            if abs(y - lastY) < 1 { break }
+            lastY = y
+        }
+
+        // Conditional because a drag that starts on the card reads as a tap
+        // and opens it by itself; an unconditional tap would close it again.
+        let header = app.staticTexts["AST"]
+        if !header.exists { statsToggle.tap() }
+        XCTAssertTrue(header.waitForExistence(timeout: 5),
+                      "The in-game stats table should show the AST column")
         for _ in 0..<8 where !header.isHittable {
             from.press(forDuration: 0.05, thenDragTo: to)
         }
@@ -193,7 +216,8 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(header.isHittable,
                       "The AST column should be on screen in the live Stats panel")
         snap(app, "19-live-stats-panel")
-        statsToggle.tap()   // collapse again; later steps expect the deck unobstructed
+        // Collapse again; later steps expect the deck unobstructed.
+        if header.exists { statsToggle.tap() }
 
         // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.
         app.buttons["Details"].tap()

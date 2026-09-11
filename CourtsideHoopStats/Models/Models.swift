@@ -381,8 +381,18 @@ struct Game: Identifiable, Codable {
             // Nothing recorded at all means nobody accrues, which is missing
             // data rather than wrong data.
             let start = firstActivity(in: period).map { max($0, previousEnd) } ?? previousEnd
+            // A live period runs to *now* — but only while the game is still
+            // being scored. Nothing says a game was finished except someone
+            // ending the period, so an unfinished one reopened the next day
+            // would otherwise credit everyone on the floor with a day of
+            // basketball. (The demo's in-progress game showed 93,599 minutes.)
+            // The clock therefore stops a grace window after the last thing
+            // actually recorded. While she's tapping, that's always ahead of
+            // now and the period ticks normally.
+            let liveEnd = min(now, (lastActivity(in: period) ?? start)
+                .addingTimeInterval(Self.liveAccrualGrace))
             let end: Date? = periodEndTimes[period]
-                ?? ((period == currentPeriod && !isComplete) ? now : nil)
+                ?? ((period == currentPeriod && !isComplete) ? liveEnd : nil)
             guard let end, end > start else { continue }
             windows.append((period, start, end))
         }
@@ -394,6 +404,16 @@ struct Game: Identifiable, Codable {
         (events.filter { $0.period == period }.map(\.timestamp)
             + lineupChanges.filter { $0.period == period }.map(\.timestamp)).min()
     }
+
+    private func lastActivity(in period: Int) -> Date? {
+        (events.filter { $0.period == period }.map(\.timestamp)
+            + lineupChanges.filter { $0.period == period }.map(\.timestamp)).max()
+    }
+
+    /// How long a live period keeps accruing after the last thing recorded in
+    /// it. Longer than any plausible scoring drought inside a youth-basketball
+    /// period, short enough that an abandoned game can't run away.
+    private static let liveAccrualGrace: TimeInterval = 20 * 60
 
     /// The game cut into stretches where the five didn't change, each tagged
     /// with the period it fell in. Both `timeOnCourt` and `periodsPlayed`
