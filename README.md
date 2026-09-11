@@ -20,7 +20,9 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
 ### Scoring courtside
 
 The main event: two taps per basket, big targets, and the score log always
-visible. Absent players are benched so the grid stays uncluttered.
+visible. The deck can show just the five on the floor, with everyone else a
+bench chip below — which keeps the grid uncluttered and narrows the assist
+picker to the four teammates who were actually out there.
 
 | Live scoring | Tap a player, then the basket | Credit the assist, or skip |
 |---|---|---|
@@ -61,7 +63,12 @@ anything. The tab appears only once a team has actually been shared with you.
 - **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗).
   Players show by **first name** for fast, unambiguous tapping. The score log
   stays on top (with sticky period headers); players sit in the thumb zone.
-  Bench absent players; reorder or edit any entry.
+  A made 2 or 3 offers an optional **assist**. Bench absent players; reorder or
+  edit any entry.
+- **Who's on the floor** — optionally track the on-court five. **Subs** swaps
+  the whole lineup in one confirm at a dead ball, the assist picker narrows to
+  the four teammates who were on, and the box score gains a **MIN** column.
+  Skip it entirely and nothing changes.
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
   later.

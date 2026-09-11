@@ -34,6 +34,9 @@ struct LiveScoringView: View {
     @State private var showBench = false
     /// The player whose point pad is open (tap a card to score, #33).
     @State private var scoringPlayer: Player?
+    /// Presents the substitution sheet — setting the five, or changing it
+    /// in one go at a whistle (#144).
+    @State private var showSubs = false
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
@@ -82,7 +85,34 @@ struct LiveScoringView: View {
     private func bench(_ id: UUID) {
         guard !game.benchedPlayerIDs.contains(id) else { return }
         game.benchedPlayerIDs.append(id)
+        // Someone marked as not at the game can't still be on the floor
+        // racking up time — take them out of the lineup too (#144).
+        if game.tracksLineup, game.currentLineup.contains(id) {
+            recordLineup(game.currentLineup.filter { $0 != id })
+        }
         store.updateGame(game)
+    }
+
+    /// Who the assist picker offers: the rest of the five when a lineup is
+    /// tracked, everyone at the game when it isn't.
+    private func assistCandidates(excluding scorer: Player) -> [Player] {
+        let pool = game.tracksLineup ? onCourtPlayers : activePlayers
+        return pool.filter { $0.id != scorer.id }
+    }
+
+    /// Append a lineup change. Appending rather than editing is what makes
+    /// time on court reconstructible: the history is the record, and the
+    /// current five is just its last entry.
+    private func recordLineup(_ ids: [UUID]) {
+        game.lineupChanges.append(
+            LineupChange(period: game.currentPeriod, onCourt: ids))
+    }
+
+    private func applyLineup(_ ids: [UUID]) {
+        guard ids != game.currentLineup else { return }
+        recordLineup(ids)
+        store.updateGame(game)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
     private func unbench(_ id: UUID) {
@@ -143,7 +173,9 @@ struct LiveScoringView: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
                     }
+                    lineupHeader
                     playerGrid
+                    offCourtStrip
                 }
                 .background(
                     GeometryReader { proxy in
@@ -153,6 +185,10 @@ struct LiveScoringView: View {
                 )
             }
             .scrollBounceBehavior(.basedOnSize)
+            // Named so a UI test can reach the deck directly. It used to be
+            // found as "the lowest scroll view on screen", which broke the
+            // moment the bench chips added a second, nested one (#144).
+            .accessibilityIdentifier("PlayerDeck")
             .frame(height: deckHeight)
             .onPreferenceChange(DeckHeightKey.self) { deckContentHeight = $0 }
             .padding(.horizontal)
@@ -207,10 +243,21 @@ struct LiveScoringView: View {
                 store.updateGame(game)
             }
         }
+        .sheet(isPresented: $showSubs) {
+            SubsSheet(
+                onCourt: onCourtPlayers,
+                bench: offCourtPlayers.isEmpty && !game.tracksLineup
+                    ? activePlayers : offCourtPlayers,
+                onConfirm: applyLineup
+            )
+        }
         .sheet(item: $scoringPlayer) { player in
             ScorePadSheet(
                 player: player,
-                teammates: activePlayers.filter { $0.id != player.id },
+                // Only the four he was on the floor with, once a lineup is
+                // tracked — a shorter list to find a name in, and one that
+                // can't offer someone who was sitting down (#144).
+                teammates: assistCandidates(excluding: player),
                 onScore: { recordScore($0, for: player.id) },
                 onAssist: { eventID, assistPlayerID in recordAssist(assistPlayerID, for: eventID) },
                 onBench: { bench(player.id) }
@@ -287,6 +334,13 @@ struct LiveScoringView: View {
 
     // MARK: - Player grid
 
+    /// The grid shows the five on the floor once a lineup is being tracked,
+    /// and everyone at the game until then — so a tracker who never opens
+    /// Subs sees exactly the screen they saw before lineups existed (#144).
+    private var gridPlayers: [Player] {
+        game.tracksLineup ? onCourtPlayers : activePlayers
+    }
+
     private var playerGrid: some View {
         Group {
             if store.team.players.isEmpty {
@@ -298,11 +352,85 @@ struct LiveScoringView: View {
                 .padding(.top, 40)
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
-                    ForEach(activePlayers) { player in
+                    ForEach(gridPlayers) { player in
                         PlayerCard(player: player) { scoringPlayer = player }
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - On-court lineup (#144)
+
+    /// The five on the floor. Empty when no lineup is being tracked, which is
+    /// a supported way to use the app rather than a state to nag about.
+    private var onCourtPlayers: [Player] {
+        guard game.tracksLineup else { return [] }
+        let ids = Set(game.currentLineup)
+        return activePlayers.filter { ids.contains($0.id) }
+    }
+
+    /// At the game, but not on the floor right now.
+    private var offCourtPlayers: [Player] {
+        guard game.tracksLineup else { return [] }
+        let ids = Set(game.currentLineup)
+        return activePlayers.filter { !ids.contains($0.id) }
+    }
+
+    @ViewBuilder
+    private var lineupHeader: some View {
+        if !store.team.players.isEmpty {
+            HStack {
+                if game.tracksLineup {
+                    Text("On court · \(onCourtPlayers.count)")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                }
+                Spacer()
+                Button {
+                    showSubs = true
+                } label: {
+                    Label(game.tracksLineup ? "Subs" : "Set the Five",
+                          systemImage: "arrow.left.arrow.right")
+                        .font(.caption.weight(.bold))
+                        .minimumTapTarget()
+                }
+            }
+        }
+    }
+
+    /// Everyone at the game who isn't on the floor, as compact chips. Tapping
+    /// one opens Subs rather than swapping straight away: a single tap can't
+    /// say who they're replacing, and guessing would be worse than asking.
+    @ViewBuilder
+    private var offCourtStrip: some View {
+        if game.tracksLineup && !offCourtPlayers.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Bench")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(offCourtPlayers) { player in
+                            Button {
+                                showSubs = true
+                            } label: {
+                                Text(benchLabel(player))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+                                    .minimumTapTarget()
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 4)
         }
     }
 
@@ -530,6 +658,9 @@ struct LiveScoringView: View {
             ourRunningTotal: game.ourScore,
             opponentRunningTotal: opponentTotal
         )
+        // Closes the window time on court accrues in, so the break between
+        // periods doesn't count as court time (#144).
+        game.periodEndTimes[period] = Date()
         if period >= game.periodFormat.periodCount {
             game.isComplete = true
         }
@@ -746,6 +877,123 @@ struct ScorePadSheet: View {
             }
             .buttonStyle(.bordered)
         }
+    }
+}
+
+// MARK: - Substitutions (#144)
+
+/// Change the whole lineup in one pass: tap whoever is going off and whoever
+/// is coming on, in any order, then confirm once.
+///
+/// Deliberately *not* a tap-a-player-then-pick-their-replacement flow. Youth
+/// coaches swap three or four at a dead ball, and a modal per swap turns one
+/// whistle into ten taps while she's trying to watch the game — the cost that
+/// decides whether the lineup stays accurate at all.
+struct SubsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let onCourt: [Player]
+    let bench: [Player]
+    let onConfirm: ([UUID]) -> Void
+
+    /// Who's been tapped to come off, and to go on. Held separately rather
+    /// than as one edited lineup so the summary can say "2 off, 2 on" — the
+    /// thing she's checking against what the coach just shouted.
+    @State private var goingOff: Set<UUID> = []
+    @State private var comingOn: Set<UUID> = []
+
+    private var isFirstLineup: Bool { onCourt.isEmpty }
+
+    private var resulting: [UUID] {
+        onCourt.map(\.id).filter { !goingOff.contains($0) } + bench.map(\.id).filter { comingOn.contains($0) }
+    }
+
+    private var summary: String {
+        if isFirstLineup {
+            return comingOn.isEmpty ? "Tap who starts" : "\(comingOn.count) on the floor"
+        }
+        return "\(goingOff.count) off, \(comingOn.count) on"
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if !isFirstLineup {
+                    Section {
+                        pickerGrid(players: onCourt, selection: $goingOff, tint: .orange)
+                    } header: {
+                        Text("Going off")
+                    }
+                }
+
+                Section {
+                    pickerGrid(players: bench, selection: $comingOn, tint: Color.teamAccent)
+                } header: {
+                    Text(isFirstLineup ? "On the floor" : "Coming on")
+                } footer: {
+                    Text(isFirstLineup
+                         ? "Tap whoever starts. You can change it any time — every change is what the time on court is worked out from."
+                         : "They don't have to match: pull someone off without a replacement and the count just tells you.")
+                }
+
+                Section {
+                    LabeledContent(summary) {
+                        Text("\(resulting.count) on court")
+                            .bold()
+                            .monospacedDigit()
+                            .foregroundStyle(Color.teamAccent)
+                    }
+                }
+            }
+            .navigationTitle(isFirstLineup ? "Set the Five" : "Subs")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Confirm") {
+                        onConfirm(resulting)
+                        dismiss()
+                    }
+                    .disabled(goingOff.isEmpty && comingOn.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func pickerGrid(players: [Player], selection: Binding<Set<UUID>>, tint: Color) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            ForEach(players) { player in
+                let picked = selection.wrappedValue.contains(player.id)
+                Button {
+                    if picked { selection.wrappedValue.remove(player.id) }
+                    else { selection.wrappedValue.insert(player.id) }
+                } label: {
+                    HStack(spacing: 8) {
+                        JerseyBadge(number: player.number, size: 28)
+                        Text(player.firstName)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                        Spacer(minLength: 0)
+                        Image(systemName: picked ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(picked ? tint : Color(.tertiaryLabel))
+                    }
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(picked ? tint.opacity(0.14) : Color(.tertiarySystemFill))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(picked ? tint : .clear, lineWidth: 1.5)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(player.firstName)
+                .accessibilityAddTraits(picked ? .isSelected : [])
+            }
+        }
+        .listRowInsets(EdgeInsets(top: 10, leading: 12, bottom: 10, trailing: 12))
     }
 }
 

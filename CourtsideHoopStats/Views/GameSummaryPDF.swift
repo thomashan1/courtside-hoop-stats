@@ -47,6 +47,10 @@ struct GameSummaryPrintout: View {
     /// evidently there — so they must not also be listed as a DNP.
     private var didNotPlay: [Player] { game.didNotPlay(from: roster) }
 
+    /// Whether this game has time on court to print (#144). Older games have
+    /// no lineup history, and a column of dashes helps nobody.
+    private var tracksTime: Bool { game.tracksLineup }
+
     /// First names, widened to "Jake M." only where two players would collide.
     /// Computed across the whole roster so a benched Jake still disambiguates
     /// the Jake who played.
@@ -227,6 +231,7 @@ struct GameSummaryPrintout: View {
                     Text("2P").frame(maxWidth: .infinity)
                     Text("3P").frame(maxWidth: .infinity)
                     Text("AST").frame(maxWidth: .infinity)
+                    if tracksTime { Text("MIN").frame(maxWidth: .infinity) }
                     // Last, matching the on-screen table.
                     Text("FT").frame(maxWidth: .infinity)
                 }
@@ -252,6 +257,9 @@ struct GameSummaryPrintout: View {
                         statCell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         statCell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         statCell("\(stat.assists)", isNothing: stat.assists == 0)
+                        if tracksTime {
+                            statCell(stat.timeDisplay ?? "—", isNothing: stat.timeDisplay == "0")
+                        }
                         statCell(stat.freeThrowDisplayWithPercent, isNothing: stat.ftAttempts == 0)
                     }
                     .padding(.horizontal, 10)
@@ -316,6 +324,9 @@ struct GameSummaryPrintout: View {
             statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.threePointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.assists })", bold: true)
+            // No team total for time: five players are on the floor at once,
+            // so summing it would read as a number five times the game length.
+            if tracksTime { statCell("", bold: true) }
             statCell(ftText, bold: true)
         }
         .padding(.horizontal, 10)

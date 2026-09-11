@@ -194,16 +194,16 @@ struct GameHeaderCard<Leading: View, Trailing: View>: View {
 /// a column someone knows to look for: iOS shows a horizontal scroll
 /// indicator while scrolling, never at rest, so anything past the right edge
 /// isn't merely out of view, it's invisible. AST was added, screenshotted and
-/// off the edge here at the default text size. Count the width before adding
-/// a column.
+/// off the edge here at the default text size. At seven columns this only just
+/// fits a 428pt screen — count the width before adding an eighth.
 ///
-/// **FT sits last**, after AST, for the same reason. `1/1 (100%)` is three
-/// times the width of any other value, so wherever it sits it pushes
+/// **FT sits last**, after AST and MIN, for the same reason. `1/1 (100%)` is
+/// three times the width of any other value, so wherever it sits it pushes
 /// everything to its right off the edge — and it's the least urgent number on
-/// the table mid-game. Last, it's the thing that degrades: the narrow
-/// counting stats all stay visible and a squeeze clips `(100%)` rather than a
-/// whole column. It also stops a short `0/0` leaving a ragged gap mid-table,
-/// since the column is as wide as its widest value either way.
+/// the table mid-game. Last, it's the thing that degrades: the narrow counting
+/// stats all stay visible and a squeeze clips `(100%)` rather than a whole
+/// column. It also stops a short `0/0` leaving a ragged gap mid-table, since
+/// the column is as wide as its widest value either way.
 ///
 /// The live Stats panel is narrower than the Game Summary's row — it's the
 /// container to check a column against, not the Summary.
@@ -213,6 +213,11 @@ struct PlayerStatsTable: View {
     /// instead of being dropped — a roster that silently loses people reads as
     /// a bug, and zeroes would wrongly say "played, didn't score".
     var didNotPlay: [Player] = []
+
+    /// Whether this game tracked a lineup, and so has time on court to show
+    /// (#144). Read off the stats themselves so the table needs nothing extra
+    /// passed to it from four different call sites.
+    private var tracksTime: Bool { stats.contains { $0.tracksLineup } }
 
     /// A stat that recedes when the player did none of it.
     ///
@@ -232,13 +237,16 @@ struct PlayerStatsTable: View {
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
                     Text("PTS")
                     Text("2P")
                     Text("3P")
                     Text("AST")
+                    // Only when there's a lineup to derive it from — a column
+                    // of dashes on every older game is worse than no column.
+                    if tracksTime { Text("MIN") }
                     // Last on purpose — see the note above.
                     Text("FT")
                 }
@@ -256,8 +264,13 @@ struct PlayerStatsTable: View {
                         cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         cell("\(stat.assists)", isNothing: stat.assists == 0)
-                        // Only "no attempts" recedes. `0/1 (0%)` is a real
-                        // trip to the line and reads as such.
+                        // A dash means "this game tracked no lineup", so it is
+                        // absence of data and never recedes. A real 0 does.
+                        if tracksTime {
+                            cell(stat.timeDisplay ?? "—", isNothing: stat.timeDisplay == "0")
+                        }
+                        // Only "no attempts" recedes. `0/1` is a real trip to
+                        // the line and reads as such.
                         cell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
                     }
                     .font(.subheadline)
@@ -274,7 +287,7 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
                         Text("DNP")
-                            .gridCellColumns(5)
+                            .gridCellColumns(tracksTime ? 6 : 5)
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -283,7 +296,7 @@ struct PlayerStatsTable: View {
             .padding(.vertical, 2)
             // Matches the inset the Score Log's row cards apply, so the jersey
             // bubbles in both sections line up down the Game Summary instead of
-            // sitting 10pt apart.
+            // sitting apart.
             .padding(.horizontal, 10)
         }
     }
