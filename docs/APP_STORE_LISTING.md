@@ -126,6 +126,7 @@ code.
 >    the pass, or skip it if you didn't catch who assisted.
 > 2. Team owners can now tap Sync Now to push the latest games to followers
 >    immediately, instead of waiting for the app to sync on its own.
+> 3. Players who didn't record a stat now fade back, so the scorers stand out.
 >
 > FIXES
 >

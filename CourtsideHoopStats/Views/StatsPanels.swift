@@ -204,6 +204,22 @@ struct PlayerStatsTable: View {
     /// a bug, and zeroes would wrongly say "played, didn't score".
     var didNotPlay: [Player] = []
 
+    /// A stat that recedes when the player did none of it.
+    ///
+    /// A youth roster has several players with nothing in most columns, and a
+    /// wall of identical `0`s buries the two or three who carried the game.
+    /// Greying the zeros lets the scorers shape the table.
+    ///
+    /// Deliberately *not* a dash. `—` already means "no data" here — MIN for a
+    /// player with no lineup history — and the DNP row exists precisely to keep
+    /// "played, didn't score" distinct from "wasn't there". A zero drawn as a
+    /// dash collapses both of those into one glyph.
+    private func cell(_ text: String, isNothing: Bool, bold: Bool = false) -> some View {
+        Text(text)
+            .bold(bold)
+            .foregroundStyle(isNothing ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
@@ -226,11 +242,13 @@ struct PlayerStatsTable: View {
                             Text(stat.player.firstName).lineLimit(1)
                         }
                         .frame(minWidth: 100, alignment: .leading)
-                        Text("\(stat.points)").bold()
-                        Text("\(stat.twoPointers)")
-                        Text("\(stat.threePointers)")
-                        Text("\(stat.assists)")
-                        Text(stat.freeThrowDisplay)
+                        cell("\(stat.points)", isNothing: stat.points == 0, bold: true)
+                        cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
+                        cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                        cell("\(stat.assists)", isNothing: stat.assists == 0)
+                        // Only "no attempts" recedes. `0/1 (0%)` is a real
+                        // trip to the line and reads as such.
+                        cell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
                     }
                     .font(.subheadline)
                     .monospacedDigit()
