@@ -226,8 +226,9 @@ struct GameSummaryPrintout: View {
                     Text("PTS").frame(maxWidth: .infinity)
                     Text("2P").frame(maxWidth: .infinity)
                     Text("3P").frame(maxWidth: .infinity)
-                    Text("FT").frame(maxWidth: .infinity)
                     Text("AST").frame(maxWidth: .infinity)
+                    // Last, matching the on-screen table.
+                    Text("FT").frame(maxWidth: .infinity)
                 }
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(.secondary)
@@ -250,8 +251,8 @@ struct GameSummaryPrintout: View {
                         statCell("\(stat.points)", bold: true)
                         statCell("\(stat.twoPointers)")
                         statCell("\(stat.threePointers)")
-                        statCell(stat.freeThrowDisplay)
                         statCell("\(stat.assists)")
+                        statCell(stat.freeThrowDisplay)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -314,8 +315,8 @@ struct GameSummaryPrintout: View {
             statCell("\(stats.reduce(0) { $0 + $1.points })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.threePointers })", bold: true)
-            statCell(ftText, bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.assists })", bold: true)
+            statCell(ftText, bold: true)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)

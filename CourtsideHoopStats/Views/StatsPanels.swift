@@ -183,9 +183,20 @@ struct GameHeaderCard<Leading: View, Trailing: View>: View {
 /// The spacing and name width are deliberately tight. Scrolling only rescues
 /// a column someone knows to look for: iOS shows a horizontal scroll
 /// indicator while scrolling, never at rest, so anything past the right edge
-/// is simply invisible. AST was added, screenshotted and off the edge here at
-/// the default text size. Six columns fit a 428pt screen at this spacing;
-/// count the width before adding a seventh.
+/// isn't merely out of view, it's invisible. AST was added, screenshotted and
+/// off the edge here at the default text size. Count the width before adding
+/// a column.
+///
+/// **FT sits last**, after AST, for the same reason. `1/1 (100%)` is three
+/// times the width of any other value, so wherever it sits it pushes
+/// everything to its right off the edge — and it's the least urgent number on
+/// the table mid-game. Last, it's the thing that degrades: the narrow
+/// counting stats all stay visible and a squeeze clips `(100%)` rather than a
+/// whole column. It also stops a short `0/0` leaving a ragged gap mid-table,
+/// since the column is as wide as its widest value either way.
+///
+/// The live Stats panel is narrower than the Game Summary's row — it's the
+/// container to check a column against, not the Summary.
 struct PlayerStatsTable: View {
     let stats: [PlayerStats]
     /// Players who sat the game out, listed below the scorers as **DNP**
@@ -201,8 +212,9 @@ struct PlayerStatsTable: View {
                     Text("PTS")
                     Text("2P")
                     Text("3P")
-                    Text("FT")
                     Text("AST")
+                    // Last on purpose — see the note above.
+                    Text("FT")
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -217,8 +229,8 @@ struct PlayerStatsTable: View {
                         Text("\(stat.points)").bold()
                         Text("\(stat.twoPointers)")
                         Text("\(stat.threePointers)")
-                        Text(stat.freeThrowDisplay)
                         Text("\(stat.assists)")
+                        Text(stat.freeThrowDisplay)
                     }
                     .font(.subheadline)
                     .monospacedDigit()
