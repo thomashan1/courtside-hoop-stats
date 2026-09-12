@@ -262,9 +262,24 @@ enum DemoData {
             hasStarted: true
         )
 
+        // Next weekend's fixture. A follower's list isn't only history and a
+        // live game — an upcoming one is the state a parent checks most ("is
+        // that the Saturday one?"), and it's the only place the follower's
+        // card shows a tip-off rather than a score.
+        let upcoming = Game(
+            date: gameDate(daysFromRef: 10, hour: 4.75),   // 2:45 PM
+            opponent: "Pine Ridge Panthers",
+            league: "Metro Youth League",
+            location: "Riverside Community Gym",
+            isHome: false,
+            periodFormat: .quarters,
+            isComplete: false,
+            hasStarted: false
+        )
+
         return FollowedTeam(
             team: team,
-            games: [live, past, loss],
+            games: [live, upcoming, past, loss],
             zoneName: "team-demo",
             ownerName: "_demoOwner_",
             updatedAt: Date().addingTimeInterval(-12)

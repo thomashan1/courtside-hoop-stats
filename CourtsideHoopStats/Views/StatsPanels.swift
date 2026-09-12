@@ -38,7 +38,10 @@ struct GameScoreCard: View {
             teamColumn(name: ourName, score: game.ourScore, highlight: true)
             VStack {
                 statusBadge
-                Text(caption).font(.caption2).foregroundStyle(.secondary)
+                Text(caption)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             teamColumn(name: game.opponent.isEmpty ? "Opponent" : game.opponent,
@@ -89,13 +92,20 @@ struct GameScoreCard: View {
         return StatusBadge(text: text, color: color)
     }
 
-    /// One line under the badge saying what the scores mean — for a game not
-    /// yet played, the tip-off time is more use than restating "scheduled".
+    /// Under the badge, saying what the scores mean — for a game not yet
+    /// played, when it tips off is more use than restating "scheduled".
+    ///
+    /// The day is on its own line above the time. A follower's band says
+    /// "Following" where the owner's says the date, so this caption is the
+    /// **only** place a follower can see *when* an upcoming game is — and a
+    /// bare "2:45 PM" doesn't say which day. It wraps rather than running on
+    /// because this column is the narrow one between the two teams.
     private var caption: String {
         switch game.lifecycle {
         case .complete:   return "Final"
         case .inProgress: return "In Progress"
-        case .scheduled:  return game.date.formatted(date: .omitted, time: .shortened)
+        case .scheduled:
+            return "\(game.date.gameDayShort)\n\(game.date.formatted(date: .omitted, time: .shortened))"
         }
     }
 }
