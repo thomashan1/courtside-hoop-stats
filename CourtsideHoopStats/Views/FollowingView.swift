@@ -16,7 +16,12 @@ struct FollowingView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.teamSharingService) private var sharing
 
-    @State private var selectedTeamID: String?
+    /// Persisted, not `@State`: a follower with two teams was thrown back to
+    /// whichever sorted first on every launch. `FollowedTeam.id` is
+    /// `ownerName|zoneName` — CloudKit-derived and stable across launches — so
+    /// it survives being written down. A view preference, not a record, so
+    /// `@AppStorage` is the right home for it (UI_GUIDELINES §5).
+    @AppStorage("followingSelectedTeamID") private var selectedTeamID: String?
     @State private var isRefreshing = false
     @State private var refreshError: String?
     /// Set while confirming an unfollow (#123); presenting the dialog.
@@ -75,8 +80,22 @@ struct FollowingView: View {
                                 }
                             }
                         } label: {
-                            Image(systemName: "person.2.fill")
-                                .minimumTapTarget()
+                            // Named, not just drawn. The control was a bare
+                            // `person.2.fill`, which reads as *roster* in this
+                            // app — the Roster tab is `person.3.fill` — rather
+                            // than "change which team you're watching". Two
+                            // opposed arrows say "swap this one out", and are
+                            // distinct from the circular Refresh arrow beside
+                            // them; the words remove the guesswork entirely.
+                            // An explicit `HStack`, not `Label` +
+                            // `.labelStyle(.titleAndIcon)`: a toolbar collapses
+                            // a `Label` to its icon and silently drops the
+                            // title, which is the whole point here.
+                            HStack(spacing: 5) {
+                                Image(systemName: "arrow.left.arrow.right")
+                                Text("Switch Team")
+                            }
+                            .minimumTapTarget()
                         }
                         .accessibilityLabel("Switch Team")
                     }
@@ -192,20 +211,22 @@ struct FollowingView: View {
                 }
             }
 
+            // The read-only line lives here and only here. It used to sit
+            // under every list, where it restated what the screen already
+            // says — the Following tab, "Shared by Jean", and the complete
+            // absence of any edit affordance. Apple's shared Notes and albums
+            // convey read-only exactly that way, which the comment on the old
+            // footer argued while keeping the footer anyway.
+            //
+            // With no games there's nothing else on screen, so it earns its
+            // place: it explains why the list is empty and whose it is.
             if followed.games.isEmpty {
                 Section {
                     Text("No games yet")
                         .foregroundStyle(.secondary)
+                } footer: {
+                    Text("You can see this team's games and stats, but can't change them.")
                 }
-            }
-
-            // Below the fold, where iOS puts explanatory non-actionable text —
-            // and mirroring the wording the owner sees in FollowersView. No
-            // persistent badge: Apple's own shared Notes and albums convey
-            // read-only by simply having no edit affordances, which this
-            // screen already does.
-            Section {} footer: {
-                Text("You can see this team's games and stats, but can't change them.")
             }
         }
         .refreshable { await refresh() }
