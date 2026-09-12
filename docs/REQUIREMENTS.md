@@ -42,7 +42,7 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ## 3. Features (current)
 
 **Tabs:** Games · Roster · Settings, plus a **Following** tab that appears only
-when someone has shared a team with you (§3.10).
+when someone has shared a team with you (§3.10). The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
 
 ### 3.1 Roster (Roster tab)
 - Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
