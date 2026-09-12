@@ -136,6 +136,8 @@ code.
 >    the app right after.
 > 3. Game start times can now be set in 5-minute steps, so a 2:45 tip-off
 >    works.
+> 4. Followers can now see which day an upcoming game is, not just the
+>    tip-off time.
 
 ### v1.5 — submitted 2026-09-05
 
