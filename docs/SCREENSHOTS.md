@@ -44,8 +44,8 @@ run's PNGs in place and looking like a successful capture.
 PNGs land in `screenshots/` (git-ignored), one per `snap(...)` step, named
 `NN-name.png` — e.g. `01-games-list`, `02-game-summary`, `03-live-scoring`,
 `04-roster`, `12-score-pad`, `13-new-game`, `17-score-pad-assist`,
-`19-live-stats-panel`, `20-following-list`,
-`21-following-game` (see the two test files for the full set).
+`20-following-list`, `21-following-game`, `25-following-scheduled` (see the
+test files for the full set).
 
 ## What the demo data covers
 

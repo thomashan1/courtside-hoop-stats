@@ -87,13 +87,27 @@ struct DemoDataTests {
         let nicholas = followed.team.players.first { $0.number == "77" }
         let nicholasID = try? #require(nicholas?.id)
 
-        for game in followed.games {
+        // Played games only. A scheduled one has no events by definition, so
+        // holding it to "Nicholas leads with threes" would just forbid the
+        // demo from having an upcoming fixture at all.
+        for game in followed.games where game.lifecycle != .scheduled {
             let stats = game.stats(for: followed.team.players)
             let top = stats.first          // stats(for:) sorts by points descending
             #expect(top?.player.id == nicholasID, "Nicholas should lead \(game.opponent)")
             #expect((top?.threePointers ?? 0) >= 3,
                     "Nicholas should be hitting threes in \(game.opponent)")
         }
+    }
+
+    /// The followed team keeps an upcoming fixture.
+    ///
+    /// Without one, the follower's card never renders its scheduled state —
+    /// which is how it shipped showing a tip-off time with no day against it.
+    /// The screenshot harness captures that screen, so this keeps the fixture
+    /// that makes it reachable.
+    @Test func followedTeamHasAnUpcomingGame() {
+        let followed = DemoData.makeFollowedTeam()
+        #expect(followed.games.contains { $0.lifecycle == .scheduled })
     }
 
     /// The live game is what a follower opens the app to watch, so one game must

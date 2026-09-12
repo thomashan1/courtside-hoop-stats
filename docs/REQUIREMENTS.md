@@ -141,7 +141,7 @@ rendering, because `ImageRenderer` emits glyphs rather than annotations.
   opening to a read-only detail (score card, player stats, per-period
   breakdown). No scoring or editing anywhere in it. The detail leads with the
   **same `GameScoreCard` the Game Summary uses**, not Live Scoring's navy
-  banner: a scheduled game shows dashes and its tip-off time, a live one the
+  banner: a scheduled game shows dashes with its **day and** tip-off time (the follower's band says "Following" where the owner's says the date, so this is the only place a follower can see *when* an upcoming game is), a live one the
   current period in place of a result, a finished one WIN/LOSS/TIE and "Final".
 - **Liveness:** honest rather than "live" — updates land in seconds with signal,
   and catch up in a burst after a dead-zone gym. Every followed team shows an

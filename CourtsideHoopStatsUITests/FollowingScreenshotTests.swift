@@ -78,6 +78,33 @@ final class FollowingScreenshotTests: XCTestCase {
                       "Should be on the followed game's detail before capturing")
         snap("21-following-game")
 
+        // An upcoming game: the one state where the card shows a tip-off
+        // instead of a score.
+        //
+        // The follower's band says "Following" where the owner's says the
+        // date, so this caption is the *only* place a follower can see when a
+        // scheduled game is — and it showed a bare "2:45 PM" with no day.
+        // Nothing caught that because the demo had no upcoming followed game
+        // at all, so the state was never rendered in a screenshot.
+        app.navigationBars.buttons.firstMatch.tap()
+        let upcoming = app.staticTexts["vs Pine Ridge Panthers"]
+        XCTAssertTrue(upcoming.waitForExistence(timeout: 10))
+        upcoming.tap()
+        XCTAssertTrue(app.staticTexts["SCHEDULED"].waitForExistence(timeout: 10),
+                      "Should be on the upcoming game's detail before capturing")
+        // The day, not just the time. Asserted on the weekday because that's
+        // the part that was missing and the part a parent actually reads.
+        let dayLine = app.staticTexts.matching(
+            NSPredicate(format: "label MATCHES '^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),.*'")).firstMatch
+        XCTAssertTrue(dayLine.exists,
+                      "A scheduled game must say which day it is, not only the time")
+        snap("25-following-scheduled")
+
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
+        liveGame.tap()
+        XCTAssertTrue(app.staticTexts["Most recent on top"].waitForExistence(timeout: 10))
+
         // A live game must NOT offer the PDF: the page stamps FINAL and a
         // win/loss result, which would state an outcome that hasn't happened.
         XCTAssertFalse(app.buttons["Box Score PDF"].exists,
