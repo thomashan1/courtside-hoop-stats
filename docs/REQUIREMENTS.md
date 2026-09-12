@@ -42,7 +42,7 @@ still decodes (a `try?` decode failure would wipe the user's games).
 ## 3. Features (current)
 
 **Tabs:** Games · Roster · Settings, plus a **Following** tab that appears only
-when someone has shared a team with you (§3.10). The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
+when someone has shared a team with you (§3.10). The "Shared by" name is **per team** on purpose — "Jean (Nicky's mom)" is a different answer for a different child's team — and the Followers screen asks for it when a shared team hasn't got one, that being the only screen where it has any effect. The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
 
 ### 3.1 Roster (Roster tab)
 - Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
