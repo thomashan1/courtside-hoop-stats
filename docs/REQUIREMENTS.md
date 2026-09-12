@@ -68,6 +68,7 @@ when someone has shared a team with you (§3.10).
 ### 3.3 Games list (Games tab)
 - Three sections, live first (mid-game it's the row you're reaching for):
   **Playing Now**, **Coming Up** (soonest first), **Final Scores** (newest first).
+- Start time is picked in **5-minute steps** (`GameDatePicker`). Not 1 — spinning sixty positions at the gym door is the thing that control exists to avoid — and not 10, which can't reach a 2:45 tip-off at all.
 - Row shows opponent, date + start time with the **weekday** ("Tue, Aug 4 at
   11:40 AM" — the year is dropped in-season), location, and a state indicator:
   **Scheduled** badge / **In Progress** badge / final score + **W/L/T** badge.

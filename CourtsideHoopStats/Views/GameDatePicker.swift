@@ -1,16 +1,23 @@
 import SwiftUI
 import UIKit
 
-/// Date + time picker whose minutes step in 10s.
+/// Date + time picker whose minutes step in 5s.
 ///
 /// SwiftUI's `DatePicker` has no minute-interval option, so this wraps
 /// `UIDatePicker` — the same control SwiftUI itself uses — purely to set
-/// `minuteInterval`. Games tip off on the hour or the half hour; spinning past
-/// sixty minutes to land on one of six useful values is wasted effort at the
-/// gym door.
+/// `minuteInterval`. Spinning through sixty positions to land on one of a
+/// dozen useful values is wasted effort at the gym door.
+///
+/// **Five, not ten.** This stepped in 10s on the theory that games tip off on
+/// the hour or the half hour. They don't: a real fixture list had a 2:45
+/// start, which 10s can't reach at all — the picker rounded it away to 2:40.
+/// Five is a strict superset of ten, so nothing that used to be reachable
+/// stopped being, and it also covers a tournament running 2:45 / 2:55 / 3:05.
+/// One is the iOS default and brings back the spinning this exists to avoid,
+/// to buy times like 2:47 that no league schedules.
 struct GameDatePicker: UIViewRepresentable {
     @Binding var selection: Date
-    var minuteInterval: Int = 10
+    var minuteInterval: Int = 5
 
     func makeUIView(context: Context) -> UIDatePicker {
         let picker = UIDatePicker()
