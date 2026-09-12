@@ -134,6 +134,8 @@ code.
 >    added before the link will work for them.
 > 2. Games you delete now sync to followers more reliably, even if you close
 >    the app right after.
+> 3. Game start times can now be set in 5-minute steps, so a 2:45 tip-off
+>    works.
 
 ### v1.5 — submitted 2026-09-05
 
