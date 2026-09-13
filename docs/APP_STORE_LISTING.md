@@ -118,26 +118,36 @@ what shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of the
 code.
 
-### v1.6 — not yet submitted (v1.5 still in review; date this on upload)
+### v1.6 — submitted 2026-09-13
 
-> NEW
+Assists lead rather than sitting in the list: it's the release's headline, and
+a numbered item beside "5-minute steps" undersold it. The lead says what a
+reader wants to know — that skipping costs nothing, and where the assists turn
+up.
+
+> Assist tracking is here.
 >
-> 1. Assist support — tap a teammate right after a made basket to credit
->    the pass, or skip it if you didn't catch who assisted.
-> 2. Team owners can now tap Sync Now to push the latest games to followers
->    immediately, instead of waiting for the app to sync on its own.
-> 3. Players who didn't record a stat now fade back, so the scorers stand out.
+> Tap a teammate right after a made basket to credit the pass — or skip it if
+> you didn't catch who assisted. The basket is already recorded either way, so
+> it never slows you down. Assists appear in the score log, the player stats
+> table, and the box score PDF.
+>
+> ALSO NEW
+>
+> • Tap Sync Now to push the latest games to your followers immediately,
+>   instead of waiting for the app to sync on its own.
+> • Players who didn't record a stat now fade back, so the scorers stand out.
 >
 > FIXES
 >
-> 1. The invite link screen now explains clearly that a person has to be
->    added before the link will work for them.
-> 2. Games you delete now sync to followers more reliably, even if you close
->    the app right after.
-> 3. Game start times can now be set in 5-minute steps, so a 2:45 tip-off
->    works.
-> 4. Followers can now see which day an upcoming game is, not just the
->    tip-off time.
+> • The invite link screen now explains that a person has to be added before
+>   the link will work for them.
+> • Games you delete now sync to followers more reliably, even if you close the
+>   app right after.
+> • Game start times can be set in 5-minute steps, so a 2:45 tip-off works.
+> • Followers can see which day an upcoming game is, not just the tip-off time.
+> • Free throws now fit on screen for every roster — the percentage moved to
+>   the box score PDF.
 
 ### v1.5 — submitted 2026-09-05
 
