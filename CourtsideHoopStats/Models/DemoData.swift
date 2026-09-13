@@ -176,16 +176,25 @@ enum DemoData {
         let p = team.players   // index 8 = Nicholas H. (#77)
 
         // Live, partway through Q3. Quarter sums: 10, 9, then 7 so far = 26.
+        //
+        // Some baskets carry an assist. A follower's log is where the family
+        // sees them, and this game is the one the store screenshot comes from
+        // — without any, the headline feature of v1.6 was absent from the
+        // picture meant to show the app off. They sit in **Q3**, which is what
+        // a follower sees first: this log is newest-first.
         var liveEvents: [GameEvent] = []
-        for (index, type, period): (Int, EventType, Int) in [
+        for (index, type, period, assistIndex): (Int, EventType, Int, Int?) in [
             // Q1 = 10 — Nicholas opens with back-to-back threes.
-            (8, .threePoint, 1), (8, .threePoint, 1), (2, .twoPoint, 1), (7, .twoPoint, 1),
+            (8, .threePoint, 1, nil), (8, .threePoint, 1, 2),
+            (2, .twoPoint, 1, nil), (7, .twoPoint, 1, nil),
             // Q2 = 9
-            (8, .threePoint, 2), (4, .twoPoint, 2), (8, .ftMade, 2), (1, .threePoint, 2),
+            (8, .threePoint, 2, 1), (4, .twoPoint, 2, nil),
+            (8, .ftMade, 2, nil), (1, .threePoint, 2, nil),
             // Q3 so far = 7
-            (8, .threePoint, 3), (6, .twoPoint, 3), (8, .twoPoint, 3),
+            (8, .threePoint, 3, 7), (6, .twoPoint, 3, nil), (8, .twoPoint, 3, 2),
         ] {
-            liveEvents.append(GameEvent(playerID: p[index].id, type: type, period: period))
+            liveEvents.append(GameEvent(playerID: p[index].id, type: type, period: period,
+                                        assistPlayerID: assistIndex.map { p[$0].id }))
         }
         let live = Game(
             date: gameDate(daysFromRef: 7, hour: 1),      // 11:00 AM
