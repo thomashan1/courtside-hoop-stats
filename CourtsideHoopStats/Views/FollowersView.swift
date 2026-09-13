@@ -25,16 +25,36 @@ struct FollowersView: View {
     @State private var confirmingStop = false
     @State private var actionError: String?
     @State private var isSyncing = false
+    /// Draft for the "Shared by" name when this team hasn't got one.
+    @State private var ownerName = ""
 
     /// Everyone except you.
     private var followers: [SharedParticipant] {
         participants.filter { !$0.isOwner }
     }
 
+    /// The live copy from the store, not the value passed in — so saving a name
+    /// below makes the prompt disappear instead of sitting there filled in.
+    private var currentTeam: Team {
+        store.teams.first { $0.id == team.id } ?? team
+    }
+
+    /// Ask for a name only when there isn't one.
+    ///
+    /// This is the one screen where the name has any effect, and the one moment
+    /// the owner is thinking about who will see the team — the field otherwise
+    /// lives in a team editor nobody reopens. Shared two teams and set it on
+    /// one, and the second shows a follower no name at all with nothing
+    /// anywhere to say why.
+    private var needsOwnerName: Bool {
+        (currentTeam.ownerDisplayName ?? "").isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             List {
                 peopleSection
+                if needsOwnerName { ownerNameSection }
                 inviteSection
                 if store.isShared(team.id) { stopSharingSection }
             }
@@ -188,6 +208,36 @@ struct FollowersView: View {
                     .foregroundStyle(.red)
             }
         }
+    }
+
+    /// Set the "Shared by" name, here, inline.
+    ///
+    /// Deliberately **per team** rather than one name for the owner: the
+    /// example the field itself gives is "Jean (Nicky's mom)", which is a
+    /// different answer for a different child's team. One global name couldn't
+    /// say that.
+    private var ownerNameSection: some View {
+        Section {
+            TextField("Your name", text: $ownerName)
+                .textInputAutocapitalization(.words)
+                .onSubmit(saveOwnerName)
+            Button("Save") { saveOwnerName() }
+                .disabled(ownerName.trimmingCharacters(in: .whitespaces).isEmpty)
+        } header: {
+            Text("Your Name")
+        } footer: {
+            Text("Followers see \"Shared by …\" so they know whose team this is; blank shows them no name. It's per team, so \"Jean (Nicky's mom)\" can differ from another child's team.")
+        }
+    }
+
+    private func saveOwnerName() {
+        let trimmed = ownerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        var updated = currentTeam
+        updated.ownerDisplayName = trimmed
+        // `updateTeam` persists and reschedules the publish, so followers pick
+        // the name up on the next sync rather than needing a fresh share.
+        store.updateTeam(updated)
     }
 
     private var stopSharingSection: some View {

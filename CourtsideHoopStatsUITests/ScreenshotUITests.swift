@@ -56,6 +56,23 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Grandma Chen"].waitForExistence(timeout: 5))
         snap(app, "16-followers")
 
+        // 1b-i) The "Shared by" name is asked for here, on the only screen
+        // where it has any effect, and only when the team hasn't got one —
+        // sharing two teams and setting it on one leaves the second showing a
+        // follower no name, with nothing anywhere saying why.
+        //
+        // Typing it must stick: the section reads the team back from the store
+        // rather than the value passed in, so a write that didn't land would
+        // leave the prompt sitting there filled in.
+        let nameField = app.textFields["Your name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5),
+                      "A team with no owner name should be asked for one here")
+        nameField.tap()
+        nameField.typeText("Jean (Nicky's mom)")
+        app.buttons["Save"].tap()
+        XCTAssertFalse(nameField.waitForExistence(timeout: 3),
+                       "Saving the name should retire the prompt, not leave it filled in")
+
         // 1b-i) Sync Now (#151) — the owner's non-destructive alternative to
         // Stop Sharing + re-invite for clearing a stuck follower sync.
         XCTAssertTrue(app.buttons["Sync Now"].waitForExistence(timeout: 5))
