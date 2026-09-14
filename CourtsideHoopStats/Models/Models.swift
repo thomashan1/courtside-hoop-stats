@@ -479,6 +479,54 @@ struct Game: Identifiable, Codable {
     }
 }
 
+// MARK: - Migration-safe decoding
+
+extension Game {
+    /// Decoded leniently: any field absent from the saved blob falls back to
+    /// its default instead of throwing.
+    ///
+    /// **This is a data-loss guard, not a style choice.** `AppStore.load()`
+    /// decodes with `try?`, so a decode failure doesn't surface as an error —
+    /// it silently empties the entire game history. And Swift's *synthesized*
+    /// `init(from:)` throws `keyNotFound` for a missing key **even when the
+    /// property has a default value**, which is the trap: adding
+    /// `var newThing: Int = 0` looks safe and makes every previously saved
+    /// game unreadable.
+    ///
+    /// So every field is read with `decodeIfPresent`. **Adding a stored
+    /// property to `Game` means adding a line to this initialiser**, and
+    /// `GameMigrationTests` is what catches you if you don't.
+    ///
+    /// Written in an extension deliberately: declaring an initialiser in the
+    /// struct body would suppress the memberwise `init`, which the whole app
+    /// and every test construct games with.
+    enum CodingKeys: String, CodingKey {
+        case id, teamID, date, opponent, league, location, locationAddress
+        case isHome, periodFormat, events, periodEndScores
+        case notes, benchedPlayerIDs, isComplete, hasStarted
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        teamID = try container.decodeIfPresent(UUID.self, forKey: .teamID)
+        date = try container.decodeIfPresent(Date.self, forKey: .date) ?? Date()
+        opponent = try container.decodeIfPresent(String.self, forKey: .opponent) ?? ""
+        league = try container.decodeIfPresent(String.self, forKey: .league) ?? ""
+        location = try container.decodeIfPresent(String.self, forKey: .location) ?? ""
+        locationAddress = try container.decodeIfPresent(String.self, forKey: .locationAddress) ?? ""
+        isHome = try container.decodeIfPresent(Bool.self, forKey: .isHome) ?? true
+        periodFormat = try container.decodeIfPresent(PeriodFormat.self, forKey: .periodFormat) ?? .quarters
+        events = try container.decodeIfPresent([GameEvent].self, forKey: .events) ?? []
+        periodEndScores = try container.decodeIfPresent([Int: PeriodEndScore].self,
+                                                        forKey: .periodEndScores) ?? [:]
+        notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
+        benchedPlayerIDs = try container.decodeIfPresent([UUID].self, forKey: .benchedPlayerIDs) ?? []
+        isComplete = try container.decodeIfPresent(Bool.self, forKey: .isComplete) ?? false
+        hasStarted = try container.decodeIfPresent(Bool.self, forKey: .hasStarted)
+    }
+}
+
 // MARK: - Derived player stats (never stored)
 
 struct PlayerStats: Identifiable {

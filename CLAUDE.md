@@ -73,8 +73,25 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **`Game.stats(for:)` takes the full roster** and applies benching itself.
   Passing a pre-filtered list makes the stats table disagree with the final
   score.
-- Models use **migration-safe optional `Codable` fields**: a `try?` decode
-  failure wipes saved data, so new fields must be optional or defaulted.
+- **Every change must be backward compatible. There are real saved games now** —
+  Jean's actual season, on her phone, not test data. A model change that can't
+  read what a previous build wrote doesn't fail loudly; `AppStore.load()`
+  decodes with `try?`, so a single unreadable field silently wipes *every*
+  game and roster. Assume any schema change is destroying real data until a
+  test proves otherwise.
+- **A default value does NOT make a `Codable` field safe.** Swift's synthesized
+  `init(from:)` throws `keyNotFound` for a missing key even when the property
+  has a default — verified, not assumed (`GameMigrationTests`). Only
+  `Optional` fields survive on their own. `Game` therefore has a hand-written
+  lenient `init(from:)` reading every field with `decodeIfPresent`: **adding a
+  stored property to `Game` means adding a line there**, and adding one
+  anywhere else means either making it `Optional` or giving that type the same
+  treatment. `locationAddress` had exactly this latent bug for months; it
+  never bit only because it landed before the v1.4 release, so no shipped
+  build ever wrote a `Game` without it.
+- Pair any schema change with a `GameMigrationTests`-style test that strips the
+  new keys and decodes what's left. It's the only thing standing between a
+  refactor and someone's season.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a
