@@ -44,6 +44,23 @@ struct GameDetailView: View {
                 LabeledContent("Date", value: game.date.gameDayAndTime)
             }
 
+            // PROTOTYPE (#169). A co-admin owns the schedule, not the game
+            // clock. The Start Game button is replaced with the reason rather
+            // than disabled, so the screen answers "why can't I?" before it's
+            // asked.
+            if store.isCoAdmin(store.team.id) {
+                Section {
+                    Label {
+                        Text("\(store.coAdminOwnerName ?? "The owner") starts and scores this game at the gym. You can change any of the details above until then.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "figure.basketball")
+                            .foregroundStyle(Color.teamAccent)
+                    }
+                }
+            } else {
             Section {
                 Button {
                     start()
@@ -59,6 +76,7 @@ struct GameDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+            }
             }
 
             Section {

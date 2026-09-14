@@ -9,21 +9,29 @@ import CloudKit
 /// invitees are added by the email address or phone number on their Apple
 /// Account and the whole invite/accept flow is handled by iOS.
 ///
-/// Permissions are deliberately limited to **read-only**: co-tracker
-/// (`.readWrite`) support isn't built yet, and offering an edit permission the
-/// app can't honor would let a participant make changes that silently never
-/// sync back. Widen this when co-trackers ship.
+/// Permissions are pinned to whatever `role` says, so the sheet offers exactly
+/// one — read-only for a follower, read-write for a co-admin (#169). Leaving
+/// both on the sheet would let the owner pick "Can make changes" without ever
+/// being told that a co-admin still can't score a live game, which is the one
+/// limit CloudKit's own wording has no way to express.
 struct CloudSharingSheet: UIViewControllerRepresentable {
     let share: CKShare
     let container: CKContainer
     var title: String?
+    /// What the people invited from this sheet may do (#169). The sheet is
+    /// configured to offer exactly one permission, because the choice was
+    /// already made — in our own words, on a screen that can say the one thing
+    /// CloudKit's "Can make changes" can't: not live scoring.
+    var role: SharingRole = .follower
     var onSaved: () -> Void = {}
     var onStopped: () -> Void = {}
     var onError: (Error) -> Void = { _ in }
 
     func makeUIViewController(context: Context) -> UICloudSharingController {
         let controller = UICloudSharingController(share: share, container: container)
-        controller.availablePermissions = [.allowReadOnly, .allowPrivate]
+        controller.availablePermissions = role == .coTracker
+            ? [.allowReadWrite, .allowPrivate]
+            : [.allowReadOnly, .allowPrivate]
         controller.delegate = context.coordinator
         return controller
     }

@@ -37,6 +37,25 @@ final class AppStore: ObservableObject {
     /// whether it needs publishing without asking CloudKit on every keystroke.
     @Published var sharedTeamIDs: Set<UUID> { didSet { save() } }
 
+    // MARK: Co-admin — PROTOTYPE ONLY (#169)
+    //
+    // Someone else's team that *this* user has been given write access to.
+    // Deliberately NOT persisted and NOT published: this is a design prototype
+    // for screenshots, seeded by the UI-test harness. In a real build these
+    // teams would arrive from the shared CloudKit database and would need the
+    // database/zone threading the issue describes.
+
+    /// Teams in `teams` that belong to someone else and are shared read-write
+    /// with this user. Empty in every shipping path.
+    var coAdminTeamIDs: Set<UUID> = []
+    /// Who owns those teams, for the "Shared by …" line.
+    var coAdminOwnerName: String?
+
+    /// Whether this user is a co-admin on the given team (rather than owning
+    /// it). A co-admin can do everything the owner can **except score a game
+    /// in progress** — scoring stays with the person at the gym.
+    func isCoAdmin(_ teamID: UUID) -> Bool { coAdminTeamIDs.contains(teamID) }
+
     private let teamsKey = "chs.teams.v1"        // multi-team blob
     private let gamesKey = "chs.games.v1"
     private let textSizeKey = "chs.textSizeIndex.v1"
@@ -104,6 +123,18 @@ final class AppStore: ObservableObject {
             sharedTeamIDs = [demoTeam.id]
             alertCadence = .periodEnd
             ephemeral = true
+
+            // PROTOTYPE (#169): become the *co-admin* of the demo team rather
+            // than its owner. The team is someone else's, so nothing is shared
+            // out from here and nothing is merely followed — it sits in the
+            // ordinary Games and Roster tabs, editable, with live scoring
+            // withheld.
+            if ProcessInfo.processInfo.arguments.contains("-uiTestCoAdminSelf") {
+                sharedTeamIDs = []
+                followedTeams = []
+                coAdminTeamIDs = [demoTeam.id]
+                coAdminOwnerName = "Jean (Nicky's mom)"
+            }
             return
         }
         #endif

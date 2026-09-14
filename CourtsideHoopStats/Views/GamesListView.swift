@@ -5,6 +5,8 @@ enum GameRoute: Hashable {
     case detail(UUID)   // scheduled — review/edit, then start
     case live(UUID)     // in progress — score it
     case summary(UUID)  // complete — read/edit summary
+    /// PROTOTYPE (#169): in progress, opened by a co-admin — watch, don't score.
+    case coAdminLive(UUID)
 }
 
 struct GamesListView: View {
@@ -20,6 +22,9 @@ struct GamesListView: View {
     /// `nil` means "not asked yet, or the ask failed" — the marker still shows,
     /// just without a number.
     @State private var followerCount: Int?
+    /// PROTOTYPE (#169): the people list itself, not just a count, so the
+    /// subtitle can distinguish someone who can edit from someone who watches.
+    @State private var coAdminCount = 0
 
     @Environment(\.teamSharingService) private var sharing
 
@@ -34,10 +39,23 @@ struct GamesListView: View {
     /// `^[…](inflect:)` markup is passed straight through and rendered
     /// literally rather than resolved.
     private var sharedSubtitle: String {
+        // PROTOTYPE (#169). A team you co-admin says whose it is, in the same
+        // slot the owner's own team uses for "Shared with…" and a follower's
+        // uses for "Updated…" — same position, third meaning (UI_GUIDELINES
+        // §10). Without it, a co-admin's Games tab is indistinguishable
+        // from their own team's, and the only difference is whose season a
+        // mistake lands in.
+        if store.isCoAdmin(store.team.id) {
+            guard let owner = store.coAdminOwnerName, !owner.isEmpty else { return "Co-admin" }
+            return "Co-admin · Shared by \(owner)"
+        }
         guard store.isShared(store.team.id) else { return "" }
         guard let followerCount, followerCount > 0 else { return "Shared" }
-        return followerCount == 1 ? "Shared with 1 follower"
-                                  : "Shared with \(followerCount) followers"
+        let people = followerCount == 1 ? "Shared with 1 follower"
+                                        : "Shared with \(followerCount) followers"
+        guard coAdminCount > 0 else { return people }
+        let admins = coAdminCount == 1 ? "1 co-admin" : "\(coAdminCount) co-admins"
+        return "\(people), \(admins)"
     }
 
     /// Games being scored right now. Listed first — a game in progress is the
@@ -157,8 +175,9 @@ struct GamesListView: View {
                     followerCount = nil
                     return
                 }
-                followerCount = (try? await sharing.participants(for: store.team))?
-                    .filter { !$0.isOwner }.count
+                let people = (try? await sharing.participants(for: store.team)) ?? []
+                followerCount = people.filter { !$0.isOwner && !$0.isCoAdmin }.count
+                coAdminCount = people.filter(\.isCoAdmin).count
             }
         }
     }
@@ -172,7 +191,12 @@ struct GamesListView: View {
     private func route(for game: Game) -> GameRoute {
         switch game.lifecycle {
         case .scheduled:  return .detail(game.id)
-        case .inProgress: return .live(game.id)
+        // PROTOTYPE (#169): a co-admin gets the watch-only view of a game in
+        // progress. Routed here rather than disabled inside Live Scoring, so
+        // the screen with no scoring on it is a different screen, not the
+        // scoring screen with its controls taken away.
+        case .inProgress: return store.isCoAdmin(store.team.id)
+                                 ? .coAdminLive(game.id) : .live(game.id)
         case .complete:   return .summary(game.id)
         }
     }
@@ -188,6 +212,8 @@ struct GamesListView: View {
             LiveScoringView(gameID: id)
         case .summary(let id):
             GameSummaryView(gameID: id)
+        case .coAdminLive(let id):
+            CoAdminLiveGameView(gameID: id)
         }
     }
 
@@ -245,25 +271,38 @@ struct NewGameSheet: View {
                         .textInputAutocapitalization(.words)
                 }
 
-                Section {
-                    Button {
-                        start()
-                    } label: {
-                        // A Label wrapped in the old Spacer/Spacer HStack
-                        // shifted the text right of true center by the
-                        // icon's width — grouped tight and centered as a
-                        // pair instead (#137).
-                        HStack(spacing: 8) {
-                            Image(systemName: "play.fill")
-                                .accessibilityHidden(true)
-                            Text("Start Game")
-                        }
-                        .frame(maxWidth: .infinity)
+                // PROTOTYPE (#169). A co-admin schedules games; they don't
+                // start them. Removing the button rather than disabling it is
+                // the honest version — a co-admin filling this form in at home
+                // on Tuesday has no use for "begin scoring now", and a greyed
+                // primary action reads as something broken.
+                if store.isCoAdmin(store.team.id) {
+                    Section {
+                        EmptyView()
+                    } footer: {
+                        Text("Nothing here is required. **Save** adds this game to the schedule for everyone. \(store.coAdminOwnerName ?? "The owner") starts it and scores it at the gym.")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                } footer: {
-                    Text("Nothing here is required. **Start Game** begins scoring now; **Save** schedules it for later. You can edit any of this mid-game from Details.")
+                } else {
+                    Section {
+                        Button {
+                            start()
+                        } label: {
+                            // A Label wrapped in the old Spacer/Spacer HStack
+                            // shifted the text right of true center by the
+                            // icon's width — grouped tight and centered as a
+                            // pair instead (#137).
+                            HStack(spacing: 8) {
+                                Image(systemName: "play.fill")
+                                    .accessibilityHidden(true)
+                                Text("Start Game")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                    } footer: {
+                        Text("Nothing here is required. **Start Game** begins scoring now; **Save** schedules it for later. You can edit any of this mid-game from Details.")
+                    }
                 }
             }
             .navigationTitle("New Game")

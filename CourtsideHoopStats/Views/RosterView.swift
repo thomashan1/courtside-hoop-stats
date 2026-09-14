@@ -36,6 +36,12 @@ struct RosterView: View {
             }
             // Show the active team name (multi-team) — the tab bar labels it "Roster".
             .navigationTitle(store.team.name)
+            // PROTOTYPE (#169). Same slot, same words as the Games tab: a
+            // roster of someone else's children is the last place to be vague
+            // about whose data you're editing.
+            .navigationSubtitle(store.isCoAdmin(store.team.id)
+                                ? "Co-admin \u{00b7} Shared by \(store.coAdminOwnerName ?? "the owner")"
+                                : "")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if store.team.players.count > 1 {

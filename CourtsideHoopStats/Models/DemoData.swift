@@ -90,6 +90,31 @@ enum DemoData {
         ]
     }
 
+    /// PROTOTYPE (#169): the same people, plus a **co-admin** — one accepted
+    /// and one still outstanding, so the People screen shows both states of the
+    /// new role rather than only the happy one.
+    ///
+    /// Kept separate from `makeParticipants()` so the committed screenshot set
+    /// and its assertions ("Shared with 2 followers") are untouched.
+    static func makeParticipantsWithCoAdmin() -> [SharedParticipant] {
+        [
+            SharedParticipant(id: "demo-owner", name: "You", contact: "",
+                              isOwner: true, hasAccepted: true),
+            SharedParticipant(id: "demo-admin-1", name: "Thomas H.",
+                              contact: "thomas@example.com",
+                              isOwner: false, hasAccepted: true, role: .coTracker),
+            SharedParticipant(id: "demo-admin-2", name: "coach.ramirez@example.com",
+                              contact: "",
+                              isOwner: false, hasAccepted: false, role: .coTracker),
+            SharedParticipant(id: "demo-1", name: "Grandma Chen",
+                              contact: "gchen@example.com",
+                              isOwner: false, hasAccepted: true),
+            SharedParticipant(id: "demo-2", name: "Uncle Ray",
+                              contact: "ray@example.com",
+                              isOwner: false, hasAccepted: true),
+        ]
+    }
+
     // MARK: - Random test game (easter egg: long-press "+" on the Games list)
 
     private static let opponents = [

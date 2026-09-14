@@ -20,6 +20,14 @@ struct FollowersView: View {
     // album keeps its people, its invite and its "Stop Sharing" on one screen.
     @State private var preparedShare: PreparedShare?
     @State private var isPreparingShare = false
+    /// PROTOTYPE (#169): which role the pending invite is for, and whether the
+    /// role chooser is up. The role is picked in our own words *before* the
+    /// system sheet, because the sheet can say "Can make changes" but has no
+    /// way to say "except score a live game".
+    @State private var choosingRole = false
+    @State private var invitingRole: SharingRole = .follower
+    /// PROTOTYPE (#169): the person whose role is being changed.
+    @State private var editingPerson: SharedParticipant?
     @State private var inviteURL: URL?
     @State private var didCopyLink = false
     @State private var confirmingStop = false
@@ -29,9 +37,11 @@ struct FollowersView: View {
     @State private var ownerName = ""
 
     /// Everyone except you.
-    private var followers: [SharedParticipant] {
+    private var others: [SharedParticipant] {
         participants.filter { !$0.isOwner }
     }
+    private var coAdmins: [SharedParticipant] { others.filter { $0.isCoAdmin } }
+    private var followers: [SharedParticipant] { others.filter { !$0.isCoAdmin } }
 
     /// The live copy from the store, not the value passed in — so saving a name
     /// below makes the prompt disappear instead of sitting there filled in.
@@ -53,7 +63,9 @@ struct FollowersView: View {
     var body: some View {
         NavigationStack {
             List {
+                if !coAdmins.isEmpty { coAdminSection }
                 peopleSection
+                inviteButtonSection
                 if needsOwnerName { ownerNameSection }
                 inviteSection
                 if store.isShared(team.id) { stopSharingSection }
@@ -100,10 +112,29 @@ struct FollowersView: View {
                 }
             }
             .task { await load() }
+            .sheet(item: $editingPerson) { person in
+                ChangeRoleSheet(person: person) { role in
+                    // PROTOTYPE: local only. For real this is a
+                    // `CKShare.Participant.permission` change plus a save of
+                    // the share record.
+                    if let index = participants.firstIndex(where: { $0.id == person.id }) {
+                        participants[index].role = role
+                    }
+                } onRemove: {
+                    participants.removeAll { $0.id == person.id }
+                }
+            }
+            .sheet(isPresented: $choosingRole) {
+                InviteRoleSheet(teamName: team.name) { role in
+                    invitingRole = role
+                    addPeople(as: role)
+                }
+            }
             .sheet(item: $preparedShare) { prepared in
                 CloudSharingSheet(share: prepared.share,
                                   container: prepared.container,
                                   title: team.name,
+                                  role: invitingRole,
                                   onSaved: { Task { await load() } },
                                   onStopped: { stoppedSharing() },
                                   onError: { actionError = $0.localizedDescription })
@@ -147,11 +178,27 @@ struct FollowersView: View {
                 }
             }
 
-            // The one way in, whether this is the first invite or the fifth.
-            // Previously "Share Team…" and "See Who's Following" sat next to
-            // each other in Settings doing overlapping jobs.
+        } header: {
+            Text("Followers")
+        } footer: {
+            // Explains the toolbar's Sync Now button (#151) — it has no List
+            // row of its own to carry a footer, so its explanation rides
+            // here instead, next to the only other content on this screen
+            // it's actually relevant to.
+            Text("Followers can see this team's games and stats, but can't change anything. If someone says they're missing a recent game or still see one you deleted, tap Sync Now above to push the latest.")
+        }
+    }
+
+    /// The one way in, whether this is the first invite or the fifth.
+    ///
+    /// PROTOTYPE (#169): moved out of the Followers section and into its own.
+    /// Sitting as the last row under "Followers", with a co-admins section
+    /// above it, it read as "add another follower" — which is exactly the
+    /// choice the next screen exists to ask about.
+    private var inviteButtonSection: some View {
+        Section {
             Button {
-                addPeople()
+                choosingRole = true
             } label: {
                 HStack {
                     Label(store.isShared(team.id) ? "Add People…" : "Invite People…",
@@ -163,14 +210,25 @@ struct FollowersView: View {
                 }
             }
             .disabled(isPreparingShare)
+        }
+    }
+
+    /// PROTOTYPE (#169). People who can change this team, listed above the
+    /// followers because the list answers "who can do what", and the people
+    /// who can *do* something are the ones worth reading first.
+    ///
+    /// A section rather than a badge per row: the header states the permission
+    /// once, so each row's trailing slot is free to answer the other question —
+    /// has this person accepted yet.
+    private var coAdminSection: some View {
+        Section {
+            ForEach(coAdmins) { person in
+                row(for: person)
+            }
         } header: {
-            Text("Followers")
+            Text("Co-admins")
         } footer: {
-            // Explains the toolbar's Sync Now button (#151) — it has no List
-            // row of its own to carry a footer, so its explanation rides
-            // here instead, next to the only other content on this screen
-            // it's actually relevant to.
-            Text("Followers can see this team's games and stats, but can't change anything. If someone says they're missing a recent game or still see one you deleted, tap Sync Now above to push the latest.")
+            Text("Co-admins can add and edit games, correct a finished score, and edit the roster \u{2014} from their own phone. **Only you can score a game as it's being played.**")
         }
     }
 
@@ -257,7 +315,7 @@ struct FollowersView: View {
 
     /// Mirror the team to CloudKit if needed, then hand the share to the system
     /// invite sheet — the same flow whether it's the first invite or a later one.
-    private func addPeople() {
+    private func addPeople(as role: SharingRole) {
         let games = store.games.filter { ($0.teamID ?? team.id) == team.id }
         isPreparingShare = true
         Task {
@@ -306,6 +364,18 @@ struct FollowersView: View {
     }
 
     private func row(for person: SharedParticipant) -> some View {
+        // PROTOTYPE (#169): tapping someone opens what they're allowed to do.
+        // The invite sheet promises the role can be changed later; this is
+        // where that promise is kept.
+        Button {
+            editingPerson = person
+        } label: {
+            personRow(person)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func personRow(_ person: SharedParticipant) -> some View {
         HStack(spacing: 12) {
             Image(systemName: person.hasAccepted ? "person.crop.circle.fill" : "person.crop.circle.badge.clock")
                 .font(.title2)
@@ -322,7 +392,11 @@ struct FollowersView: View {
             Text(person.statusLabel)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(person.hasAccepted ? Color.teamAccent : .secondary)
+            Image(systemName: "chevron.right")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
         }
+        .contentShape(Rectangle())
     }
 
     private func load() async {

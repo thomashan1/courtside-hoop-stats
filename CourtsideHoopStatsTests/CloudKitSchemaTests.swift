@@ -111,7 +111,11 @@ struct CloudKitSchemaTests {
     @Test func rolesMapToCloudKitPermissions() {
         #expect(SharingRole.follower.cloudKitPermission == .readOnly)
         #expect(SharingRole.coTracker.cloudKitPermission == .readWrite)
-        #expect(SharingRole.follower.label == "View only")
-        #expect(SharingRole.coTracker.label == "Can edit")
+        // PROTOTYPE (#169): the labels are now the app's own nouns for the two
+        // roles, not CloudKit's verbs for the two permissions — the invite
+        // sheet names a person, and "View only" isn't a kind of person.
+        #expect(SharingRole.follower.label == "Follower")
+        #expect(SharingRole.coTracker.label == "Co-admin")
+        #expect(SharingRole.coTracker.summary.contains("Can't score a live game"))
     }
 }

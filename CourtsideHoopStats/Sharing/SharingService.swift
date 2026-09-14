@@ -17,8 +17,27 @@ enum SharingRole: String, Codable, CaseIterable, Identifiable {
     /// Wording shown next to a person in the invite sheet — mirrors the mockups.
     var label: String {
         switch self {
-        case .follower:  return "View only"
-        case .coTracker: return "Can edit"
+        case .follower:  return "Follower"
+        case .coTracker: return "Co-admin"
+        }
+    }
+
+    /// One line saying what this role can do, in the app's own terms rather
+    /// than CloudKit's "View only / Can make changes" (#169). The second half
+    /// of the co-admin line is the part the system share sheet can never say.
+    var summary: String {
+        switch self {
+        case .follower:
+            return "Can watch games, scores and stats. Changes nothing."
+        case .coTracker:
+            return "Can add and edit games, fix a final score, and edit the roster. Can't score a live game."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .follower:  return "binoculars.fill"
+        case .coTracker: return "pencil.and.list.clipboard"
         }
     }
 
@@ -44,11 +63,17 @@ struct SharedParticipant: Identifiable {
     let isOwner: Bool
     /// False while an invite is still outstanding.
     let hasAccepted: Bool
+    /// What this person is allowed to do (#169). Defaults to `.follower` so
+    /// every existing call site keeps compiling and keeps its meaning.
+    var role: SharingRole = .follower
 
     var statusLabel: String {
         if isOwner { return "Owner" }
+        if role == .coTracker { return hasAccepted ? "Can edit" : "Invited" }
         return hasAccepted ? "Following" : "Invited"
     }
+
+    var isCoAdmin: Bool { !isOwner && role == .coTracker }
 }
 
 /// A prepared `CKShare` plus its container — the two things the system share
@@ -196,6 +221,15 @@ struct DemoSharingService: TeamSharingService {
     /// everything made `syncSharedState()` adopt *every* demo team, so the
     /// second team picked up a "Shared" tag it was never given.
     let sharedTeamID: UUID
+    /// PROTOTYPE (#169): include a read-write participant in the people list,
+    /// so the owner-side co-admin screens have something to render. Off by
+    /// default, so the committed screenshot set is untouched.
+    var includeCoAdmin = false
+    /// PROTOTYPE (#169): off for the co-admin persona, whose point is that a
+    /// team you can edit is **not** a followed team — it belongs in the
+    /// ordinary Games and Roster tabs, and the Following tab shouldn't appear
+    /// at all.
+    var includeFollowedTeams = true
 
     var isAvailable: Bool { true }
 
@@ -206,12 +240,14 @@ struct DemoSharingService: TeamSharingService {
     func stopSharing(_ team: Team) async throws {}
     func acceptShare(_ metadata: CKShare.Metadata) async throws {}
     func fetchFollowedTeams() async throws -> [FollowedTeam] {
-        [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
+        includeFollowedTeams ? [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()] : []
     }
     func unfollow(_ team: FollowedTeam) async throws {}
     func isSharing(_ team: Team) async throws -> Bool { team.id == sharedTeamID }
     func participants(for team: Team) async throws -> [SharedParticipant] {
-        team.id == sharedTeamID ? DemoData.makeParticipants() : []
+        guard team.id == sharedTeamID else { return [] }
+        return includeCoAdmin ? DemoData.makeParticipantsWithCoAdmin()
+                              : DemoData.makeParticipants()
     }
     func shareURL(for team: Team) async throws -> URL? {
         team.id == sharedTeamID ? URL(string: "https://www.icloud.com/share/demo") : nil

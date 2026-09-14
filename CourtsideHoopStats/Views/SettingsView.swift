@@ -169,6 +169,7 @@ struct SettingsView: View {
                 TeamRow(team: team,
                         isActive: team.id == store.activeTeamID,
                         isShared: store.isShared(team.id),
+                        isCoAdmin: store.isCoAdmin(team.id),
                         onEdit: { editingTeam = TeamRef(id: team.id) },
                         onSelect: { store.setActiveTeam(team.id) })
                 .swipeActions(edge: .trailing) {
@@ -280,6 +281,10 @@ private struct TeamRow: View {
     /// Whether this team is shared with followers. Read from the store rather
     /// than fetched, so a list of teams costs no network calls.
     let isShared: Bool
+    /// PROTOTYPE (#169): someone else's team, shared with you read-write.
+    /// Mutually exclusive with `isShared` — you either own it and shared it
+    /// out, or you don't own it at all.
+    var isCoAdmin = false
     let onEdit: () -> Void
     let onSelect: () -> Void
 
@@ -302,6 +307,14 @@ private struct TeamRow: View {
                     if isShared {
                         StatusBadge(text: "Shared", color: .teamAccent,
                                     compact: true, systemImage: "person.2.fill")
+                    }
+                    // A roster you can edit but don't own is worth saying out
+                    // loud in the one list that shows every team at once —
+                    // otherwise the only difference between your team and
+                    // someone else's is which one you tapped last.
+                    if isCoAdmin {
+                        StatusBadge(text: "Co-admin", color: .teamAccent, compact: true,
+                                    systemImage: "pencil.and.list.clipboard")
                     }
                 }
             }

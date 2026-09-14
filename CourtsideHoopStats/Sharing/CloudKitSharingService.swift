@@ -231,7 +231,11 @@ final class CloudKitSharingService: TeamSharingService {
                 // Don't repeat the contact underneath when it *is* the name.
                 contact: formatted.isEmpty ? "" : contact,
                 isOwner: participant.role == .owner,
-                hasAccepted: participant.acceptanceStatus == .accepted
+                hasAccepted: participant.acceptanceStatus == .accepted,
+                // The share, not local state, is the authority on what someone
+                // can do (#169) — a permission changed from another device or
+                // from the system Manage Share sheet still reads correctly.
+                role: participant.permission == .readWrite ? .coTracker : .follower
             )
         }
     }

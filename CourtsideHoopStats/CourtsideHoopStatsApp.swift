@@ -23,7 +23,16 @@ struct CourtsideHoopStatsApp: App {
         // stand-in service. Without it the seeded team reports zero followers
         // and every sharing screen captures in its empty state.
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
-            let demo = DemoSharingService(sharedTeamID: appStore.team.id)
+            let args = ProcessInfo.processInfo.arguments
+            // PROTOTYPE (#169). `-uiTestCoAdminOwner` puts a co-admin in the
+            // owner's people list. `-uiTestCoAdminSelf` flips the persona: the
+            // demo team belongs to someone else, so nothing here is shared
+            // *out* and the service must report so — otherwise
+            // `syncSharedState()` adopts the team back as the user's own.
+            var demo = DemoSharingService(
+                sharedTeamID: args.contains("-uiTestCoAdminSelf") ? UUID() : appStore.team.id)
+            demo.includeCoAdmin = args.contains("-uiTestCoAdminOwner")
+            demo.includeFollowedTeams = !args.contains("-uiTestCoAdminSelf")
             appStore.sharingService = demo
             sharing = demo
             _store = StateObject(wrappedValue: appStore)
