@@ -17,7 +17,11 @@ private enum Page {
     /// US Letter at 72dpi. Letter rather than A4 because the audience is a US
     /// youth league; it also prints acceptably on A4 with default scaling.
     static let size = CGSize(width: 612, height: 792)
-    static let margin: CGFloat = 32
+    /// 32 originally. Trimmed to make room for the Notes line: with a
+    /// twelve-player roster the page is completely full, and the note
+    /// overran US Letter (827pt of 792) until the stack's spacing came down
+    /// and this with it. 28pt is still a normal printable margin.
+    static let margin: CGFloat = 28
     static var contentWidth: CGFloat { size.width - margin * 2 }
     static var contentHeight: CGFloat { size.height - margin * 2 }
 }
@@ -81,11 +85,12 @@ struct GameSummaryPrintout: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             header
             scoreBand
             periodTable
             statsTable
+            notesBlock
             Spacer(minLength: 0)
             footer
         }
@@ -340,6 +345,43 @@ struct GameSummaryPrintout: View {
     }
 
     // MARK: Chrome
+
+    /// The tracker's note, under the box score.
+    ///
+    /// Sits below the numbers and above the `Spacer` that absorbs the page's
+    /// slack, so on a normal game it lands in the whitespace that was empty
+    /// anyway. Capped at four lines: this page is a one-pager by design, and
+    /// a long note should lose its tail rather than push the footer — and the
+    /// App Store link anchored to it — onto a second sheet.
+    @ViewBuilder
+    private var notesBlock: some View {
+        if !game.notes.isEmpty {
+            // Label and text on one line rather than a stacked section. The
+            // page is a one-pager by design and a full section's worth of
+            // chrome — title, its own spacing, the parent stack's gap — was
+            // enough to push a twelve-player roster onto a second sheet
+            // (`testRendersASingleLetterPage` caught it at 827pt of 792).
+            //
+            // **One line.** Not a taste call — the page is genuinely full. A
+            // twelve-player roster plus the note overran US Letter at two
+            // lines (798pt of 792) even after the stack's spacing came down
+            // from 14 to 12. A long note truncates rather than pushing the
+            // footer — and the App Store link anchored to it — onto a second
+            // sheet.
+            //
+            // This is the clearest argument for exporting an image instead of
+            // a PDF: there is no room left for anything, and a raster export
+            // would simply get taller.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                sectionTitle("Notes")
+                Text(game.notes)
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.black)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+    }
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text.uppercased())

@@ -182,9 +182,18 @@ struct EditGameSheet: View {
                     }
                 }
 
-                Section("Notes") {
+                Section {
                     TextField("Scouting notes, observations…", text: $notes, axis: .vertical)
                         .lineLimit(3...10)
+                } header: {
+                    Text("Notes")
+                } footer: {
+                    // Say so where it's typed. Notes have always travelled to
+                    // followers inside the published game blob; now that a
+                    // follower's screen actually shows them, the person
+                    // writing one should know who reads it — not find out
+                    // from someone quoting it back.
+                    Text("Followers of this team can read these.")
                 }
 
                 // Only the "oops, tapped Start Game by mistake" case (#133):
