@@ -174,6 +174,7 @@ Key types (see source for full detail):
 - `PeriodEndScore { ourRunningTotal, opponentRunningTotal }` (opponent side authoritative; our side derived from events).
 - `Game { id, date, opponent, league, location, isHome, periodFormat, events, periodEndScores, notes, isComplete, hasStarted: Bool? }`
   - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, and **`lifecycle` { scheduled, inProgress, complete }**.
+  - **Decodes leniently.** `Game` has a hand-written `init(from:)` (in an extension, so the memberwise init survives) reading every field with `decodeIfPresent`. This is a data-loss guard, not style: `AppStore.load()` uses `try?`, so one missing key silently wipes every saved game, and Swift's synthesized decoder throws on a missing key *even when the property has a default*. **Adding a stored property to `Game` means adding a line there**, covered by `GameMigrationTests`.
 - `PlayerStats` (derived, never stored).
 
 ---
