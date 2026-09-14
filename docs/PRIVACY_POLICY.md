@@ -29,8 +29,8 @@ can see them. This is the same mechanism behind an iCloud Shared Album.
   a team, and stopping sharing removes the shared copy.
 - **Only people you invite** can see it. Invitations go to specific Apple
   Accounts; there is no public link.
-- **They can view, not change.** People you invite see the roster, scores, and
-  stats read-only.
+- **They can view, not change.** People you invite see the roster, scores,
+  stats, and any notes you write on a game — read-only.
 - **The developer cannot see any of it.** The data sits in your iCloud account,
   governed by [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
   We have no access to it and receive no copy.

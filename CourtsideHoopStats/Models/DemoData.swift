@@ -236,6 +236,10 @@ enum DemoData {
                               2: PeriodEndScore(ourRunningTotal: 15, opponentRunningTotal: 13),
                               3: PeriodEndScore(ourRunningTotal: 21, opponentRunningTotal: 19),
                               4: PeriodEndScore(ourRunningTotal: 28, opponentRunningTotal: 24)],
+            // A followed game with a note on it, so the follower's Notes
+            // section is reachable in a screenshot. There was no followed game
+            // carrying one before, which is part of how this went unnoticed.
+            notes: "Best passing game of the season — 14 assists. Nicholas unstoppable from deep.",
             isComplete: true,
             hasStarted: true
         )

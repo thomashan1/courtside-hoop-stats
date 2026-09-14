@@ -117,6 +117,19 @@ final class FollowingScreenshotTests: XCTestCase {
         XCTAssertTrue(finished.waitForExistence(timeout: 10))
         finished.tap()
 
+        // The tracker's note, on the follower's side.
+        //
+        // `notes` has always been published — a game crosses the wire as one
+        // encoded blob — so it sat on every follower's device with no screen
+        // showing it. Asserted `isHittable`, since the point is that it's
+        // visible rather than merely decoded.
+        let note = app.staticTexts["Best passing game of the season — 14 assists. Nicholas unstoppable from deep."]
+        for _ in 0..<10 where !note.exists || !note.isHittable { app.swipeUp() }
+        XCTAssertTrue(note.exists && note.isHittable,
+                      "A follower should see the owner's note on the game")
+        snap("26-following-notes")
+        for _ in 0..<10 where !app.buttons["Box Score PDF"].isHittable { app.swipeDown() }
+
         let pdfButton = app.buttons["Box Score PDF"]
         XCTAssertTrue(pdfButton.waitForExistence(timeout: 10),
                       "A finished followed game should offer the box score PDF")

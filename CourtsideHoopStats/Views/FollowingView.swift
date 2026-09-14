@@ -524,6 +524,35 @@ private struct FollowedGameView: View {
                     PeriodBreakdownGrid(game: game, ourName: teamName)
                 }
             }
+
+            // The tracker's note on the game. It was always being published —
+            // a game goes over the wire as one encoded blob, so `notes` has
+            // been sitting on every follower's device all along with no screen
+            // to show it. That was an oversight rather than a decision: this
+            // view's own doc comment claims it shows everything the owner's
+            // Game Summary does.
+            //
+            // Last, below the numbers: a follower opens this for the score,
+            // and the note is colour rather than the thing they came for.
+            if !game.notes.isEmpty {
+                Section {
+                    Text(game.notes)
+                } header: {
+                    // Say whose words these are. The follower's *list* carries
+                    // "Shared by Jean (Nicky's mom)" in the navigation
+                    // subtitle, but that's two screens away by the time anyone
+                    // reads a note — and an unattributed opinion about a game
+                    // reads oddly on a screen that's otherwise all numbers.
+                    //
+                    // Degrades to plain "Notes" when the owner hasn't set a
+                    // name (it's optional, and #166 only prompts for it).
+                    if let owner = followed?.team.ownerDisplayName, !owner.isEmpty {
+                        Text("Notes from \(owner)")
+                    } else {
+                        Text("Notes")
+                    }
+                }
+            }
         }
     }
 }
