@@ -97,7 +97,7 @@ when someone has shared a team with you (§3.10). A follower sees the owner's **
 - **Scoreboard:** solid navy banner (both appearances); our score auto-calculated (blue), opponent score in white; period label. Score scales with Dynamic Type (capped). A compact top bar (Back / Details) replaces the system nav bar; nav + tab bars are hidden while scoring.
 - **Point pad:** tapping a player card raises a big point pad — **2 PT / 3 PT / FT ✓ / FT ✗** — recorded immediately; selection then clears. There is no floating action bar and no undo/redo.
 - **End Period:** a tappable **quarter/half boundary at the top of the Score Log** opens a sheet to enter the opponent's cumulative total, then advances / finishes. (A pickup game has no period breaks — it just ends via **Finish Game**.)
-- **Score Log:** grouped by period with quarter/half separators + per-period points; each row shows a concise action label + running team total; **tap to edit** (player/action) or **swipe to delete**.
+- **Score Log:** grouped by period with quarter/half separators + per-period points; each row shows a concise action label + running team total, with **3-pointers badged 🎉** so they're distinguishable from a two at a glance; **tap to edit** (player/action) or **swipe to delete**.
 
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt). *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 

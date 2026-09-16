@@ -160,6 +160,9 @@ enum EventType: String, Codable, CaseIterable {
     }
 
     /// Single concise label for a Score Log row (combines action + points).
+    ///
+    /// Also the body of the follower push notification and their live score
+    /// banner, so it stays plain text — see `scoreLogBadge` (#172).
     var scoreLogLabel: String {
         switch self {
         case .twoPoint:   return "+2 points"
@@ -168,6 +171,16 @@ enum EventType: String, Codable, CaseIterable {
         case .ftMissed:   return "FT miss"
         case .foul:       return "Foul"
         }
+    }
+
+    /// Prefix that gives a Score Log row a shape you can spot without reading
+    /// it. `+2 points` and `+3 points` are one character apart at caption
+    /// size, which is too fine a distinction to scan mid-game (#172).
+    ///
+    /// Deliberately separate from `scoreLogLabel`: that string also fills a
+    /// push notification, where an emoji is a different decision.
+    var scoreLogBadge: String? {
+        self == .threePoint ? "🎉" : nil
     }
 }
 

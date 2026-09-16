@@ -36,6 +36,25 @@ struct ModelsTests {
         #expect(EventType.foul.points == 0)
     }
 
+    /// Only a three gets the badge — badge everything and it signals nothing.
+    @Test func onlyThreePointersAreBadged() {
+        #expect(EventType.threePoint.scoreLogBadge == "🎉")
+        for other in [EventType.twoPoint, .ftMade, .ftMissed, .foul] {
+            #expect(other.scoreLogBadge == nil)
+        }
+    }
+
+    /// The badge must stay out of `scoreLogLabel` itself: that same string is
+    /// the body of a follower's push notification and their live score banner
+    /// (`FollowerAlerts.newestScorer`), where it wasn't asked for (#172).
+    @Test func theScoreLogLabelStaysPlainText() {
+        for type in EventType.allCases {
+            let isPlain = type.scoreLogLabel.unicodeScalars.allSatisfy { $0.isASCII }
+            #expect(isPlain,
+                    "\(type) leaked a non-ASCII character into the notification body")
+        }
+    }
+
     @Test func selectableExcludesFoul() {
         #expect(!EventType.selectable.contains(.foul))
         #expect(EventType.selectable.contains(.twoPoint))
