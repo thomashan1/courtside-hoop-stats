@@ -163,6 +163,12 @@ struct EventLogRow: View {
     /// Whether to show the trailing chevron (hidden in read-only mode).
     var showsChevron: Bool = true
 
+    /// The action label, badged when the event is one worth spotting (#172).
+    private var scoreLabel: String {
+        guard let badge = event.type.scoreLogBadge else { return event.type.scoreLogLabel }
+        return "\(badge) \(event.type.scoreLogLabel)"
+    }
+
     var body: some View {
         HStack(spacing: 10) {
             // Same size as the stats table's badge: on the Game Summary both
@@ -177,9 +183,13 @@ struct EventLogRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 0) {
-                Text(event.type.scoreLogLabel)
+                Text(scoreLabel)
                     .font(.caption).bold()
                     .foregroundStyle(event.type.points > 0 ? Color.teamAccent : Color.secondary)
+                    // VoiceOver reads the emoji as "party popper", which is
+                    // noise in front of the fact — it announces the plain
+                    // label, since the badge is there for a sighted glance.
+                    .accessibilityLabel(event.type.scoreLogLabel)
                 if event.type.points > 0 {
                     Text("\(runningTotal) pts")
                         .font(.caption2)
