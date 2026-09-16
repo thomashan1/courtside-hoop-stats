@@ -113,10 +113,14 @@ Nobody reads a twenty-line changelog on a phone, so leave out anything they
 wouldn't have noticed.
 
 One block per submitted version, newest first, with the date it went to App
-Store Connect. This is the one place the project keeps a per-version record:
-what shipped when is the question App Review, a bug report, or a "when did this
-change?" all start from, and it can't be recovered from the current state of the
-code.
+Store Connect — the *copy* for each release. The build number, approval date
+and review turnaround live in [`RELEASE_HISTORY.md`](RELEASE_HISTORY.md);
+keep dates consistent between the two.
+
+Between them they're the only per-version record the project keeps: what
+shipped when is the question App Review, a bug report, or a "when did this
+change?" all start from, and it can't be recovered from the current state of
+the code.
 
 ### v1.6 — submitted 2026-09-13
 
