@@ -4,63 +4,95 @@ Every version submitted to App Store Connect: which Xcode Cloud build carried
 it, when it went in, when Apple approved it, and how long that took.
 
 **Keep this current.** Add a row when a version is submitted (Approved =
-`in review`), and fill in the approval date and turnaround when the email
-arrives. It's the only place these three facts sit together — App Store
-Connect shows the dates but not the commit, and the build numbers can't be
-recovered from git.
+`in review`), and fill in the approval and the split when the email arrives.
+It's the only place these facts sit together — App Store Connect has the
+timestamps but not the commit, and the build numbers can't be recovered from
+git.
+
+Times are from each version's **Activity** list in App Store Connect:
+"Submitted" is *Waiting for Review*, "Approved" is *Ready for Distribution*.
 
 ## Submitted versions
 
-| Version | Build | Commit | Submitted | Approved | Turnaround |
-|---|---|---|---|---|---|
-| v1.6 | 128 | `f3e960d` | Sun 2026-09-13 | *in review* | — |
-| v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM PDT | **Sun 2026-09-13** | **8 days** |
-| v1.4 | 100 | — | Wed 2026-09-02, 6:18 PM PDT | Sat 2026-09-05 | 3 days |
-| v1.3 | 89 | — | Wed 2026-09-02, 8:41 AM PDT | Wed 2026-09-02 | same day |
-| v1.2 | — | — | Mon 2026-08-17, 8:06 PM PDT | Tue 2026-08-18 | under 1 day |
-| v1.1 | — | — | Tue 2026-08-04 | Mon 2026-08-17 | 13 days |
-| v1.0 | — | — | — | — | — |
+| Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
+|---|---|---|---|---|---|---|---|
+| v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | *in review* | — | — | — |
+| v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM | Sun 2026-09-13, 12:22 PM | 7d 16h | 7d 13h 27m | 2h 22m |
+| v1.4 | 100 | — | Wed 2026-09-02, 6:18 PM | Sat 2026-09-05, 7:54 PM | 3d 2h | 2d 22h 7m | **3h 29m** |
+| v1.3 | 89 | — | Wed 2026-09-02, 8:42 AM | Wed 2026-09-02, 12:36 PM | **3h 54m** | 1h 46m | 2h 8m |
+| v1.2 | — | — | Mon 2026-08-17, 8:06 PM | Tue 2026-08-18, 1:27 PM | 17h 21m | 15h 57m | 1h 24m |
+| v1.1 | — | — | Tue 2026-08-04, 10:43 PM | Mon 2026-08-17, 6:21 PM | 12d 20h | 12d 19h 21m | **17m** |
+| v1.0 | — | — | Tue 2026-07-21, 12:52 PM | Mon 2026-08-03, 10:21 PM | **13d 9h** | 13d 9h 6m | 23m |
 
-Weekdays are in the table because they carry information: **two of five
-approvals landed on a weekend** — v1.4 on a Saturday and v1.5 on a Sunday, and
-that Sunday approval is what unblocked submitting v1.6 the same day. Two
-submissions went in at a weekend too. App Review isn't on a business-day
-cycle, so "it's the weekend, nothing will move" is wrong here.
+Weekdays are kept because **two of six approvals landed at a weekend** (v1.4
+Saturday, v1.5 Sunday). App Review is not on a business-day cycle, so
+"nothing will move until Monday" is wrong for this app.
 
-### Gaps, deliberately left blank
+## The wait is the queue. The review is hours.
 
-Blank means *not known*, not *none* — don't fill these by inference.
+| | Range | Spread |
+|---|---|---|
+| **Queued** (*Waiting for Review*) | 1h 46m → 13d 9h | **180×** |
+| **In review** (*In Review*) | 17m → 3h 29m | 12× |
 
-- **v1.0–v1.2 build numbers** predate the tracked build↔commit anchors, and
-  Xcode Cloud numbering can't be reconstructed backwards from git (it counts
-  *pushes*, and a push can be silently dropped). They're recoverable from the
-  App Store Connect build list if ever needed.
-- **v1.0's dates** aren't recorded anywhere in the repo.
-- **Commits** for v1.1–v1.4 weren't captured at submission time.
+Every multi-day wait this app has had was spent **queued, untouched**. Once a
+human starts, it has always finished the same working day — the longest was
+v1.4 at 3h 29m.
 
-## What the turnaround actually tells you
+Two things follow, and they're the reason this table exists:
+
+1. **Elapsed days carry no information; the status does.** A submission out
+   for a week is in a queue, not under scrutiny — there is nothing in the
+   binary or the metadata to second-guess while waiting.
+2. **Once it flips to *In Review*, it's nearly over.** Expect an answer inside
+   a few hours, same day.
+
+So **don't read silence as a problem.** Nothing here supports "it's stuck" at
+3, 5 or even 8 days — v1.5 sat 7d 13h in the queue and was approved in 2h 22m
+without a single question. A *Rejected* or *Metadata Rejected* status is the
+signal; elapsed time is not.
+
+## Queue depth, not release size
 
 | | |
 |---|---|
-| Fastest | same day (v1.3) |
-| Slowest | 13 days (v1.1) |
+| Fastest | 3h 54m (v1.3) |
+| Slowest | 13d 9h (v1.0) |
 | Median | ~3 days |
 
-**There is no pattern by size of change**, and that matters more than the
-average: v1.3 was a bigger release than v1.4 and cleared in hours, while v1.5
-— a small one — sat 8 days. v1.1's 13 days overlapped the beta-macOS toolchain
-blocker, so it isn't clean queue time either.
+**Total turnaround has no relation to the size of the change.** v1.3 was a
+bigger release than v1.4 and cleared in under four hours; v1.5 was small and
+took a week. What varies is queue depth on the day, which is unknowable in
+advance — so don't plan a release date around a predicted approval.
 
-**So don't read silence as a problem.** Nothing here supports "it's stuck" at
-3, 5, or even 7 days; v1.5 is the counter-example at 8 days and a normal
-approval. Two weeks with no *Metadata Rejected* or *Rejected* status would be
-the first real signal.
+The one visible pattern is that the queue got dramatically shorter after the
+first two releases: 13 days for v1.0 and v1.1, then 16 hours or less for v1.2
+and v1.3. A new app's first submissions appear to be queued differently.
+
+### Time before submitting is ours, not Apple's
+
+v1.0 sat **4d 14h** between *Prepare for Submission* and *Waiting for Review*
+— the beta-macOS toolchain blocker, entirely this side of the fence. Every
+release since has closed that gap in 1–25 minutes. Worth separating when
+judging how long a release "took": the queue is Apple's, the prep gap is ours.
+
+## Gaps, deliberately left blank
+
+Blank means *not known*, not *none* — don't fill these by inference.
+
+- **v1.0–v1.2 build numbers** predate the tracked build↔commit anchors. Xcode
+  Cloud numbering can't be reconstructed backwards from git: it counts
+  *pushes*, not commits, and at least one push was silently dropped. They're
+  readable from each version's page in App Store Connect if ever needed.
+- **Commits** for v1.0–v1.4 weren't captured at submission time.
 
 ## Rules that shape the table
 
 - **One version in review at a time.** Apple closes a version's train once
   it's approved, so the next release needs a new `MARKETING_VERSION` — not
-  just a new build. v1.7 can't be submitted until v1.6 clears.
+  just a new build. The data shows this as a chain of same-day handoffs: v1.2
+  went in 2h after v1.1 was approved, v1.4 6h after v1.3, and v1.6 90 minutes
+  after v1.5. v1.7 can't be submitted until v1.6 clears.
 - **Build numbers are Xcode Cloud's, not `CURRENT_PROJECT_VERSION`'s.** They
   run in their own sequence, +1 per **push** to `main` (not per commit), and
   increment whether the build succeeds or not.
