@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | *in review* | — | — | — |
+| v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | **Wed 2026-09-16** | ~3d 2h | ? | ? |
 | v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM | Sun 2026-09-13, 12:22 PM | 7d 16h | 7d 13h 27m | 2h 22m |
 | v1.4 | 100 | — | Wed 2026-09-02, 6:18 PM | Sat 2026-09-05, 7:54 PM | 3d 2h | 2d 22h 7m | **3h 29m** |
 | v1.3 | 89 | — | Wed 2026-09-02, 8:42 AM | Wed 2026-09-02, 12:36 PM | **3h 54m** | 1h 46m | 2h 8m |
@@ -24,9 +24,13 @@ Times are from each version's **Activity** list in App Store Connect:
 | v1.1 | — | — | Tue 2026-08-04, 10:43 PM | Mon 2026-08-17, 6:21 PM | 12d 20h | 12d 19h 21m | **17m** |
 | v1.0 | — | — | Tue 2026-07-21, 12:52 PM | Mon 2026-08-03, 10:21 PM | **13d 9h** | 13d 9h 6m | 23m |
 
-Weekdays are kept because **two of six approvals landed at a weekend** (v1.4
+Weekdays are kept because **two of seven approvals landed at a weekend** (v1.4
 Saturday, v1.5 Sunday). App Review is not on a business-day cycle, so
 "nothing will move until Monday" is wrong for this app.
+
+`?` on v1.6 means **not yet collected**: the approval email gives the date but
+not the *In Review* timestamp, so the queue/review split needs a look at that
+version's Activity list. Its ~3d 2h total sits right on the median.
 
 ## The wait is the queue. The review is hours.
 
