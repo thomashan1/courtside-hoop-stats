@@ -106,6 +106,11 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - Pair any schema change with a `GameMigrationTests`-style test that strips the
   new keys and decodes what's left. It's the only thing standing between a
   refactor and someone's season.
+- **`DemoData` is test input, so re-run the tests after touching it.** The PDF
+  and demo-coverage suites render the demo game, so lengthening a note or
+  adding events can fail a layout assertion with no code change at all. A
+  longer demo note shipped a red `testRendersASingleLetterPage` to `main`
+  once, because the last test run predated the demo edit.
 - **A new `EventType` case must never reach `events` on the wire.** A `Game`
   crosses to followers as one JSON blob, and an older build's `GameEvent`
   decoder *throws* on a type it doesn't recognise — failing the whole game, so

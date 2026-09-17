@@ -43,6 +43,10 @@ final class AppStore: ObservableObject {
     private let followedKey = "chs.followedTeams.v1"
     private let sharedKey = "chs.sharedTeams.v1"
     private let cadenceKey = "chs.alertCadence.v1"
+    /// Where the raw bytes go when a game or team can't be decoded, so the
+    /// unreadable record survives the load that skipped it (#180).
+    private static let gamesQuarantineKey = "chs.games.unreadable.v1"
+    private static let teamsQuarantineKey = "chs.teams.unreadable.v1"
 
     /// Backend for publishing local edits to followers. Injected at app launch;
     /// nil in tests and previews, which disables publishing entirely.
@@ -133,8 +137,11 @@ final class AppStore: ObservableObject {
             .flatMap(FollowerAlertCadence.init(rawValue:)) ?? .periodEnd
 
         // Teams: load the saved collection, else start with one empty team.
+        // A team that won't decode takes its roster with it, so the same
+        // element-wise salvage applies — losing one team beats losing the
+        // roster of every team (#180).
         if let data = UserDefaults.standard.data(forKey: teamsKey),
-           let saved = try? decoder.decode(TeamsState.self, from: data),
+           let saved = Self.salvagedTeamsState(from: data),
            !saved.teams.isEmpty {
             teams = saved.teams
             activeTeamID = saved.teams.contains(where: { $0.id == saved.activeTeamID })
@@ -145,12 +152,78 @@ final class AppStore: ObservableObject {
             activeTeamID = first.id
         }
 
-        if let data = UserDefaults.standard.data(forKey: gamesKey),
-           let saved = try? decoder.decode([Game].self, from: data) {
-            games = saved
+        if let data = UserDefaults.standard.data(forKey: gamesKey) {
+            games = Self.salvagingElements([Game].self, from: data,
+                                            quarantinedAs: Self.gamesQuarantineKey)
         } else {
             games = []
         }
+    }
+
+    // MARK: - Lenient loading (#180)
+
+    /// `TeamsState` with any unreadable team skipped rather than the whole
+    /// blob lost. Returns `nil` only when nothing at all could be read.
+    static func salvagedTeamsState(from data: Data) -> TeamsState? {
+        let decoder = JSONDecoder()
+        if let whole = try? decoder.decode(TeamsState.self, from: data) { return whole }
+
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let rawTeams = object["teams"]
+        else {
+            UserDefaults.standard.set(data, forKey: teamsQuarantineKey)
+            return nil
+        }
+
+        guard let teamsData = try? JSONSerialization.data(withJSONObject: rawTeams) else {
+            UserDefaults.standard.set(data, forKey: teamsQuarantineKey)
+            return nil
+        }
+        let salvaged = salvagingElements([Team].self, from: teamsData,
+                                         quarantinedAs: teamsQuarantineKey)
+        guard !salvaged.isEmpty else { return nil }
+
+        // The active id may itself be the unreadable part; the caller already
+        // falls back to the first team when it doesn't match.
+        let activeID = (object["activeTeamID"] as? String).flatMap(UUID.init(uuidString:))
+        return TeamsState(teams: salvaged, activeTeamID: activeID ?? salvaged[0].id)
+    }
+
+    /// Decodes an array element by element when it won't decode as a whole,
+    /// keeping everything that still reads.
+    ///
+    /// `try? decoder.decode([Game].self, …)` is all-or-nothing: **one**
+    /// unreadable game throws for the entire array, the `try?` turns it into
+    /// `nil`, and the next `save()` writes that emptiness over the file. Losing
+    /// one game is recoverable; losing a season is not, and the difference is
+    /// this function.
+    ///
+    /// The original bytes are quarantined under `key` the first time anything
+    /// is dropped, so the unreadable game isn't gone — just not loaded. That's
+    /// what makes this cheap insurance rather than a smaller kind of loss.
+    static func salvagingElements<T: Decodable>(_ type: [T].Type, from data: Data,
+                                                        quarantinedAs key: String) -> [T] {
+        let decoder = JSONDecoder()
+        if let all = try? decoder.decode([T].self, from: data) { return all }
+
+        guard let elements = try? JSONSerialization.jsonObject(with: data) as? [Any] else {
+            // Not even an array — nothing to salvage element-wise. Keep the
+            // bytes anyway: they're all that's left of whatever was there.
+            UserDefaults.standard.set(data, forKey: key)
+            return []
+        }
+
+        let salvaged: [T] = elements.compactMap { element in
+            guard let itemData = try? JSONSerialization.data(withJSONObject: element) else {
+                return nil
+            }
+            return try? decoder.decode(T.self, from: itemData)
+        }
+
+        if salvaged.count < elements.count {
+            UserDefaults.standard.set(data, forKey: key)
+        }
+        return salvaged
     }
 
     // MARK: - Persistence
