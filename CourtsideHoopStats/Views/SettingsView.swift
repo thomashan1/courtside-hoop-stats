@@ -5,6 +5,11 @@ import UniformTypeIdentifiers
 struct SettingsView: View {
     @EnvironmentObject var store: AppStore
 
+    /// Restore result, shown as a confirmation after the fact (#177).
+    @State private var restoreMessage: String?
+    @State private var confirmingRestore = false
+    @State private var browsingBackup = false
+
     @State private var showAddTeam = false
     @State private var newTeamName = ""
     @State private var editingTeam: TeamRef?
@@ -31,6 +36,8 @@ struct SettingsView: View {
                 } else {
                     teamsSection
                 }
+
+                backupSection
 
                 Section {
                     HStack(spacing: 16) {
@@ -137,6 +144,88 @@ struct SettingsView: View {
         }
     }
 
+    /// Pluralises inside a plain `String`.
+    ///
+    /// `^[…](inflect: true)` only works when the text reaches a `Text` as a
+    /// literal — build a `String` with it and the markup ships to the user
+    /// verbatim, which is exactly what the import alert was doing.
+    private func counted(_ n: Int, _ singular: String) -> String {
+        "\(n) \(singular)\(n == 1 ? "" : "s")"
+    }
+
+    // MARK: - iCloud backup (#177)
+
+    /// Says when it last worked, because a backup you can't verify isn't one.
+    /// Deliberately not an alert or a badge: a failure must never interrupt a
+    /// game, so this screen is where it surfaces.
+    @ViewBuilder
+    private var backupSection: some View {
+        Section {
+            LabeledContent("Last backed up") {
+                if store.isBackingUp {
+                    Text("Backing up…").foregroundStyle(.secondary)
+                } else if let at = store.backupSnapshot.backedUpAt {
+                    Text(at.formatted(.relative(presentation: .named)))
+                } else {
+                    Text("Never").foregroundStyle(.secondary)
+                }
+            }
+
+            if store.backupSnapshot.gameCount > 0 {
+                LabeledContent("In iCloud") {
+                    // One literal, not two joined with `+`: concatenation
+                    // produces a plain `String`, so the inflection markup is
+                    // never parsed and renders as "^[6 game](inflect: true)".
+                    Text("^[\(store.backupSnapshot.gameCount) game](inflect: true) in ^[\(store.backupSnapshot.teamCount) team](inflect: true)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button("Back Up Now") {
+                Task { await store.backUpNow() }
+            }
+            .disabled(store.isBackingUp)
+
+            Button("Restore from iCloud…") {
+                browsingBackup = true
+            }
+            .disabled(store.isBackingUp)
+
+            if let error = store.backupError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+        } header: {
+            Text("iCloud Backup")
+        } footer: {
+            Text("Every team and game is copied to your own iCloud automatically, so a lost or wiped phone doesn't take the season with it. Restoring only adds what's missing — it never overwrites or deletes anything on this phone.")
+        }
+        .sheet(isPresented: $browsingBackup) {
+            BackupBrowserView()
+        }
+        .confirmationDialog("Restore from iCloud?",
+                            isPresented: $confirmingRestore, titleVisibility: .visible) {
+            Button("Restore") {
+                Task {
+                    let added = await store.restoreFromBackup()
+                    restoreMessage = added.games == 0 && added.teams == 0
+                        ? "Nothing to restore — this phone already has everything in iCloud."
+                        : "Restored \(counted(added.games, "game")) and \(counted(added.teams, "team"))."
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Adds anything in iCloud that isn't on this phone. Nothing here is overwritten or deleted.")
+        }
+        .alert("Restore", isPresented: .init(get: { restoreMessage != nil },
+                                             set: { if !$0 { restoreMessage = nil } })) {
+            Button("OK") { restoreMessage = nil }
+        } message: {
+            Text(restoreMessage ?? "")
+        }
+    }
+
     // MARK: - Teams
 
     /// The only Teams affordance a pure follower sees (#118): just the way
@@ -224,7 +313,7 @@ struct SettingsView: View {
                     return
                 }
                 let team = store.importTeam(from: export)
-                importMessage = "Imported “\(team.name)” with ^[\(team.players.count) player](inflect: true). It's now the active team."
+                importMessage = "Imported “\(team.name)” with \(counted(team.players.count, "player")). It's now the active team."
             } catch {
                 importMessage = "Couldn't read that file. Make sure it's a Courtside team export (.json)."
             }

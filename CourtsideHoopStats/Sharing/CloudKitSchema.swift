@@ -180,4 +180,60 @@ enum CloudKitSchema {
               let data = record[Key.payload] as? Data else { return nil }
         return game(fromPayload: data)
     }
+
+    // MARK: - Backup (#177)
+
+    /// Record types for the owner's **private backup**, distinct from the
+    /// shared ones so a backup record can never be mistaken for a shared one
+    /// (or vice versa) by a fetch that walks a zone.
+    static let backupTeamRecordType = "BackupTeam"
+    static let backupGameRecordType = "BackupGame"
+
+    static func backupTeamRecordID(_ id: UUID, in zoneID: CKRecordZone.ID) -> CKRecord.ID {
+        CKRecord.ID(recordName: "backup-team-\(id.uuidString)", zoneID: zoneID)
+    }
+
+    static func backupGameRecordID(_ id: UUID, in zoneID: CKRecordZone.ID) -> CKRecord.ID {
+        CKRecord.ID(recordName: "backup-game-\(id.uuidString)", zoneID: zoneID)
+    }
+
+    /// A team as a backup record.
+    ///
+    /// **No parent reference and no share.** The sharing records use a parent
+    /// to make a game travel with its team and cascade-delete with it; a
+    /// backup must do the opposite and outlive whatever happens to the live
+    /// copy, which is the whole reason sharing can't double as a backup.
+    static func backupRecord(for team: Team, in zoneID: CKRecordZone.ID) -> CKRecord {
+        let record = CKRecord(recordType: backupTeamRecordType,
+                              recordID: backupTeamRecordID(team.id, in: zoneID))
+        record[Key.name] = team.name as CKRecordValue
+        if let data = try? encoder.encode(team) {
+            record[Key.payload] = data as CKRecordValue
+        }
+        return record
+    }
+
+    static func backupRecord(for game: Game, in zoneID: CKRecordZone.ID) -> CKRecord {
+        let record = CKRecord(recordType: backupGameRecordType,
+                              recordID: backupGameRecordID(game.id, in: zoneID))
+        // The same `laterEvents` split as the shared payload. Not strictly
+        // required here — only this build reads its own backup — but a restore
+        // onto an older build is exactly the situation where it matters.
+        if let data = payload(for: game) {
+            record[Key.payload] = data as CKRecordValue
+        }
+        return record
+    }
+
+    static func backupTeam(from record: CKRecord) -> Team? {
+        guard record.recordType == backupTeamRecordType,
+              let data = record[Key.payload] as? Data else { return nil }
+        return try? decoder.decode(Team.self, from: data)
+    }
+
+    static func backupGame(from record: CKRecord) -> Game? {
+        guard record.recordType == backupGameRecordType,
+              let data = record[Key.payload] as? Data else { return nil }
+        return game(fromPayload: data)
+    }
 }
