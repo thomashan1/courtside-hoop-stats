@@ -122,7 +122,11 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.7 — not yet submitted
+### v1.8 — open
+
+*(no notes yet)*
+
+### v1.7 — submitted 2026-09-16, build 137
 
 Rebounds lead: it's the one thing a reader can act on, and the request came
 from the person who actually tracks the games. The Score Log changes are real

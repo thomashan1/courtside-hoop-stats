@@ -365,23 +365,26 @@ struct GameSummaryPrintout: View {
             // enough to push a twelve-player roster onto a second sheet
             // (`testRendersASingleLetterPage` caught it at 827pt of 792).
             //
-            // **One line.** Not a taste call — the page is genuinely full. A
-            // twelve-player roster plus the note overran US Letter at two
-            // lines (798pt of 792) even after the stack's spacing came down
-            // from 14 to 12. A long note truncates rather than pushing the
-            // footer — and the App Store link anchored to it — onto a second
-            // sheet.
+            // **Wraps, up to 6 lines.** It was one line for a while, to keep
+            // the page at exactly 792pt — but that truncated a real note
+            // mid-sentence (#178), and the note is often the reason the
+            // numbers look odd: "ended 4 minutes early, coach got two techs".
+            // The PDF is what goes to the parents' group chat, so losing that
+            // sentence costs more than a taller page.
             //
-            // This is the clearest argument for exporting an image instead of
-            // a PDF: there is no room left for anything, and a raster export
-            // would simply get taller.
+            // Extra lines eat the `Spacer` above the footer first, so a
+            // typical game still lands on exactly one Letter page; only a
+            // long roster *and* a long note grow it, which `.frame(minHeight:)`
+            // already allows. The 6-line cap stops an essay producing an
+            // absurd sheet.
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 sectionTitle("Notes")
                 Text(game.notes)
                     .font(.system(size: 10.5))
                     .foregroundStyle(.black)
-                    .lineLimit(1)
+                    .lineLimit(6)
                     .truncationMode(.tail)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

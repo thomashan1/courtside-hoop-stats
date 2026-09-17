@@ -407,7 +407,7 @@ enum DemoData {
             periodFormat: .quarters,
             events: events,
             periodEndScores: periodEnds,
-            notes: "Great defensive third quarter. Watch #8 on the press next time.",
+            notes: "Great defensive third quarter — the press finally clicked and they turned it over four times in a row. Watch #8 next time, he drifts baseline when the ball goes weak side.",
             benchedPlayerIDs: [p[9].id],
             isComplete: true,
             hasStarted: true
