@@ -122,6 +122,25 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
+### v1.7 — not yet submitted
+
+Rebounds lead: it's the one thing a reader can act on, and the request came
+from the person who actually tracks the games. The Score Log changes are real
+but small, so they ride as fixes rather than taking a numbered slot.
+
+> NEW
+>
+> 1. Track rebounds — tap a player, then REB. One tap, no offensive/defensive
+>    split to slow you down, and they show up in the box score and the PDF.
+>
+> FIXES
+>
+> 1. Threes now stand out in the Score Log, so you can tell a 2 from a 3 at a
+>    glance mid-game.
+> 2. The Score Log fits more of the game on screen.
+> 3. Notes you write on a game are now shown to your followers, so everyone
+>    sees the same picture.
+
 ### v1.6 — submitted 2026-09-13
 
 Assists lead rather than sitting in the list: it's the release's headline, and
