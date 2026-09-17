@@ -241,8 +241,15 @@ struct PlayerStatsTable: View {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
                     Text("PTS")
-                    Text("2P")
-                    Text("3P")
+                    // PROPOSAL #175: either two extra columns…
+                    switch (Proposal175.showsAttempts, Proposal175.statsColumns) {
+                    case (true, .separate):
+                        Text("2P"); Text("2PA"); Text("3P"); Text("3PA")
+                    case (true, .fg):
+                        Text("FG"); Text("3P")
+                    default:
+                        Text("2P"); Text("3P")
+                    }
                     Text("AST")
                     Text("REB")
                     // Last on purpose — see the note above.
@@ -259,8 +266,26 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
                         cell("\(stat.points)", isNothing: stat.points == 0, bold: true)
-                        cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
-                        cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                        // PROPOSAL #175: `separate` keeps every number narrow but
+                        // costs two columns; `combined` keeps seven columns but
+                        // triples the width of two of them.
+                        switch (Proposal175.showsAttempts, Proposal175.statsColumns) {
+                        case (true, .separate):
+                            cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
+                            cell("\(stat.twoAttempts)", isNothing: stat.twoAttempts == 0)
+                            cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                            cell("\(stat.threeAttempts)", isNothing: stat.threeAttempts == 0)
+                        case (true, .fg):
+                            cell(stat.fieldGoalDisplay,
+                                 isNothing: stat.twoAttempts + stat.threeAttempts == 0)
+                            cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                        case (true, .combined):
+                            cell(stat.twoPointDisplay, isNothing: stat.twoAttempts == 0)
+                            cell(stat.threePointDisplay, isNothing: stat.threeAttempts == 0)
+                        default:
+                            cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
+                            cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
+                        }
                         cell("\(stat.assists)", isNothing: stat.assists == 0)
                         cell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
                         // Only "no attempts" recedes. `0/1 (0%)` is a real
@@ -281,7 +306,9 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
                         Text("DNP")
-                            .gridCellColumns(6)
+                            .gridCellColumns(
+                                Proposal175.showsAttempts
+                                && Proposal175.statsColumns == .separate ? 8 : 6)
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

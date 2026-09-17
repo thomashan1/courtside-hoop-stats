@@ -34,6 +34,9 @@ struct LiveScoringView: View {
     @State private var showBench = false
     /// The player whose point pad is open (tap a card to score, #33).
     @State private var scoringPlayer: Player?
+    /// PROPOSAL #175, Option B: which miss the deck is armed to record, or nil
+    /// when a tap means "score" as usual.
+    @State private var missMode: EventType?
 
     // Sizes that scale with Dynamic Type so the screen stays usable at large
     // accessibility text sizes (player cards widen, action buttons wrap/grow).
@@ -136,6 +139,9 @@ struct LiveScoringView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     benchStrip
+                    if Proposal175.option == .b {
+                        Proposal175MissBar(mode: $missMode)
+                    }
                     // Cue the tap-to-score flow until the first point is scored.
                     if game.events.isEmpty && !store.team.players.isEmpty {
                         Text("Tap a player to score")
@@ -196,7 +202,7 @@ struct LiveScoringView: View {
                 ourScore: game.ourScore,
                 previousOpponentTotal: previousOpponentTotal,
                 isFinalPeriod: game.isFinalPeriod,
-                onConfirm: endPeriod(opponentTotal:)
+                onConfirm: endPeriod(opponentTotal:shotAttempts:)
             )
         }
         .sheet(isPresented: $showOpponentTotals) {
@@ -299,7 +305,18 @@ struct LiveScoringView: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(activePlayers) { player in
-                        PlayerCard(player: player) { scoringPlayer = player }
+                        PlayerCard(player: player,
+                                   missCount: missMode == nil ? nil : missCount(for: player.id),
+                                   armed: missMode != nil) {
+                            // PROPOSAL #175, Option B: while the deck is armed a
+                            // tap is a missed shot, recorded straight into the
+                            // tally — no sheet, no log row, one tap total.
+                            if let missMode {
+                                recordTallyMiss(missMode, for: player.id)
+                            } else {
+                                scoringPlayer = player
+                            }
+                        }
                     }
                 }
             }
@@ -517,6 +534,27 @@ struct LiveScoringView: View {
         return event.id
     }
 
+    /// PROPOSAL #175, Option B: bump the per-player miss count.
+    private func recordTallyMiss(_ type: EventType, for playerID: UUID) {
+        if type == .missedTwo {
+            var tally = game.missedTwosTally ?? [:]
+            tally[playerID, default: 0] += 1
+            game.missedTwosTally = tally
+        } else {
+            var tally = game.missedThreesTally ?? [:]
+            tally[playerID, default: 0] += 1
+            game.missedThreesTally = tally
+        }
+        store.updateGame(game)
+    }
+
+    /// The player's running miss count in the armed mode, shown on their card
+    /// so the tally is verifiable without leaving the deck.
+    private func missCount(for playerID: UUID) -> Int {
+        let tally = missMode == .missedTwo ? game.missedTwosTally : game.missedThreesTally
+        return tally?[playerID] ?? 0
+    }
+
     /// Attaches an assist to an already-recorded basket (#143).
     private func recordAssist(_ assistPlayerID: UUID, for eventID: UUID) {
         guard let index = game.events.firstIndex(where: { $0.id == eventID }) else { return }
@@ -524,12 +562,18 @@ struct LiveScoringView: View {
         store.updateGame(game)
     }
 
-    private func endPeriod(opponentTotal: Int) {
+    private func endPeriod(opponentTotal: Int, shotAttempts: Int?) {
         let period = game.currentPeriod
         game.periodEndScores[period] = PeriodEndScore(
             ourRunningTotal: game.ourScore,
             opponentRunningTotal: opponentTotal
         )
+        // PROPOSAL #175, Option D: one optional number per period.
+        if let shotAttempts {
+            var attempts = game.teamShotAttempts ?? [:]
+            attempts[period] = shotAttempts
+            game.teamShotAttempts = attempts
+        }
         if period >= game.periodFormat.periodCount {
             game.isComplete = true
         }
@@ -547,6 +591,10 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
+    /// PROPOSAL #175, Option B: this player's running miss count, shown only
+    /// while the deck is armed for misses.
+    var missCount: Int? = nil
+    var armed: Bool = false
     /// Single tap opens the big point pad for this player (#33, Jean's feedback).
     let onTap: () -> Void
 
@@ -574,6 +622,13 @@ private struct PlayerCard: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(.primary)
+                if let missCount {
+                    Spacer(minLength: 2)
+                    Text("\(missCount)")
+                        .font(.caption.weight(.heavy))
+                        .monospacedDigit()
+                        .foregroundStyle(missCount == 0 ? .secondary : Color.orange)
+                }
             }
             // Leading, not centred: centred content pushes each badge to a
             // different x depending on name length, so badges never line up
@@ -582,7 +637,12 @@ private struct PlayerCard: View {
             .padding(.vertical, 9)
             .padding(.horizontal, 8)
             .background(
-                RoundedRectangle(cornerRadius: 12).fill(kit.swatch.opacity(0.10))
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(armed ? Color.orange.opacity(0.14) : kit.swatch.opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(armed ? Color.orange.opacity(0.55) : .clear, lineWidth: 1.5)
             )
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }
@@ -645,15 +705,12 @@ struct ScorePadSheet: View {
 
             if let madeEvent {
                 assistStep(for: madeEvent.id)
+            } else if Proposal175.option == .a {
+                makeMissGrid
+                benchButton
             } else {
                 pointGrid
-                Button(role: .destructive) {
-                    onBench()
-                    dismiss()
-                } label: {
-                    Label("Not playing", systemImage: "person.slash")
-                }
-                .padding(.top, 2)
+                benchButton
             }
         }
         .padding()
@@ -666,8 +723,79 @@ struct ScorePadSheet: View {
         )
         // 360 fitted a 2x2 pad; the REB row needs another button's height
         // plus the grid spacing (#174).
-        .presentationDetents(madeEvent == nil ? [.height(462)] : [.height(assistContentHeight)])
+        .presentationDetents(madeEvent == nil
+                             ? [.height(Proposal175.option == .a ? 560 : 462)]
+                             : [.height(assistContentHeight)])
         .presentationDragIndicator(.visible)
+    }
+
+    /// **PROPOSAL #175, Option A.** The pad restructured so *made* is always
+    /// the left column and *missed* always the right: seven buttons instead of
+    /// five, in a shape you can learn in one game. It costs no extra taps per
+    /// shot — a miss is one tap like a make — but the buttons have to come down
+    /// from 88pt to 76pt to fit, and the sheet grows to cover more of the log.
+    @ViewBuilder
+    private var makeMissGrid: some View {
+        if Proposal175.padLayout == .grouped {
+            // Makes keep their own 2x2 block; the misses sit below a rule,
+            // away from `+2`. #174 moved REB off the scoring row for exactly
+            // this reason — a 0-point button next to `+2` invites a mis-tap
+            // that silently changes the score — and a miss button is the same
+            // hazard with a worse failure (the basket is simply never
+            // recorded).
+            VStack(spacing: 10) {
+                Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                    GridRow {
+                        padButton("+2", .twoPoint, height: 74)
+                        padButton("+3", .threePoint, height: 74)
+                    }
+                    GridRow {
+                        padButton("FT ✓", .ftMade, height: 74)
+                        padButton("FT ✗", .ftMissed, height: 74, isMiss: true)
+                    }
+                }
+                Divider()
+                Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                    GridRow {
+                        padButton("MISS 2", .missedTwo, height: 62, isMiss: true)
+                        padButton("MISS 3", .missedThree, height: 62, isMiss: true)
+                    }
+                    GridRow {
+                        padButton("REB", .rebound, height: 62)
+                            .gridCellColumns(2)
+                    }
+                }
+            }
+        } else {
+            Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                GridRow {
+                    padButton("+2", .twoPoint, height: 76)
+                    padButton("2P ✗", .missedTwo, height: 76, isMiss: true)
+                }
+                GridRow {
+                    padButton("+3", .threePoint, height: 76)
+                    padButton("3P ✗", .missedThree, height: 76, isMiss: true)
+                }
+                GridRow {
+                    padButton("FT ✓", .ftMade, height: 76)
+                    padButton("FT ✗", .ftMissed, height: 76, isMiss: true)
+                }
+                GridRow {
+                    padButton("REB", .rebound, height: 64)
+                        .gridCellColumns(2)
+                }
+            }
+        }
+    }
+
+    private var benchButton: some View {
+        Button(role: .destructive) {
+            onBench()
+            dismiss()
+        } label: {
+            Label("Not playing", systemImage: "person.slash")
+        }
+        .padding(.top, 2)
     }
 
     private var pointGrid: some View {
@@ -690,7 +818,8 @@ struct ScorePadSheet: View {
         }
     }
 
-    private func padButton(_ label: String, _ type: EventType) -> some View {
+    private func padButton(_ label: String, _ type: EventType,
+                           height: CGFloat = 88, isMiss: Bool = false) -> some View {
         Button {
             let id = onScore(type)
             let isMake = type == .twoPoint || type == .threePoint
@@ -701,9 +830,10 @@ struct ScorePadSheet: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 34, weight: .heavy, design: .rounded))
-                .frame(maxWidth: .infinity, minHeight: 88)
-                .background(RoundedRectangle(cornerRadius: 18).fill(Color.teamAccent))
+                .font(.system(size: isMiss ? 28 : 34, weight: .heavy, design: .rounded))
+                .frame(maxWidth: .infinity, minHeight: height)
+                .background(RoundedRectangle(cornerRadius: 18)
+                    .fill(isMiss ? Color(.systemGray3) : Color.teamAccent))
                 .foregroundStyle(.white)
         }
         .buttonStyle(.plain)
@@ -833,9 +963,12 @@ struct EndPeriodSheet: View {
     let ourScore: Int
     let previousOpponentTotal: Int
     let isFinalPeriod: Bool
-    let onConfirm: (Int) -> Void
+    let onConfirm: (Int, Int?) -> Void
 
     @State private var opponentTotalText = ""
+    /// PROPOSAL #175, Option D: our field-goal attempts this period — the whole
+    /// feature, in one optional field, on a sheet that is already open.
+    @State private var attemptsText = ""
     /// Opens straight onto the number pad — ending a period is a one-field
     /// task, so the keyboard should already be up with the cursor in place.
     @FocusState private var opponentFieldFocused: Bool
@@ -871,6 +1004,17 @@ struct EndPeriodSheet: View {
                 } footer: {
                     Text(opponentFooter)
                 }
+                if Proposal175.option == .d {
+                    Section {
+                        TextField("Shots taken this \(periodLabel)", text: $attemptsText)
+                            .keyboardType(.numberPad)
+                            .submitLabel(.done)
+                    } header: {
+                        Text("Our shooting (optional)")
+                    } footer: {
+                        Text("Every shot we took, made or missed — one number, from the last ten minutes rather than the whole game. Makes are already counted, so this is all the app needs for a team shooting percentage. Leave it blank and nothing changes.")
+                    }
+                }
             }
             .navigationTitle(isFinalPeriod ? "Finish Game" : "End \(periodLabel)")
             .navigationBarTitleDisplayMode(.inline)
@@ -880,7 +1024,8 @@ struct EndPeriodSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isFinalPeriod ? "Finish" : "Next Period") {
-                        onConfirm(Int(opponentTotalText) ?? previousOpponentTotal)
+                        onConfirm(Int(opponentTotalText) ?? previousOpponentTotal,
+                                  Int(attemptsText))
                         dismiss()
                     }
                 }

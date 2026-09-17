@@ -15,6 +15,8 @@ struct GameSummaryView: View {
     @State private var pdfURL: URL?
     /// Presents the PDF preview, from which it can be shared.
     @State private var showingPDF = false
+    /// PROPOSAL #175, Option C: the post-game shooting-attempts screen.
+    @State private var showShooting = false
 
     init(gameID: UUID) {
         self.gameID = gameID
@@ -25,6 +27,7 @@ struct GameSummaryView: View {
         List {
             finalScoreSection
             periodSection
+            teamShootingSection
             statsSection
             eventLogSection
             notesSection
@@ -63,6 +66,9 @@ struct GameSummaryView: View {
             }
         }
         .onAppear(perform: loadGameIfNeeded)
+        .sheet(isPresented: $showShooting) {
+            Proposal175ShootingSheet(stats: game.stats(for: store.team.players))
+        }
         .sheet(isPresented: $showingPDF) {
             if let pdfURL {
                 GameSummaryPDFPreview(url: pdfURL, shareTitle: shareTitle)
@@ -125,6 +131,29 @@ struct GameSummaryView: View {
 
     // MARK: - Player stats table
 
+    /// PROPOSAL #175, Option D: the entire read side of the feature — one row
+    /// under the linescore, plus a per-period breakdown. No table columns, no
+    /// log rows, and it simply isn't there when nobody typed a number in.
+    @ViewBuilder
+    private var teamShootingSection: some View {
+        if Proposal175.option == .d, let display = game.teamShootingDisplay {
+            Section("Our Shooting") {
+                LabeledContent("Field goals") {
+                    Text(display).bold().monospacedDigit()
+                }
+                ForEach(game.periodEndScores.keys.sorted(), id: \.self) { period in
+                    if let attempts = game.teamShotAttempts?[period], attempts > 0 {
+                        LabeledContent(game.periodFormat.periodLabel(period)) {
+                            Text("\(game.teamFieldGoalsMade(in: period))/\(attempts)")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var statsSection: some View {
         Section("Player Stats") {
             // Shared table (#8) — the same component used in Live Scoring.
@@ -134,6 +163,15 @@ struct GameSummaryView: View {
             // up to the final score (#59).
             PlayerStatsTable(stats: game.stats(for: store.team.players),
                              didNotPlay: game.didNotPlay(from: store.team.players))
+            // PROPOSAL #175, Option C: the only place the feature exists — one
+            // row, after the game, and nothing changes during play.
+            if Proposal175.option == .c {
+                Button {
+                    showShooting = true
+                } label: {
+                    Label("Enter Shooting Attempts", systemImage: "scope")
+                }
+            }
         }
     }
 

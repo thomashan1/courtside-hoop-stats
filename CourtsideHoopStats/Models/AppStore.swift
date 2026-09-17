@@ -82,9 +82,14 @@ final class AppStore: ObservableObject {
             let demoTeam = DemoData.makeTeam()
             teams = [demoTeam, DemoData.makeSecondTeam()]
             activeTeamID = demoTeam.id
-            games = DemoData.makeGames(team: demoTeam).map {
-                var g = $0; g.teamID = demoTeam.id; return g
-            }
+            // PROPOSAL #175: `Proposal175.apply` re-scripts the demo games with
+            // missed field goals at a real game's volume; a no-op unless
+            // -uiTestProposal175 is set.
+            games = Proposal175.apply(
+                to: DemoData.makeGames(team: demoTeam).map {
+                    var g = $0; g.teamID = demoTeam.id; return g
+                },
+                roster: demoTeam.players)
             // `-uiTestTextSizeIndex N` seeds the in-app Text Size so a UI test
             // can exercise accessibility sizes. The OS-level
             // `-UIPreferredContentSizeCategoryName` argument does not reach a

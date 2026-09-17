@@ -133,6 +133,10 @@ enum EventType: String, Codable, CaseIterable {
     case ftMade                 // +1
     case ftMissed               // +0, counts as FT attempt
     case rebound                // +0 — a board, offensive or defensive (#174)
+    /// PROPOSAL #175 (Option A): a missed field goal as a real event, so it
+    /// lands in the Score Log, is editable, and carries a period.
+    case missedTwo              // +0, counts as a 2P attempt
+    case missedThree            // +0, counts as a 3P attempt
     case foul                   // +0 — retained for decoding old games; not tracked in the UI
     /// An event type written by a **newer** build than this one.
     ///
@@ -146,7 +150,8 @@ enum EventType: String, Codable, CaseIterable {
     /// Event types users can record/choose. `foul` is excluded (kept only so
     /// previously-saved foul events still decode) and so is `unknown`, which
     /// this build never writes.
-    static let selectable: [EventType] = [.twoPoint, .threePoint, .ftMade, .ftMissed, .rebound]
+    static let selectable: [EventType] = [.twoPoint, .threePoint, .ftMade, .ftMissed,
+                                          .missedTwo, .missedThree, .rebound]
 
     /// Decodes an unrecognised raw value to `.unknown` rather than throwing.
     ///
@@ -172,6 +177,8 @@ enum EventType: String, Codable, CaseIterable {
         case .ftMade:     return 1
         case .ftMissed:   return 0
         case .rebound:    return 0
+        case .missedTwo:   return 0
+        case .missedThree: return 0
         case .foul:       return 0
         case .unknown:    return 0
         }
@@ -185,6 +192,8 @@ enum EventType: String, Codable, CaseIterable {
         case .ftMade:     return "Free Throw"
         case .ftMissed:   return "FT Miss"
         case .rebound:    return "Rebound"
+        case .missedTwo:   return "Missed 2P"
+        case .missedThree: return "Missed 3P"
         case .foul:       return "Foul"
         case .unknown:    return "Other"
         }
@@ -201,6 +210,8 @@ enum EventType: String, Codable, CaseIterable {
         case .ftMade:     return "FT +1 point"
         case .ftMissed:   return "FT miss"
         case .rebound:    return "Rebound"
+        case .missedTwo:   return "Miss 2"
+        case .missedThree: return "Miss 3"
         case .foul:       return "Foul"
         case .unknown:    return "Other event"
         }
@@ -331,6 +342,17 @@ struct Game: Identifiable, Codable {
     /// live-scoring grid to save space; their existing events are untouched.
     var benchedPlayerIDs: [UUID] = []
     var isComplete: Bool = false
+    /// PROPOSAL #175 Option D: **team** field-goal attempts per period — one
+    /// number per quarter, typed into the sheet the tracker already opens to
+    /// record the opponent's running total. No per-player attribution, no new
+    /// event type, nothing recorded during live play.
+    var teamShotAttempts: [Int: Int]? = nil
+    /// PROPOSAL #175 Options B & C: missed field goals as a per-player count
+    /// instead of per-shot events. Optional and nil by default so a game saved
+    /// by any shipped build still decodes — and note that the hand-written
+    /// `init(from:)` below still needs a line each, default or not.
+    var missedTwosTally: [UUID: Int]? = nil
+    var missedThreesTally: [UUID: Int]? = nil
     /// Whether scoring has begun. Optional for backward compatibility: games
     /// saved before scheduling existed decode as `nil` and are treated as
     /// started (see `isStarted`). New games set this explicitly (Save = false,
@@ -412,6 +434,34 @@ struct Game: Identifiable, Codable {
             rows.append((period, ourTotal, score.opponentRunningTotal))
         }
         return rows
+    }
+
+    // MARK: - PROPOSAL #175 Option D: team shooting
+
+    /// Team field goals made in a period — derived from events, like every
+    /// other number in the app.
+    func teamFieldGoalsMade(in period: Int) -> Int {
+        events.filter {
+            $0.period == period && ($0.type == .twoPoint || $0.type == .threePoint)
+        }.count
+    }
+
+    var teamFieldGoalsMade: Int {
+        events.filter { $0.type == .twoPoint || $0.type == .threePoint }.count
+    }
+
+    var teamShotAttemptsTotal: Int {
+        (teamShotAttempts ?? [:]).values.reduce(0, +)
+    }
+
+    /// "17/50 (34%)" for the whole game, or nil when no attempts were entered —
+    /// the feature is entirely optional, like every other field on a game.
+    var teamShootingDisplay: String? {
+        let attempts = teamShotAttemptsTotal
+        guard attempts > 0 else { return nil }
+        let made = teamFieldGoalsMade
+        let percent = Int((Double(made) / Double(attempts) * 100).rounded())
+        return "\(made)/\(attempts) (\(percent)%)"
     }
 
     // MARK: - Reorderable score log (#9)
@@ -508,9 +558,11 @@ struct Game: Identifiable, Codable {
             switch event.type {
             case .twoPoint:
                 stats.twoPointers += 1
+                stats.twoAttempts += 1
                 stats.points += 2
             case .threePoint:
                 stats.threePointers += 1
+                stats.threeAttempts += 1
                 stats.points += 3
             case .ftMade:
                 stats.ftMade += 1
@@ -520,6 +572,12 @@ struct Game: Identifiable, Codable {
                 stats.ftAttempts += 1
             case .rebound:
                 stats.rebounds += 1
+            // PROPOSAL #175 Option A: misses are events, so attempts are
+            // derived from the log like everything else.
+            case .missedTwo:
+                stats.twoAttempts += 1
+            case .missedThree:
+                stats.threeAttempts += 1
             case .foul:
                 stats.fouls += 1
             case .unknown:
@@ -532,6 +590,20 @@ struct Game: Identifiable, Codable {
                 map[assistID] = assistStats
             }
         }
+        // PROPOSAL #175 Options B & C: attempts recorded as a per-player tally
+        // rather than as events. Same numbers, no Score Log rows — and nothing
+        // to reorder, re-period, or notify a follower about.
+        for (playerID, count) in missedTwosTally ?? [:] {
+            guard var stats = map[playerID] else { continue }
+            stats.twoAttempts += count
+            map[playerID] = stats
+        }
+        for (playerID, count) in missedThreesTally ?? [:] {
+            guard var stats = map[playerID] else { continue }
+            stats.threeAttempts += count
+            map[playerID] = stats
+        }
+
         // "Was at the game" = appears anywhere in the log, including a foul, a
         // missed free throw, or an assist on someone else's basket (all things
         // only a present player can do).
@@ -568,6 +640,7 @@ extension Game {
         case id, teamID, date, opponent, league, location, locationAddress
         case isHome, periodFormat, events, periodEndScores
         case notes, benchedPlayerIDs, isComplete, hasStarted
+        case missedTwosTally, missedThreesTally, teamShotAttempts
     }
 
     init(from decoder: any Decoder) throws {
@@ -588,6 +661,10 @@ extension Game {
         benchedPlayerIDs = try container.decodeIfPresent([UUID].self, forKey: .benchedPlayerIDs) ?? []
         isComplete = try container.decodeIfPresent(Bool.self, forKey: .isComplete) ?? false
         hasStarted = try container.decodeIfPresent(Bool.self, forKey: .hasStarted)
+        // PROPOSAL #175: the two lines the tally option costs here.
+        missedTwosTally = try container.decodeIfPresent([UUID: Int].self, forKey: .missedTwosTally)
+        missedThreesTally = try container.decodeIfPresent([UUID: Int].self, forKey: .missedThreesTally)
+        teamShotAttempts = try container.decodeIfPresent([Int: Int].self, forKey: .teamShotAttempts)
     }
 }
 
@@ -603,8 +680,29 @@ struct PlayerStats: Identifiable {
     var fouls: Int = 0
     var assists: Int = 0
     var rebounds: Int = 0
+    /// PROPOSAL #175: field-goal attempts (makes + misses), however the misses
+    /// were recorded.
+    var twoAttempts: Int = 0
+    var threeAttempts: Int = 0
 
     var id: UUID { player.id }
+
+    /// "4/9" — made/attempts, the combined form that keeps the table at seven
+    /// columns instead of nine.
+    var twoPointDisplay: String { "\(twoPointers)/\(twoAttempts)" }
+    var threePointDisplay: String { "\(threePointers)/\(threeAttempts)" }
+
+    /// Field-goal percentage over 2s and 3s together; nil with no attempts.
+    var fieldGoalPercent: Int? {
+        let attempts = twoAttempts + threeAttempts
+        guard attempts > 0 else { return nil }
+        let made = twoPointers + threePointers
+        return Int((Double(made) / Double(attempts) * 100).rounded())
+    }
+
+    var fieldGoalDisplay: String {
+        "\(twoPointers + threePointers)/\(twoAttempts + threeAttempts)"
+    }
 
     /// Made/attempts — "5/6". The compact form, for the on-screen table.
     ///
