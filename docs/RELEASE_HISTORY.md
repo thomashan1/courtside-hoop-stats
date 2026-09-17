@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | *in review* | — | — | — |
+| v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | **Thu 2026-09-17** | ~15h | ? | ? |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
 | v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM | Sun 2026-09-13, 12:22 PM | 7d 16h | 7d 13h 27m | 2h 22m |
 | v1.4 | 100 | — | Wed 2026-09-02, 6:18 PM | Sat 2026-09-05, 7:54 PM | 3d 2h | 2d 22h 7m | **3h 29m** |
@@ -32,6 +32,10 @@ Saturday, v1.5 Sunday). App Review is not on a business-day cycle, so
 Build 137 is **confirmed** by App Store Connect, and it lands exactly where
 counting pushes from the anchor (130 = `b060d7e`) predicted — seven pushes,
 seven builds.
+
+`?` on v1.7 means the queue/review split isn't collected yet — the approval
+email carries the date, not the *In Review* timestamp. Its ~15h total is the
+second-fastest after v1.3.
 
 ## The wait is the queue. The review is hours.
 

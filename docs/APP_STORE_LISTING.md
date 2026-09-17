@@ -126,7 +126,7 @@ the code.
 
 *(no notes yet)*
 
-### v1.7 — submitted 2026-09-16, build 137
+### v1.7 — submitted 2026-09-16, build 137, approved 2026-09-17
 
 Rebounds lead: it's the one thing a reader can act on, and the request came
 from the person who actually tracks the games. The Score Log changes are real
