@@ -171,13 +171,11 @@ struct CloudKitWireCompatibilityTests {
         let game = gameWithRebounds()
         let data = try #require(CloudKitSchema.payload(for: game))
 
-        // Simulates v1.6: the payload minus the key it never reads.
-        let json = try JSONSerialization.jsonObject(with: data)
-        var object = try #require(json as? [String: Any])
-        object.removeValue(forKey: "laterEvents")
-        let asV16Sees = try JSONSerialization.data(withJSONObject: object)
-
-        let decoded = try JSONDecoder().decode(Game.self, from: asV16Sees)
+        // Decoded **with** `laterEvents` still present, which is the whole
+        // question: an old build receives the key and has to ignore it.
+        // Stripping it first would prove nothing — it would pass even if a
+        // decoder rejected unknown keys.
+        let decoded = try JSONDecoder().decode(Game.self, from: data)
 
         #expect(decoded.opponent == game.opponent)
         #expect(decoded.ourScore == game.ourScore,
@@ -196,6 +194,28 @@ struct CloudKitWireCompatibilityTests {
         #expect(restored.ourScore == game.ourScore)
         #expect(restored.events.map(\.id) == game.events.map(\.id),
                 "restored in timestamp order, matching what was published")
+    }
+
+    /// The case most likely to look like a vanished game: every event is one
+    /// the old build can't read, so `events` goes out empty. It must still
+    /// arrive as a real game with an empty log, not as nothing at all.
+    @Test func aGameOfNothingButReboundsStillArrives() throws {
+        var game = Game(opponent: "Bayview")
+        let boarder = UUID()
+        game.events = [
+            GameEvent(playerID: boarder, type: .rebound, period: 1),
+            GameEvent(playerID: boarder, type: .rebound, period: 1),
+        ]
+
+        let data = try #require(CloudKitSchema.payload(for: game))
+        let decoded = try JSONDecoder().decode(Game.self, from: data)
+
+        #expect(decoded.opponent == "Bayview")
+        #expect(decoded.events.isEmpty)
+        #expect(decoded.ourScore == 0)
+
+        let restored = try #require(CloudKitSchema.game(fromPayload: data))
+        #expect(restored.events.count == 2)
     }
 
     /// A game with nothing new in it must encode byte-for-byte as before, so
