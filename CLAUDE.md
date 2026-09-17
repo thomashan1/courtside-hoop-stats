@@ -30,9 +30,8 @@ followers and their notifications from v1.2). The CloudKit schema is deployed
 to Production and verified — two TestFlight builds shared and followed each
 other's teams end to end (see `docs/SHARING.md`).
 
-**v1.7 is open** and currently small: a `Codable` data-loss guard, the owner's
-notes shown to followers, and 3-pointers badged in the Score Log. Nothing
-blocks submitting it; nothing forces it either.
+**v1.7 is open**: a `Codable` data-loss guard, the owner's notes shown to
+followers, 3-pointers badged in the Score Log, and **rebound tracking** (#174).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 (`scripts/screenshots.sh`). **iPhone-only** — `TARGETED_DEVICE_FAMILY = 1`, and
@@ -51,6 +50,10 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Assists.** After a made basket, an optional one-tap "assisted by" step —
   skipping costs nothing. Assists show in the Score Log (`ast. Bradley`), in
   the stats table's **AST** column, and in the PDF.
+- **Rebounds.** A **REB** button on its own row below the scoring buttons —
+  one tap, no offensive/defensive split (that would cost a decision on every
+  board, and speed wins courtside). Worth 0 points, so it's safe against games
+  whose period totals are already written down.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
   editable opponent totals, editable log.
@@ -103,6 +106,13 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - Pair any schema change with a `GameMigrationTests`-style test that strips the
   new keys and decodes what's left. It's the only thing standing between a
   refactor and someone's season.
+- **Adding an `EventType` case is a cross-version event, not a free change.**
+  A `Game` reaches a follower as one JSON blob; an unrecognised `type` used to
+  throw and take the whole game with it, so the game silently vanished from
+  the list of anyone who hadn't updated. `EventType` now decodes unknown raw
+  values to `.unknown` (0 points, never written here) — which protects v1.7
+  onward and **cannot** protect builds already shipped. Expect a window where
+  followers on the previous version don't see games using a new event type.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a

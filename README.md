@@ -58,9 +58,9 @@ anything. The tab appears only once a team has actually been shared with you.
 
 ## What it does
 
-- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗),
-  then an optional one-tap **assist** if someone set it up (skipping costs
-  nothing). Players show by **first name** for fast, unambiguous tapping. The
+- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗,
+  plus **REB** for a rebound), then an optional one-tap **assist** if someone
+  set it up (skipping costs nothing). Players show by **first name** for fast, unambiguous tapping. The
   score log stays on top (with sticky period headers) and badges 3-pointers 🎉
   so they read at a glance; players sit in the thumb zone. Bench absent
   players; reorder or edit any entry.
@@ -80,7 +80,7 @@ anything. The tab appears only once a team has actually been shared with you.
   a game are shown to them too, attributed to you. Updates land within seconds
   when you have signal, and catch up once you're out of a gym with no reception.
 - **Summary** — final score, cumulative by-period linescore, and per-player
-  stats: points, 2P, 3P, assists and free throws (`5/6`). Players who sat the
+  stats: points, 2P, 3P, assists, rebounds and free throws (`5/6`). Players who sat the
   game out are listed **DNP** rather than dropped from the roster.
 - **Box score PDF** — export the summary as a clean one-page PDF and share it
   (AirDrop / Messages / Files). Preview it first, so you see exactly what lands

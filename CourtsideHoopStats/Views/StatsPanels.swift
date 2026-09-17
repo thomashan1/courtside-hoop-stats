@@ -207,6 +207,11 @@ struct GameHeaderCard<Leading: View, Trailing: View>: View {
 ///
 /// The live Stats panel is narrower than the Game Summary's row — it's the
 /// container to check a column against, not the Summary.
+///
+/// **REB (#174) is the seventh column**, inserted before FT so FT stays last.
+/// That was the last of the slack at the default text size — verified against
+/// the live Stats panel, not just the Summary. Anything further needs a column
+/// removed, not added.
 struct PlayerStatsTable: View {
     let stats: [PlayerStats]
     /// Players who sat the game out, listed below the scorers as **DNP**
@@ -239,6 +244,7 @@ struct PlayerStatsTable: View {
                     Text("2P")
                     Text("3P")
                     Text("AST")
+                    Text("REB")
                     // Last on purpose — see the note above.
                     Text("FT")
                 }
@@ -256,6 +262,7 @@ struct PlayerStatsTable: View {
                         cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         cell("\(stat.assists)", isNothing: stat.assists == 0)
+                        cell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
                         // Only "no attempts" recedes. `0/1 (0%)` is a real
                         // trip to the line and reads as such.
                         cell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
@@ -274,7 +281,7 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
                         Text("DNP")
-                            .gridCellColumns(5)
+                            .gridCellColumns(6)
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

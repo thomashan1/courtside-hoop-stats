@@ -55,10 +55,56 @@ struct ModelsTests {
         }
     }
 
-    @Test func selectableExcludesFoul() {
+    @Test func selectableExcludesFoulAndUnknown() {
         #expect(!EventType.selectable.contains(.foul))
+        #expect(!EventType.selectable.contains(.unknown),
+                "this build must never write an event type it invented for forward compatibility")
         #expect(EventType.selectable.contains(.twoPoint))
-        #expect(EventType.selectable.count == 4)
+        #expect(EventType.selectable.contains(.rebound))
+        #expect(EventType.selectable.count == 5)
+    }
+
+    // MARK: - Rebounds (#174)
+
+    /// A rebound is worth nothing, which is the whole reason it's safe to add
+    /// to games whose period totals are already written down.
+    @Test func aReboundScoresNothing() {
+        #expect(EventType.rebound.points == 0)
+
+        let p = player("Wesley", "88")
+        var game = Game(opponent: "Hawks")
+        game.events = [event(p.id, .twoPoint), event(p.id, .rebound), event(p.id, .rebound)]
+
+        #expect(game.ourScore == 2, "rebounds must not move the score")
+    }
+
+    @Test func reboundsAggregatePerPlayer() {
+        let wesley = player("Wesley", "88")
+        let nick = player("Nicholas", "77")
+        var game = Game(opponent: "Hawks")
+        game.events = [
+            event(wesley.id, .rebound),
+            event(wesley.id, .rebound),
+            event(nick.id, .rebound),
+            event(nick.id, .twoPoint),
+        ]
+
+        let stats = game.stats(for: [wesley, nick])
+        #expect(stats.first { $0.player.id == wesley.id }?.rebounds == 2)
+        #expect(stats.first { $0.player.id == nick.id }?.rebounds == 1)
+        #expect(stats.first { $0.player.id == wesley.id }?.points == 0)
+    }
+
+    /// A rebounder with no points still belongs in the table — the REB column
+    /// is exactly the case where a player's contribution isn't in PTS.
+    @Test func aPlayerWithOnlyReboundsStillAppearsInTheStatsTable() {
+        let wesley = player("Wesley", "88")
+        var game = Game(opponent: "Hawks")
+        game.events = [event(wesley.id, .rebound)]
+
+        let listed = game.stats(for: [wesley])
+        #expect(listed.contains { $0.player.id == wesley.id })
+        #expect(game.didNotPlay(from: [wesley]).isEmpty)
     }
 
     // MARK: - PeriodFormat

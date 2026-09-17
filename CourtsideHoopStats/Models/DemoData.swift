@@ -190,8 +190,10 @@ enum DemoData {
             // Q2 = 9
             (8, .threePoint, 2, 1), (4, .twoPoint, 2, nil),
             (8, .ftMade, 2, nil), (1, .threePoint, 2, nil),
-            // Q3 so far = 7
-            (8, .threePoint, 3, 7), (6, .twoPoint, 3, nil), (8, .twoPoint, 3, 2),
+            // Q3 so far = 7. Rebounds (#174) score nothing, so the per-period
+            // totals above are unaffected.
+            (8, .threePoint, 3, 7), (7, .rebound, 3, nil),
+            (6, .twoPoint, 3, nil), (8, .rebound, 3, nil), (8, .twoPoint, 3, 2),
         ] {
             liveEvents.append(GameEvent(playerID: p[index].id, type: type, period: period,
                                         assistPlayerID: assistIndex.map { p[$0].id }))
@@ -369,6 +371,15 @@ enum DemoData {
             (8, .threePoint, 4, nil), (8, .ftMade, 4, nil), (2, .threePoint, 4, nil),
             (7, .twoPoint, 4, 6), (7, .ftMade, 4, nil), (6, .twoPoint, 4, nil),
             (4, .ftMade, 4, nil), (5, .ftMissed, 4, nil),
+            // Rebounds (#174) — 0 points each, so the quarter deltas and the
+            // 48 total above still hold. Brendon (index 3) leads the boards on
+            // 4 while sitting near the bottom of the scoring on 2: the REB
+            // column only earns its width if it surfaces someone PTS doesn't.
+            // Wesley (9) is the benched DNP row and stays empty.
+            (3, .rebound, 1, nil), (8, .rebound, 1, nil),
+            (3, .rebound, 2, nil), (6, .rebound, 2, nil), (7, .rebound, 2, nil),
+            (8, .rebound, 3, nil), (3, .rebound, 3, nil),
+            (3, .rebound, 4, nil), (6, .rebound, 4, nil), (0, .rebound, 4, nil),
         ]
         for (idx, type, period, assistIdx) in script {
             events.append(GameEvent(playerID: p[idx].id, type: type, period: period,
@@ -522,10 +533,22 @@ enum DemoData {
     private static func inProgressGame(team: Team) -> Game {
         let p = team.players
         // Nicholas (index 8) opens with a 3; running total 7 at the Q1 break.
+        // Rebounds are in here too (#174): worth no points, so they don't
+        // disturb the 7, but without them the live Stats panel ships a REB
+        // column of zeroes — the mistake assists, notes and the followed
+        // scheduled game each made first.
+        //
+        // Never indices 5 (Kaleb) or 9 (Wesley): those are the two the
+        // screenshot harness benches, and a benched player with an event
+        // correctly appears in the stats table (#59) — so a rebound there
+        // reads as "not playing, but grabbed a board".
         let events: [GameEvent] = [
             GameEvent(playerID: p[8].id, type: .threePoint, period: 1),
+            GameEvent(playerID: p[7].id, type: .rebound, period: 1),
             GameEvent(playerID: p[2].id, type: .twoPoint, period: 1),
+            GameEvent(playerID: p[8].id, type: .rebound, period: 1),
             GameEvent(playerID: p[8].id, type: .twoPoint, period: 1),
+            GameEvent(playerID: p[6].id, type: .rebound, period: 2),
             GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
         ]
         return Game(

@@ -132,11 +132,38 @@ enum EventType: String, Codable, CaseIterable {
     case threePoint             // +3
     case ftMade                 // +1
     case ftMissed               // +0, counts as FT attempt
+    case rebound                // +0 — a board, offensive or defensive (#174)
     case foul                   // +0 — retained for decoding old games; not tracked in the UI
+    /// An event type written by a **newer** build than this one.
+    ///
+    /// Not a real stat and never recorded by this build — it exists so an
+    /// unrecognised value degrades to "an event I don't understand" instead of
+    /// throwing. See `init(from:)`: without it, one new case in a future
+    /// release silently *deletes* the game it appears in, for every follower
+    /// who hasn't updated yet.
+    case unknown
 
-    /// Event types users can record/choose. `foul` is intentionally excluded
-    /// (kept only so previously-saved foul events still decode).
-    static let selectable: [EventType] = [.twoPoint, .threePoint, .ftMade, .ftMissed]
+    /// Event types users can record/choose. `foul` is excluded (kept only so
+    /// previously-saved foul events still decode) and so is `unknown`, which
+    /// this build never writes.
+    static let selectable: [EventType] = [.twoPoint, .threePoint, .ftMade, .ftMissed, .rebound]
+
+    /// Decodes an unrecognised raw value to `.unknown` rather than throwing.
+    ///
+    /// `Game` crosses to followers as **one JSON blob** and `type` is a
+    /// non-optional field, so a value this build doesn't know would throw
+    /// `dataCorrupted` → `CloudKitSchema.game(from:)` returns nil → the caller
+    /// skips it → **the game vanishes from that follower's list.** Per-game,
+    /// silent, and only on the device that's behind. `GameMigrationTests`
+    /// covers it.
+    ///
+    /// This protects v1.7 onward; it cannot protect builds already shipped,
+    /// which is why adding a case is still a cross-version event worth
+    /// thinking about rather than a free change.
+    init(from decoder: any Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = EventType(rawValue: raw) ?? .unknown
+    }
 
     var points: Int {
         switch self {
@@ -144,7 +171,9 @@ enum EventType: String, Codable, CaseIterable {
         case .threePoint: return 3
         case .ftMade:     return 1
         case .ftMissed:   return 0
+        case .rebound:    return 0
         case .foul:       return 0
+        case .unknown:    return 0
         }
     }
 
@@ -155,7 +184,9 @@ enum EventType: String, Codable, CaseIterable {
         case .threePoint: return "3-Point"
         case .ftMade:     return "Free Throw"
         case .ftMissed:   return "FT Miss"
+        case .rebound:    return "Rebound"
         case .foul:       return "Foul"
+        case .unknown:    return "Other"
         }
     }
 
@@ -169,7 +200,9 @@ enum EventType: String, Codable, CaseIterable {
         case .threePoint: return "+3 points"
         case .ftMade:     return "FT +1 point"
         case .ftMissed:   return "FT miss"
+        case .rebound:    return "Rebound"
         case .foul:       return "Foul"
+        case .unknown:    return "Other event"
         }
     }
 
@@ -471,8 +504,12 @@ struct Game: Identifiable, Codable {
                 stats.points += 1
             case .ftMissed:
                 stats.ftAttempts += 1
+            case .rebound:
+                stats.rebounds += 1
             case .foul:
                 stats.fouls += 1
+            case .unknown:
+                break   // written by a newer build; counted as nothing
             }
             map[event.playerID] = stats
 
@@ -551,6 +588,7 @@ struct PlayerStats: Identifiable {
     var ftAttempts: Int = 0
     var fouls: Int = 0
     var assists: Int = 0
+    var rebounds: Int = 0
 
     var id: UUID { player.id }
 
