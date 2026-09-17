@@ -65,6 +65,33 @@ final class GameSummaryPDFTests: XCTestCase {
         XCTAssertEqual(bounds.height, 792, accuracy: 1)
     }
 
+    /// A long note must **wrap and grow the page**, never truncate (#178).
+    ///
+    /// The note is often the reason the numbers look odd — "ended 4 minutes
+    /// early, coach got two techs" — and the PDF is what gets sent round, so
+    /// cutting it mid-sentence costs more than a taller sheet. Growth is
+    /// already how a long roster is handled.
+    @MainActor
+    func testALongNoteWrapsRatherThanBeingTruncated() throws {
+        let (team, game) = try sample()
+        var wordy = game
+        wordy.notes = "Game ended early by 4 minutes due to Coach Rich got into argument with one of the referees and they gave him 2 techs, which resulted in immediately game end"
+
+        let pdf = try render(team, wordy)
+        let text = try XCTUnwrap(pdf.string)
+
+        // The tail of the note is what used to disappear.
+        XCTAssertTrue(text.contains("immediately game end"),
+                      "the end of the note was truncated")
+
+        // Still one sheet, still Letter width — it may only get taller.
+        XCTAssertEqual(pdf.pageCount, 1)
+        let bounds = try XCTUnwrap(pdf.page(at: 0)).bounds(for: .mediaBox)
+        XCTAssertEqual(bounds.width, 612, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(bounds.height, 792 - 1,
+                                    "the page must grow, never shrink or clip")
+    }
+
     @MainActor
     func testIncludesTheHeadlineNumbersAndDNPRows() throws {
         let (team, game) = try sample()
