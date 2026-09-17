@@ -58,10 +58,12 @@ anything. The tab appears only once a team has actually been shared with you.
 
 ## What it does
 
-- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗).
-  Players show by **first name** for fast, unambiguous tapping. The score log
-  stays on top (with sticky period headers); players sit in the thumb zone.
-  Bench absent players; reorder or edit any entry.
+- **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗),
+  then an optional one-tap **assist** if someone set it up (skipping costs
+  nothing). Players show by **first name** for fast, unambiguous tapping. The
+  score log stays on top (with sticky period headers) and badges 3-pointers 🎉
+  so they read at a glance; players sit in the thumb zone. Bench absent
+  players; reorder or edit any entry.
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
   later.
@@ -74,15 +76,17 @@ anything. The tab appears only once a team has actually been shared with you.
   Album; they get a **read-only** view in a **Following** tab and can't change
   anything. Built on CloudKit, so there's no account to create and no server.
   Followers are **notified** when a game starts, at each period end, and at the
-  final score — with a cadence setting, down to off. Updates land within seconds
+  final score — with a cadence setting, down to off. Any **notes** you write on
+  a game are shown to them too, attributed to you. Updates land within seconds
   when you have signal, and catch up once you're out of a gym with no reception.
-- **Summary** — final score, cumulative by-period linescore, and per-player stats
-  including **FT%** (e.g. `5/6 (83%)`). Players who sat the game out are listed
-  **DNP** rather than dropped from the roster.
+- **Summary** — final score, cumulative by-period linescore, and per-player
+  stats: points, 2P, 3P, assists and free throws (`5/6`). Players who sat the
+  game out are listed **DNP** rather than dropped from the roster.
 - **Box score PDF** — export the summary as a clean one-page PDF and share it
   (AirDrop / Messages / Files). Preview it first, so you see exactly what lands
-  in the parents' group chat. Players who didn't play are listed **DNP**,
-  NBA-style. Rendered on device; nothing is uploaded.
+  in the parents' group chat. It has room the phone doesn't, so it adds **FT%**
+  (`5/6 (83%)`) and any notes on the game. Players who didn't play are listed
+  **DNP**, NBA-style. Rendered on device; nothing is uploaded.
 
 ## Build
 

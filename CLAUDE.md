@@ -24,14 +24,19 @@ tap targets, and error recovery are the top UX priorities.**
 <https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094>
 
 Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` for
-what's in a release. **v1.2 shipped 2026-08-18: read-only followers and their
-notifications.** The CloudKit schema is deployed to Production and verified —
-two TestFlight builds shared and followed each other's teams end to end (see
-`docs/SHARING.md`). v1.3 is open, led by #57 (co-trackers).
+what's in a release, and `docs/RELEASE_HISTORY.md` for build numbers and review
+turnaround. **v1.6 was approved 2026-09-16** (assists, on top of read-only
+followers and their notifications from v1.2). The CloudKit schema is deployed
+to Production and verified — two TestFlight builds shared and followed each
+other's teams end to end (see `docs/SHARING.md`).
+
+**v1.7 is open** and currently small: a `Codable` data-loss guard, the owner's
+notes shown to followers, and 3-pointers badged in the Score Log. Nothing
+blocks submitting it; nothing forces it either.
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
-(`scripts/screenshots.sh`). **iPhone-only** (`TARGETED_DEVICE_FAMILY = 1`); #32
-(iPad) is open and deferred.
+(`scripts/screenshots.sh`). **iPhone-only** — `TARGETED_DEVICE_FAMILY = 1`, and
+#32 (iPad layout) is **closed**: iPhone-only is the answer, not a backlog item.
 
 ## What's built
 
@@ -43,8 +48,12 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Games.** Tap **+** for a New Game form where **every field is optional**.
   **Start Game** begins scoring immediately; **Save** schedules it. Period
   format (quarters / halves / pickup) is chosen at creation.
+- **Assists.** After a made basket, an optional one-tap "assisted by" step —
+  skipping costs nothing. Assists show in the Score Log (`ast. Bradley`), in
+  the stats table's **AST** column, and in the PDF.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
-  stats with **FT** (`5/6`; the percentage is the PDF's, where there's room), editable opponent totals, editable log.
+  stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
+  editable opponent totals, editable log.
 - **Box score PDF.** Game Summary → share icon → a preview of a one-page PDF.
   Print-specific layout in `GameSummaryPDF.swift` (*not* a screen capture),
   NBA-style **DNP** rows, and a tappable App Store link attached via PDFKit
@@ -63,8 +72,10 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   only on collision (`Jake` → `Jake L.` → `Jake Moore`); the Roster keeps full
   names.
 - **Also live:** edit-a-finished-game, score-log reorder + movable dividers,
-  location autocomplete + address, game start time, and a consistency pass
-  (Cancel/Save editors, delete confirms — see `docs/UI_GUIDELINES.md`).
+  location autocomplete + address, game start time, 3-pointers badged 🎉 in the
+  Score Log (a `+2`/`+3` one character apart was unreadable mid-game), the
+  owner's game **notes shown to followers** (and in the PDF), and a consistency
+  pass (Cancel/Save editors, delete confirms — see `docs/UI_GUIDELINES.md`).
 
 ## Traps worth knowing
 
@@ -160,12 +171,22 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-1. **#57 — co-trackers.** Read-write participants, so two people can score the
-   same team. Roughly 3–4x the followers work and it *changes* code followers
-   depend on, so it leads the **v1.3** milestone.
-   `docs/SHARING.md` covers what it needs and names a smaller first slice
-   (baton-passing rather than merging).
-2. **#32 — iPad layout.** Deferred; the app is iPhone-only.
+**The backlog is currently empty** — no open issues, no open PRs. New work
+starts with a decision, not a pick-up.
+
+**Closed doors**, with the reasoning already written down — these are settled,
+not waiting:
+
+1. **Read-write sharing is declined, three times over** — #57 (co-trackers),
+   #169 (co-admin), and a public share link. Don't re-propose it without new
+   information: participant management is the *owner's* privilege in CloudKit,
+   so a second writer would not have solved the need that prompted #169
+   ("add other followers"). `docs/SHARING.md` keeps the full analysis, and the
+   prototypes are archived at `archive/144-live-lineup` and
+   `archive/169-co-admin-prototype`.
+2. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
+   deferred — mid-game lineup tracking is too much work for the tracker. The
+   salvaged part (the `Codable` guard) shipped separately.
 
 ## MVP defaults chosen for the spec's open questions
 

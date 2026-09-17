@@ -17,8 +17,9 @@ during live games. **Speed, big tap targets, legibility, and error recovery** ar
 the top UX priorities.
 
 **Team context:** Swish Warriors, youth league. Shipped to the App Store.
-Others can follow a team read-only (§3.10). Next: co-trackers
-who can edit, and read-only followers — see [`SHARING.md`](SHARING.md) and #57.
+Others can follow a team **read-only** (§3.10), which is the final state, not a
+stepping stone: read-write sharing has been declined three times (#57, #169,
+and a public link). See [`SHARING.md`](SHARING.md).
 
 ---
 
@@ -133,9 +134,11 @@ rendering, because `ImageRenderer` emits glyphs rather than annotations.
   by the email/phone on their Apple Account and the link goes out via Messages /
   Mail / AirDrop. Re-sharing reuses the existing share rather than making a
   second one.
-- **Permissions:** **read-only, invite-only.** No "Can edit" (co-tracker writes
-  aren't implemented) and no public link (a forwardable URL to a children's
-  roster is the wrong default).
+- **Permissions:** **read-only, invite-only** — a settled decision, not a gap.
+  No "Can edit" (read-write was explored twice and declined; see
+  [`SHARING.md`](SHARING.md)) and no public link (a forwardable URL to a
+  children's roster is the wrong default, and the trade for link-joining is
+  losing *control* of who joins, not gaining visibility).
 - **Follower:** a **Following tab** appears only when a team is actually shared
   with you. It lists each followed team's games with scores and a **Live** flag,
   opening to a read-only detail (score card, player stats, per-period
@@ -223,7 +226,7 @@ ViewModel layer yet.
 | Error recovery | Tap-to-edit / swipe-to-delete any logged event | Fat-finger + after-the-fact fixes |
 | Game lifecycle | scheduled → inProgress → complete | Pre-enter the season, then start |
 | Color | Swish Warriors blue accent, navy scoreboard | Team identity; high courtside contrast |
-| Navigation | Tabs: Games / Roster / Settings | Clear concerns |
+| Navigation | Tabs: Games / Roster / Settings, plus **Following** once a team is shared with you | Clear concerns; the extra tab appears only when it has content |
 | Accessibility | Dynamic Type + in-app Text Size floor | End user needs larger text |
 | Persistence | UserDefaults JSON, optional new fields | Zero setup, migration-safe |
 
@@ -232,13 +235,15 @@ ViewModel layer yet.
 ## 7. Out of scope / deferred
 
 Game timer/shot clock · opponent player tracking · CSV export · season
-summary/archiving · watchOS · **iPad layout** (#32, iPhone-only ships).
+summary/archiving · watchOS · **iPad layout** (#32 closed — iPhone-only is the
+decision, and `TARGETED_DEVICE_FAMILY = 1` enforces it).
 
-**Sharing:** read-only followers ship in v1.2 (§3.10). Still to come:
-**co-trackers** (read-write participants, which is where a synced Core Data
-store becomes necessary), **push notifications** for followers, and
-**publish-on-edit** so a followed game updates continuously rather than at share
-time. See [`SHARING.md`](SHARING.md).
+**Sharing:** read-only followers shipped in v1.2 (§3.10), and so did the two
+things this section used to list as pending — **push notifications** for
+followers and **publish-on-edit** (a debounced publish, protected by a
+background-task assertion). **Co-trackers / read-write sharing is declined**,
+not pending: see [`SHARING.md`](SHARING.md) for the analysis and where the
+prototypes are archived.
 
 **App Store**: live; see [`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) for
 listing copy and the per-release checklist.

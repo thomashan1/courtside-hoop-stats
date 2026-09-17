@@ -1,7 +1,8 @@
 # Multi-User Sharing
 
-**Status:** read-only **followers** are built and shipping in **v1.2** (#57).
-Read-write **co-trackers** are deferred — see [Not built yet](#not-built-yet).
+**Status:** read-only **followers** shipped in **v1.2** (#57). Read-write
+sharing is **declined** — see [Declined, and why](#declined-and-why). Read-only
+is the finished design, not a first step.
 
 ## What it does
 
@@ -192,15 +193,39 @@ The **follower UI itself needs no iCloud account**: `DemoData.makeFollowedTeam()
 seeds a followed team and `FollowingScreenshotTests` drives the whole flow. Only
 the accept handshake and the real fetch require two accounts.
 
-## Not built yet
+## Declined, and why
 
-**Co-trackers (`.readWrite` participants)** — two people scoring the same team,
-e.g. one running the app courtside while the other jumps in. The mechanism is
-identical; a co-tracker is just a participant at a higher permission level.
+Read-write sharing has now been turned down **three times**, and the reasons
+differ enough to be worth keeping:
 
-Roughly **3–4x the work followers took**, and a different kind of work: followers
-were purely additive, while co-trackers *change* the code followers depend on —
-the service's database/zone handling, the publish path, and `Game`'s shape.
+| Attempt | Ask | Outcome |
+|---|---|---|
+| **#57** co-trackers | two people scoring the same team | declined on cost and data-loss risk (below) |
+| **#169** co-admin | "I wanted to add other followers" | declined — **it would not have worked**: participant management is the *owner's* privilege in CloudKit, so a co-admin still couldn't invite anyone |
+| public share link | link-joining instead of invites | declined — the trade is losing *control* of who joins, and it doesn't reveal who subscribed either |
+
+#169 is the instructive one: weeks of the riskiest work in the codebase would
+have shipped and still left the original need unmet. Prototypes are preserved
+at `archive/144-live-lineup` and `archive/169-co-admin-prototype` (branch
+`prototype/co-admin-screens`).
+
+**Two hazards the prototype exposed are true on `main` today**, harmless with a
+single writer but the first things to fix if a second one is ever contemplated:
+
+- `syncSharedState()` walks `teams`, asks `isSharing`, and publishes — a device
+  holding a team it doesn't own would adopt and republish it with
+  `savePolicy: .allKeys`.
+- `deleteGamesNoLongerPresent(...)` deletes any remote game absent from the
+  publisher's local list.
+
+### What it would have taken
+
+Kept because it's the reasoning, and re-deriving it costs a day. A co-tracker
+is just a participant at a higher permission level — the mechanism is
+identical. Roughly **3–4x the work followers took**, and a different kind of
+work: followers were purely additive, while co-trackers *change* the code
+followers depend on — the service's database/zone handling, the publish path,
+and `Game`'s shape.
 
 What it needs:
 

@@ -57,7 +57,7 @@ range, not one happy path:
 | Sections | Playing Now (Northgate), Coming Up (Summit), Final Scores (four games) |
 | Results | **win** (Lakeside 48–41), **loss** (Central 38–44), **tie** (Pine Ridge 30–30) |
 | Period formats | quarters, **halves** (Pine Ridge), **pickup** (Bayview — no periods, no location) |
-| Edge cases | a DNP row (Wesley benched), a missed FT so FT% isn't always 100%, optional fields left blank on the pickup game |
+| Edge cases | a DNP row (Wesley benched), a missed FT so the `5/6` split isn't always clean (and FT% isn't 100% in the PDF), greyed zero cells, optional fields left blank on the pickup game |
 
 `DemoDataTests` asserts this coverage, so dropping a game while editing the seed
 fails a test rather than quietly costing a badge nothing screenshots any more.
