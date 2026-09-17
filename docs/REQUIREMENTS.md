@@ -102,7 +102,7 @@ when someone has shared a team with you (§3.10). A follower sees the owner's **
 
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), **rebound (0)**. *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 
-A rebound is a full event, not a counter — it lands in the Score Log and can be edited, reordered or deleted there like anything else, because error recovery matters more than tidiness. It renders in secondary grey with no running-score line, so a non-scoring play never looks like a basket.
+A rebound is a full event, not a counter — it lands in the Score Log and can be edited, reordered or deleted there like anything else, because error recovery matters more than tidiness. It renders as a **subordinate row**: no card, indented, one grey line. At a real game's rebound volume, full cards buried the baskets and the log stopped answering the question it exists for — what just happened to the score. An **FT miss is not** subordinate: it's an attempt, it moves FT%, and it's half of a stat the table shows.
 
 **A new `EventType` case must never reach `events` on the wire.** A `Game` reaches followers as one JSON blob, and an older build's `GameEvent` decoder throws on a type it doesn't recognise — failing *the whole game*, so `CloudKitSchema.game(from:)` returns nil, the caller skips it, and the game silently disappears from that follower's list. (Assists escaped this because `assistPlayerID` is an optional *property* and unknown keys are ignored; a new enum case is different.)
 

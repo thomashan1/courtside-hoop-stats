@@ -545,11 +545,17 @@ enum DemoData {
         let events: [GameEvent] = [
             GameEvent(playerID: p[8].id, type: .threePoint, period: 1),
             GameEvent(playerID: p[7].id, type: .rebound, period: 1),
+            GameEvent(playerID: p[3].id, type: .rebound, period: 1),
             GameEvent(playerID: p[2].id, type: .twoPoint, period: 1),
             GameEvent(playerID: p[8].id, type: .rebound, period: 1),
+            GameEvent(playerID: p[6].id, type: .rebound, period: 1),
             GameEvent(playerID: p[8].id, type: .twoPoint, period: 1),
+            GameEvent(playerID: p[3].id, type: .rebound, period: 1),
+            GameEvent(playerID: p[0].id, type: .rebound, period: 1),
+            GameEvent(playerID: p[7].id, type: .rebound, period: 2),
             GameEvent(playerID: p[6].id, type: .rebound, period: 2),
             GameEvent(playerID: p[4].id, type: .twoPoint, period: 2),
+            GameEvent(playerID: p[3].id, type: .rebound, period: 2),
         ]
         return Game(
             date: gameDate(daysFromRef: 7, hour: 1),      // 11:00 AM

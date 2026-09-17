@@ -170,6 +170,35 @@ struct EventLogRow: View {
     }
 
     var body: some View {
+        if event.type.isMinorLogEntry { minorRow } else { scoringRow }
+    }
+
+    /// A rebound and friends: one indented grey line, no card.
+    ///
+    /// At a real game's rebound volume, full cards buried the baskets — the
+    /// log's whole job mid-game is what just happened to the score (#174).
+    /// Still tappable and still swipe-deletable, because a mis-tapped rebound
+    /// has to be fixable.
+    private var minorRow: some View {
+        HStack(spacing: 8) {
+            JerseyBadge(number: player?.number ?? "?", size: 18)
+            Text(player?.firstName ?? "Unknown")
+            Text("\u{00B7}")
+            Text(event.type.scoreLogLabel)
+            Spacer()
+            if showsChevron {
+                Image(systemName: "chevron.right").font(.caption2)
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.leading, 14)
+        .padding(.trailing, 10)
+        .padding(.vertical, 1)
+        .contentShape(Rectangle())
+    }
+
+    private var scoringRow: some View {
         HStack(spacing: 10) {
             // Same size as the stats table's badge: on the Game Summary both
             // sections are visible at once, and two sizes of the same bubble

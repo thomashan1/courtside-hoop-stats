@@ -206,6 +206,20 @@ enum EventType: String, Codable, CaseIterable {
         }
     }
 
+    /// Whether a Score Log row for this event should be drawn as a subordinate
+    /// line rather than a full card.
+    ///
+    /// At a real game's rebound volume the log filled with grey `Rebound`
+    /// cards and the baskets — the thing the log exists to show — were pushed
+    /// off the screen. A rebound still belongs in the log so it can be
+    /// corrected, but it should not compete with a score (#174).
+    ///
+    /// An FT miss is deliberately *not* minor: it's an attempt, it moves FT%,
+    /// and it's the other half of a stat the table shows.
+    var isMinorLogEntry: Bool {
+        points == 0 && self != .ftMissed
+    }
+
     /// Prefix that gives a Score Log row a shape you can spot without reading
     /// it. `+2 points` and `+3 points` are one character apart at caption
     /// size, which is too fine a distinction to scan mid-game (#172).
