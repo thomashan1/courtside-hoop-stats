@@ -52,7 +52,13 @@ final class GameSummaryPDFTests: XCTestCase {
     @MainActor
     func testRendersASingleLetterPage() throws {
         let (team, game) = try sample()
-        let pdf = try render(team, game)
+        // A one-line note, so this measures the *layout* rather than the
+        // length of whatever the demo seed happens to say. The growth case has
+        // its own test below; this one is the guard against creeping padding,
+        // and it can only do that job from a fixed baseline.
+        var baseline = game
+        baseline.notes = "Good game."
+        let pdf = try render(team, baseline)
 
         XCTAssertEqual(pdf.pageCount, 1)
 
@@ -90,6 +96,10 @@ final class GameSummaryPDFTests: XCTestCase {
         XCTAssertEqual(bounds.width, 612, accuracy: 1)
         XCTAssertGreaterThanOrEqual(bounds.height, 792 - 1,
                                     "the page must grow, never shrink or clip")
+        // Growth is allowed, sprawl isn't: the 6-line cap plus the Spacer
+        // should keep this within a modest overshoot of Letter.
+        XCTAssertLessThan(bounds.height, 792 + 120,
+                          "a wrapped note must not run the page away")
     }
 
     @MainActor
