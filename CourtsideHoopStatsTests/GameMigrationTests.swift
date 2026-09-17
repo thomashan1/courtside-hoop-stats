@@ -81,6 +81,49 @@ struct GameMigrationTests {
         #expect(decoded.isStarted, "a game predating hasStarted counts as started")
     }
 
+    /// **Forward** compatibility, which is the direction sharing cares about.
+    ///
+    /// A `Game` reaches a follower as one JSON blob. If a newer build records
+    /// an `EventType` this build has never heard of, a synthesized decoder
+    /// throws `dataCorrupted` for the whole blob —
+    /// `CloudKitSchema.game(from:)` returns nil, the caller skips it, and the
+    /// game just isn't there any more on the device that's behind. So the
+    /// unknown value has to degrade, not throw (#174).
+    @Test func anEventTypeFromANewerBuildDecodesInsteadOfThrowing() throws {
+        let event = GameEvent(playerID: UUID(), type: .twoPoint, period: 1)
+        var object = try JSONSerialization.jsonObject(
+            with: try JSONEncoder().encode(event)) as! [String: Any]
+        object["type"] = "quadruplePoint"   // a case some future release adds
+
+        let decoded = try JSONDecoder().decode(
+            GameEvent.self, from: try JSONSerialization.data(withJSONObject: object))
+
+        #expect(decoded.type == .unknown)
+        #expect(decoded.type.points == 0, "an event we can't read must not invent points")
+    }
+
+    /// And the case that actually matters: the *game* survives, because losing
+    /// one unreadable event is recoverable and losing the game is not.
+    @Test func aGameCarryingAnUnknownEventTypeStillDecodes() throws {
+        var game = finishedDemoGame
+        let realScore = game.ourScore
+        game.events.append(GameEvent(playerID: game.events[0].playerID,
+                                     type: .twoPoint, period: 1))
+
+        var object = try JSONSerialization.jsonObject(
+            with: try JSONEncoder().encode(game)) as! [String: Any]
+        var events = object["events"] as! [[String: Any]]
+        events[events.count - 1]["type"] = "somethingFromV2"
+        object["events"] = events
+
+        let decoded = try JSONDecoder().decode(
+            Game.self, from: try JSONSerialization.data(withJSONObject: object))
+
+        #expect(decoded.events.count == game.events.count, "no event was dropped")
+        #expect(decoded.ourScore == realScore,
+                "the unreadable event contributes nothing rather than corrupting the score")
+    }
+
     /// The same question one level down: an event saved before assists existed.
     @Test func anEventSavedBeforeAssistsStillDecodes() throws {
         let event = GameEvent(playerID: UUID(), type: .twoPoint, period: 1)

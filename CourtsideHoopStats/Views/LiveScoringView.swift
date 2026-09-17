@@ -664,7 +664,9 @@ struct ScorePadSheet: View {
                     .onChange(of: proxy.size.height) { _, new in assistContentHeight = new }
             }
         )
-        .presentationDetents(madeEvent == nil ? [.height(360)] : [.height(assistContentHeight)])
+        // 360 fitted a 2x2 pad; the REB row needs another button's height
+        // plus the grid spacing (#174).
+        .presentationDetents(madeEvent == nil ? [.height(462)] : [.height(assistContentHeight)])
         .presentationDragIndicator(.visible)
     }
 
@@ -677,6 +679,13 @@ struct ScorePadSheet: View {
             GridRow {
                 padButton("FT ✓", .ftMade)
                 padButton("FT ✗", .ftMissed)
+            }
+            // Full width, and below the scoring buttons rather than among
+            // them: a rebound is worth no points, so putting it beside "+2"
+            // invites a mis-tap that silently changes the score (#174).
+            GridRow {
+                padButton("REB", .rebound)
+                    .gridCellColumns(2)
             }
         }
     }

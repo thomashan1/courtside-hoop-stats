@@ -44,9 +44,16 @@ struct EventLogView: View {
                            pinnedViews: pinsPeriodHeaders ? [.sectionHeaders] : []) {
                     ForEach(periodsInOrder, id: \.self) { period in
                         Section {
-                            VStack(alignment: .leading, spacing: 8) {
+                            // Spacing is per-row, not uniform: a card needs a
+                            // gap to read as its own object, a subordinate
+                            // line doesn't, and at a real game's rebound
+                            // volume that gap was costing a row of screen
+                            // every few plays (#174).
+                            VStack(alignment: .leading, spacing: 0) {
                                 ForEach(eventsInOrder(in: period)) { event in
                                     eventRow(event)
+                                        .padding(.vertical,
+                                                 event.type.isMinorLogEntry ? 0 : 4)
                                 }
                             }
                         } header: {
@@ -170,11 +177,48 @@ struct EventLogRow: View {
     }
 
     var body: some View {
+        if event.type.isMinorLogEntry { minorRow } else { scoringRow }
+    }
+
+    /// A rebound and friends: one indented grey line, no card.
+    ///
+    /// At a real game's rebound volume, full cards buried the baskets — the
+    /// log's whole job mid-game is what just happened to the score (#174).
+    /// Still tappable and still swipe-deletable, because a mis-tapped rebound
+    /// has to be fixable.
+    private var minorRow: some View {
+        // Spacing and trailing inset match `scoringRow` so the action label
+        // lands in the same right-hand column as "+2 points" — the eye reads
+        // one column of *what happened*, and the grey and the missing card
+        // carry the hierarchy instead of a ragged left-aligned label.
+        HStack(spacing: 10) {
+            JerseyBadge(number: player?.number ?? "?", size: 18)
+            Text(player?.firstName ?? "Unknown")
+            Spacer()
+            Text(event.type.scoreLogLabel)
+            if showsChevron {
+                Image(systemName: "chevron.right").font(.caption2)
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.leading, 14)
+        .padding(.trailing, 10)
+        // 36, not the 44 a small control needs: this target is the full width
+        // of the screen, so only vertical precision is in question, and a
+        // vertical miss opens the neighbouring event's editor — visibly the
+        // wrong one, and cancelled. Deliberate, because the log has to hold
+        // rebounds *and* missed shots without becoming a scroll.
+        .frame(minHeight: 36)
+        .contentShape(Rectangle())
+    }
+
+    private var scoringRow: some View {
         HStack(spacing: 10) {
             // Same size as the stats table's badge: on the Game Summary both
             // sections are visible at once, and two sizes of the same bubble
             // reads as a mistake.
-            JerseyBadge(number: player?.number ?? "?", size: 26)
+            JerseyBadge(number: player?.number ?? "?", size: 24)
 
             Text(player?.firstName ?? "Unknown")
                 .font(.subheadline)
@@ -182,18 +226,25 @@ struct EventLogRow: View {
 
             Spacer()
 
+            // Label and running total share one line. The total used to sit
+            // under the label, which cost a line on *every* basket — the
+            // single biggest saving available once the log has to carry
+            // rebounds and missed shots too. The assist keeps its own line,
+            // but only on the rows that have one.
             VStack(alignment: .trailing, spacing: 0) {
-                Text(scoreLabel)
-                    .font(.caption).bold()
-                    .foregroundStyle(event.type.points > 0 ? Color.teamAccent : Color.secondary)
-                    // VoiceOver reads the emoji as "party popper", which is
-                    // noise in front of the fact — it announces the plain
-                    // label, since the badge is there for a sighted glance.
-                    .accessibilityLabel(event.type.scoreLogLabel)
-                if event.type.points > 0 {
-                    Text("\(runningTotal) pts")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(scoreLabel)
+                        .font(.caption).bold()
+                        .foregroundStyle(event.type.points > 0 ? Color.teamAccent : Color.secondary)
+                        // VoiceOver reads the emoji as "party popper", which is
+                        // noise in front of the fact — it announces the plain
+                        // label, since the badge is there for a sighted glance.
+                        .accessibilityLabel(event.type.scoreLogLabel)
+                    if event.type.points > 0 {
+                        Text("\(runningTotal)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 if let assistPlayer {
                     Text("ast. \(assistPlayer.firstName)")
@@ -209,7 +260,7 @@ struct EventLogRow: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
         .padding(.horizontal, 10)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(.secondarySystemGroupedBackground)))
         .contentShape(Rectangle())

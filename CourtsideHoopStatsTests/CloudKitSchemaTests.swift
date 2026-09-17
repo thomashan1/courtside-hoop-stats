@@ -115,3 +115,127 @@ struct CloudKitSchemaTests {
         #expect(SharingRole.coTracker.label == "Can edit")
     }
 }
+
+// MARK: - Wire compatibility with already-shipped builds (#174)
+
+/// A `Game` reaches a follower as one JSON blob, and an older build's
+/// `GameEvent` decoder **throws** on an `EventType` it has never heard of —
+/// failing the whole game, so `game(from:)` returns nil, the caller skips it,
+/// and the game silently disappears from that follower's list.
+///
+/// `CloudKitSchema.payload(for:)` therefore keeps `events` to the types every
+/// shipped build knows and parks newer ones under a top-level key that an old
+/// `Game.init(from:)` never reads. These tests are the proof, because the
+/// claim is about binaries that can no longer be changed.
+struct CloudKitWireCompatibilityTests {
+
+    /// Exactly what `EventType` contained in the last release before
+    /// `laterEvents` existed (v1.6). Frozen — if a change makes this test fail,
+    /// the change is what's wrong.
+    private let typesV16CanDecode: Set<String> = [
+        "twoPoint", "threePoint", "ftMade", "ftMissed", "foul",
+    ]
+
+    private func gameWithRebounds() -> Game {
+        let scorer = UUID(), boarder = UUID()
+        var game = Game(opponent: "Lakeside")
+        let t = Date()
+        game.events = [
+            GameEvent(playerID: scorer, type: .threePoint, period: 1, timestamp: t),
+            GameEvent(playerID: boarder, type: .rebound, period: 1, timestamp: t + 1),
+            GameEvent(playerID: scorer, type: .twoPoint, period: 1, timestamp: t + 2),
+            GameEvent(playerID: boarder, type: .rebound, period: 2, timestamp: t + 3),
+        ]
+        return game
+    }
+
+    /// The load-bearing one: nothing an old build can't decode reaches `events`.
+    @Test func theWirePayloadNeverPutsANewEventTypeInEvents() throws {
+        let data = try #require(CloudKitSchema.payload(for: gameWithRebounds()))
+        let json = try JSONSerialization.jsonObject(with: data)
+        let object = try #require(json as? [String: Any])
+        let events = try #require(object["events"] as? [[String: Any]])
+
+        #expect(events.count == 2, "the two rebounds must not be in events")
+        for event in events {
+            let raw = try #require(event["type"] as? String)
+            #expect(typesV16CanDecode.contains(raw),
+                    "\(raw) would make v1.6 drop this game entirely")
+        }
+        #expect(object["laterEvents"] != nil, "the rebounds have to go somewhere")
+    }
+
+    /// An old build ignores unknown top-level keys, so it must still see a
+    /// complete game — and, because rebounds are worth 0, the right score.
+    @Test func anOlderBuildStillDecodesTheGameWithTheCorrectScore() throws {
+        let game = gameWithRebounds()
+        let data = try #require(CloudKitSchema.payload(for: game))
+
+        // Decoded **with** `laterEvents` still present, which is the whole
+        // question: an old build receives the key and has to ignore it.
+        // Stripping it first would prove nothing — it would pass even if a
+        // decoder rejected unknown keys.
+        let decoded = try JSONDecoder().decode(Game.self, from: data)
+
+        #expect(decoded.opponent == game.opponent)
+        #expect(decoded.ourScore == game.ourScore,
+                "rebounds score 0, so an old follower's total is still right")
+        #expect(decoded.events.count == 2)
+    }
+
+    /// A current build gets everything back.
+    @Test func aCurrentBuildRoundTripsEveryEvent() throws {
+        let game = gameWithRebounds()
+        let published = try #require(CloudKitSchema.payload(for: game))
+        let restored = try #require(CloudKitSchema.game(fromPayload: published))
+
+        #expect(restored.events.count == game.events.count)
+        #expect(restored.events.filter { $0.type == .rebound }.count == 2)
+        #expect(restored.ourScore == game.ourScore)
+        #expect(restored.events.map(\.id) == game.events.map(\.id),
+                "restored in timestamp order, matching what was published")
+    }
+
+    /// The case most likely to look like a vanished game: every event is one
+    /// the old build can't read, so `events` goes out empty. It must still
+    /// arrive as a real game with an empty log, not as nothing at all.
+    @Test func aGameOfNothingButReboundsStillArrives() throws {
+        var game = Game(opponent: "Bayview")
+        let boarder = UUID()
+        game.events = [
+            GameEvent(playerID: boarder, type: .rebound, period: 1),
+            GameEvent(playerID: boarder, type: .rebound, period: 1),
+        ]
+
+        let data = try #require(CloudKitSchema.payload(for: game))
+        let decoded = try JSONDecoder().decode(Game.self, from: data)
+
+        #expect(decoded.opponent == "Bayview")
+        #expect(decoded.events.isEmpty)
+        #expect(decoded.ourScore == 0)
+
+        let restored = try #require(CloudKitSchema.game(fromPayload: data))
+        #expect(restored.events.count == 2)
+    }
+
+    /// A game with nothing new in it must encode byte-for-byte as before, so
+    /// this machinery costs existing games nothing.
+    @Test func aGameWithNoNewerEventsIsUnchangedOnTheWire() throws {
+        var game = Game(opponent: "Central")
+        game.events = [GameEvent(playerID: UUID(), type: .twoPoint, period: 1)]
+
+        let data = try #require(CloudKitSchema.payload(for: game))
+        let json = try JSONSerialization.jsonObject(with: data)
+        let object = try #require(json as? [String: Any])
+
+        // Compared as parsed JSON, not bytes: key order in a serialized
+        // dictionary isn't contractual, and it's the content that has to be
+        // untouched.
+        let plain = try JSONEncoder().encode(game)
+        let plainJSON = try JSONSerialization.jsonObject(with: plain)
+        let plainObject = try #require(plainJSON as? [String: Any])
+
+        #expect(object["laterEvents"] == nil, "no sidecar key when it isn't needed")
+        #expect(NSDictionary(dictionary: object) == NSDictionary(dictionary: plainObject))
+    }
+}

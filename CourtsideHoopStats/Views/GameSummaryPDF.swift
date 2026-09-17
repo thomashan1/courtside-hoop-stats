@@ -232,6 +232,7 @@ struct GameSummaryPrintout: View {
                     Text("2P").frame(maxWidth: .infinity)
                     Text("3P").frame(maxWidth: .infinity)
                     Text("AST").frame(maxWidth: .infinity)
+                    Text("REB").frame(maxWidth: .infinity)
                     // Last, matching the on-screen table.
                     Text("FT").frame(maxWidth: .infinity)
                 }
@@ -257,6 +258,7 @@ struct GameSummaryPrintout: View {
                         statCell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         statCell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         statCell("\(stat.assists)", isNothing: stat.assists == 0)
+                        statCell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
                         statCell(stat.freeThrowDisplayWithPercent, isNothing: stat.ftAttempts == 0)
                     }
                     .padding(.horizontal, 10)
@@ -321,6 +323,7 @@ struct GameSummaryPrintout: View {
             statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.threePointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.assists })", bold: true)
+            statCell("\(stats.reduce(0) { $0 + $1.rebounds })", bold: true)
             statCell(ftText, bold: true)
         }
         .padding(.horizontal, 10)

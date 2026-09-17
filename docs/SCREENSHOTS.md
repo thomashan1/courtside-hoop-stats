@@ -58,9 +58,17 @@ range, not one happy path:
 | Results | **win** (Lakeside 48–41), **loss** (Central 38–44), **tie** (Pine Ridge 30–30) |
 | Period formats | quarters, **halves** (Pine Ridge), **pickup** (Bayview — no periods, no location) |
 | Edge cases | a DNP row (Wesley benched), a missed FT so the `5/6` split isn't always clean (and FT% isn't 100% in the PDF), greyed zero cells, optional fields left blank on the pickup game |
+| Rebounds (#174) | in the in-progress, followed **and** finished games, at roughly a real game's **density** (more rebounds than baskets) rather than a token one or two — that density is what exposed the Score Log noise problem, and a thin seed would have hidden it. Brendon leads the boards on 4 while scoring 2: the REB column only earns its width if it surfaces someone PTS doesn't |
 
 `DemoDataTests` asserts this coverage, so dropping a game while editing the seed
 fails a test rather than quietly costing a badge nothing screenshots any more.
+
+**Roster indices are not alphabetical, and 5 and 9 are special.** `makeTeam()`
+returns Adrian 0 … Wesley 9; **index 5 is Kaleb and index 9 is Wesley**, the two
+the harness benches. An event on either puts a "Not playing" player in the
+stats table — correct behaviour (#59: they were evidently there) but nonsense as
+demo data. Check the index against `makeTeam()` before scripting an event;
+the deck renders alphabetically, which makes it easy to guess wrong.
 
 Two more things it's tuned for: **Nicholas (#77) leads every game on threes**,
 which keeps one narrative across owner and follower screens, and each game gets
