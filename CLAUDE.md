@@ -106,13 +106,21 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - Pair any schema change with a `GameMigrationTests`-style test that strips the
   new keys and decodes what's left. It's the only thing standing between a
   refactor and someone's season.
-- **Adding an `EventType` case is a cross-version event, not a free change.**
-  A `Game` reaches a follower as one JSON blob; an unrecognised `type` used to
-  throw and take the whole game with it, so the game silently vanished from
-  the list of anyone who hadn't updated. `EventType` now decodes unknown raw
-  values to `.unknown` (0 points, never written here) — which protects v1.7
-  onward and **cannot** protect builds already shipped. Expect a window where
-  followers on the previous version don't see games using a new event type.
+- **A new `EventType` case must never reach `events` on the wire.** A `Game`
+  crosses to followers as one JSON blob, and an older build's `GameEvent`
+  decoder *throws* on a type it doesn't recognise — failing the whole game, so
+  `CloudKitSchema.game(from:)` returns nil, the caller skips it, and the game
+  **silently disappears** from that follower's list. This is why assists were
+  safe and rebounds weren't: `assistPlayerID` was an **optional property**
+  (unknown keys are ignored), while `rebound` is a new *enum case*.
+  `CloudKitSchema.payload(for:)` now keeps `events` to
+  `typesEveryShippedBuildKnows` and parks newer ones under a top-level
+  `laterEvents` key that old builds never read — so they see the game, score
+  intact, minus the new events. **Never add to that frozen set.** Note this
+  only works because rebounds are worth **0 points**; a new *scoring* type
+  would make an old follower compute a wrong total and needs its own answer.
+  `EventType` also decodes unknown raw values to `.unknown` as a second line of
+  defence. `CloudKitWireCompatibilityTests` is the proof.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a

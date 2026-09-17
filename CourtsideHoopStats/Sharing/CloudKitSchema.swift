@@ -29,6 +29,10 @@ enum CloudKitSchema {
         static let payload = "payload"
         /// Reference from a game to its owning team record.
         static let team = "team"
+        /// Events whose `EventType` did not exist in every shipped build, held
+        /// **outside** `events` inside the same JSON payload. See
+        /// `payload(for:)`.
+        static let laterEvents = "laterEvents"
     }
 
     private static let encoder = JSONEncoder()
@@ -75,10 +79,83 @@ enum CloudKitSchema {
 
     // MARK: - Game
 
+    /// Event types that **every shipped build** can decode.
+    ///
+    /// The list is frozen history, not a preference: it's what `EventType`
+    /// contained in the last release before `laterEvents` existed. Never add to
+    /// it — a type added here would go straight into `events` and break exactly
+    /// the builds this exists to protect.
+    private static let typesEveryShippedBuildKnows: Set<EventType> = [
+        .twoPoint, .threePoint, .ftMade, .ftMissed, .foul,
+    ]
+
+    /// The JSON a follower receives, with newer event types moved out of
+    /// `events` into `laterEvents`.
+    ///
+    /// **Why this exists.** A `Game` crosses as one blob, and an older build's
+    /// `GameEvent` decoder throws on an `EventType` it doesn't recognise —
+    /// which fails the *whole* game, so `game(from:)` returns nil, the caller
+    /// skips it, and the game silently disappears from that follower's list.
+    /// Adding `rebound` (#174) would have done exactly that to everyone still
+    /// on v1.6.
+    ///
+    /// The old build's `Game.init(from:)` reads a fixed set of keys and ignores
+    /// the rest, so an unknown *top-level* key costs it nothing. Newer events
+    /// therefore ride there: an old follower sees the game with its score
+    /// intact and simply no rebounds, and a current one gets them merged back
+    /// in `game(fromPayload:)`. Degrading beats vanishing.
+    ///
+    /// Rebounds are worth 0 points, so the score an old follower computes is
+    /// still correct. **A future scoring event type could not be split out this
+    /// way** without the old build showing a wrong total — it would need its
+    /// own answer.
+    static func payload(for game: Game) -> Data? {
+        let later = game.events.filter { !typesEveryShippedBuildKnows.contains($0.type) }
+        guard !later.isEmpty else { return try? encoder.encode(game) }
+
+        var trimmed = game
+        trimmed.events = game.events.filter { typesEveryShippedBuildKnows.contains($0.type) }
+
+        guard let base = try? encoder.encode(trimmed),
+              var object = try? JSONSerialization.jsonObject(with: base) as? [String: Any],
+              let laterData = try? encoder.encode(later),
+              let laterArray = try? JSONSerialization.jsonObject(with: laterData) as? [Any]
+        else {
+            // Worst case, publish without the newer events rather than not at
+            // all: the game still reaches every follower, score intact.
+            return try? encoder.encode(trimmed)
+        }
+        object[Key.laterEvents] = laterArray
+        return (try? JSONSerialization.data(withJSONObject: object))
+            ?? (try? encoder.encode(trimmed))
+    }
+
+    /// Rebuilds a game from `payload(for:)`, restoring `laterEvents` into
+    /// `events` at their timestamp positions.
+    ///
+    /// Insertion preserves the existing array order rather than re-sorting the
+    /// whole log: a manual reorder (`applyingReorderedLog`) can leave array
+    /// order deliberately out of timestamp order, and re-sorting would undo it.
+    static func game(fromPayload data: Data) -> Game? {
+        guard var game = try? decoder.decode(Game.self, from: data) else { return nil }
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let raw = object[Key.laterEvents],
+              let laterData = try? JSONSerialization.data(withJSONObject: raw),
+              let later = try? decoder.decode([GameEvent].self, from: laterData)
+        else { return game }
+
+        for event in later {
+            let index = game.events.firstIndex { $0.timestamp > event.timestamp }
+                ?? game.events.count
+            game.events.insert(event, at: index)
+        }
+        return game
+    }
+
     /// Write a game's fields (and its parent links) onto an existing record.
     /// See `apply(_:to:)` for why publishing mutates rather than replaces.
     static func apply(_ game: Game, teamID: UUID, in zoneID: CKRecordZone.ID, to record: CKRecord) {
-        if let data = try? encoder.encode(game) {
+        if let data = payload(for: game) {
             record[Key.payload] = data as CKRecordValue
         }
 
@@ -101,6 +178,6 @@ enum CloudKitSchema {
     static func game(from record: CKRecord) -> Game? {
         guard record.recordType == gameRecordType,
               let data = record[Key.payload] as? Data else { return nil }
-        return try? decoder.decode(Game.self, from: data)
+        return game(fromPayload: data)
     }
 }
