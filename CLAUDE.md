@@ -25,13 +25,20 @@ tap targets, and error recovery are the top UX priorities.**
 
 Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` for
 what's in a release, and `docs/RELEASE_HISTORY.md` for build numbers and review
-turnaround. **v1.6 was approved 2026-09-16** (assists, on top of read-only
-followers and their notifications from v1.2). The CloudKit schema is deployed
-to Production and verified — two TestFlight builds shared and followed each
-other's teams end to end (see `docs/SHARING.md`).
+turnaround. **v1.7 was approved 2026-09-17** (rebounds, notes shown to
+followers, 3-pointers badged in the Score Log, a `Codable` data-loss guard).
 
-**v1.7 is open**: a `Codable` data-loss guard, the owner's notes shown to
-followers, 3-pointers badged in the Score Log, and **rebound tracking** (#174).
+**v1.8 is in review**, build 147: automatic **iCloud backup** of every team and
+game, the **Score Log printed as page 2+** of the box score PDF, running totals
+in period headers, and the REB column hidden when a game has none.
+
+**v1.9 is open**: Following moved to the left of the tab bar, and a short Score
+Log centred on its PDF page.
+
+The CloudKit schema is deployed to Production and verified for **both**
+features — sharing (two TestFlight builds shared and followed each other's
+teams end to end, see `docs/SHARING.md`) and backup (`BackupTeam`/`BackupGame`
+deployed 2026-09-17, write path confirmed against a real account).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 (`scripts/screenshots.sh`). **iPhone-only** — `TARGETED_DEVICE_FAMILY = 1`, and
@@ -57,10 +64,20 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
   editable opponent totals, editable log.
-- **Box score PDF.** Game Summary → share icon → a preview of a one-page PDF.
-  Print-specific layout in `GameSummaryPDF.swift` (*not* a screen capture),
-  NBA-style **DNP** rows, and a tappable App Store link attached via PDFKit
-  because `ImageRenderer` emits glyphs rather than annotations.
+- **Box score PDF.** Game Summary → share icon → a preview. Page 1 is the
+  summary; the **Score Log follows on page 2+** in two columns, each period
+  closing with its score (`End Q1 Swish 24 – Lakeside 8`). Print-specific
+  layout in `GameSummaryPDF.swift` / `ScoreLogPrintout.swift` (*not* a screen
+  capture), NBA-style **DNP** rows, and a tappable App Store link attached to
+  **every page** via PDFKit because `ImageRenderer` emits glyphs rather than
+  annotations. A log short enough for one column is centred on its page.
+- **iCloud backup (#177).** Every team and game is copied automatically to the
+  owner's *private* CloudKit database, debounced like the follower publish.
+  Settings shows "Last backed up" and offers Back Up Now plus a browse-and-pick
+  restore. Deliberately **not** sharing: that's a mirror, so unsharing or
+  deleting removes it. The backup zone carries no `CKShare` and no parent
+  references, so nothing in the sharing code can reach it, and it's one record
+  per game so a corrupt record costs one game.
 - **Teams.** Multiple teams, managed in Settings; Roster and Games follow the
   active team. **Export a Backup** writes a team + roster to `.json`
   (AirDrop/Files) and Import reads one back — roster-only, and distinct from
@@ -74,7 +91,13 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Displays.** In-game and Game Summary show **first names only**, escalating
   only on collision (`Jake` → `Jake L.` → `Jake Moore`); the Roster keeps full
   names.
-- **Also live:** edit-a-finished-game, score-log reorder + movable dividers,
+- **Tabs.** Games / Roster / Settings, plus **Following first** when a team is
+  shared with you (#189) — the tab only exists if you follow someone, so a
+  tracker's bar is unchanged. Leftmost is not the same as default-selected: an
+  owner still lands on Games.
+- **Also live:** period headers carrying the running total (`4 pts (11)`), the
+  REB column hidden when a game has no rebounds, edit-a-finished-game,
+  score-log reorder + movable dividers,
   location autocomplete + address, game start time, 3-pointers badged 🎉 in the
   Score Log (a `+2`/`+3` one character apart was unreadable mid-game), the
   owner's game **notes shown to followers** (and in the PDF), and a consistency

@@ -102,6 +102,8 @@ when someone has shared a team with you (§3.10). A follower sees the owner's **
 
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), **rebound (0)**. *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 
+Period headers in the Score Log show the points scored in that period **and the running total at the end of it** — `4 pts (11)`. Computed *through* the period rather than "everything above this row", so it still reads correctly in a follower's log, which runs newest-period-first. Every running total in the log is bracketed, rows included, so they form one column.
+
 A rebound is a full event, not a counter — it lands in the Score Log and can be edited, reordered or deleted there like anything else, because error recovery matters more than tidiness. It renders as a **subordinate row**: no card, indented, one grey line. At a real game's rebound volume, full cards buried the baskets and the log stopped answering the question it exists for — what just happened to the score. An **FT miss is not** subordinate: it's an attempt, it moves FT%, and it's half of a stat the table shows.
 
 **A new `EventType` case must never reach `events` on the wire.** A `Game` reaches followers as one JSON blob, and an older build's `GameEvent` decoder throws on a type it doesn't recognise — failing *the whole game*, so `CloudKitSchema.game(from:)` returns nil, the caller skips it, and the game silently disappears from that follower's list. (Assists escaped this because `assistPlayerID` is an optional *property* and unknown keys are ignored; a new enum case is different.)
@@ -110,7 +112,7 @@ A rebound is a full event, not a counter — it lands in the Score Log and can b
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
-- Player stats table (sorted by points), first names: PTS, 2P, 3P, **AST**, **REB**, then **FT** as made/attempts (`5/6`). REB was the seventh column and the last of the slack at the default text size; anything further needs a column removed, not added. The whole-percent **FT%** (`5/6 (83%)`) is the **PDF's** — on a phone that column is roughly three times the width of any other, and the Player column is sized by the longest name on the roster, so a long name leaves too little for it. The fraction says the same thing in a third of the space. A stat the player didn't record is drawn in grey rather than full contrast, on screen and in the PDF alike — a youth roster puts several all-zero rows in the table and a wall of identical `0`s buries the two or three who carried the game. Grey, not a dash: `—` already means *no data* here, and the DNP row exists to keep "played, didn't score" distinct from "wasn't there". `0/1 (0%)` stays full contrast — a missed free throw is a real event; `0/0` is not. FT is deliberately **last**: it's three times the width of any other value, so anywhere else it pushes the columns to its right off the edge, and it's the least urgent number mid-game. The same table and order appear in the Game Summary, the live **Stats** panel and a follower's game view — the live panel is the narrowest of the three and the one a new column has to fit.
+- Player stats table (sorted by points), first names: PTS, 2P, 3P, **AST**, **REB**, then **FT** as made/attempts (`5/6`). **REB is hidden entirely when no player in that game has one** — rebounds are hard to catch while scoring live, so a column of zeroes is the common case and reads as "nobody got one" rather than "nobody recorded one". REB was the seventh column and the last of the slack at the default text size; anything further needs a column removed, not added. The whole-percent **FT%** (`5/6 (83%)`) is the **PDF's** — on a phone that column is roughly three times the width of any other, and the Player column is sized by the longest name on the roster, so a long name leaves too little for it. The fraction says the same thing in a third of the space. A stat the player didn't record is drawn in grey rather than full contrast, on screen and in the PDF alike — a youth roster puts several all-zero rows in the table and a wall of identical `0`s buries the two or three who carried the game. Grey, not a dash: `—` already means *no data* here, and the DNP row exists to keep "played, didn't score" distinct from "wasn't there". `0/1 (0%)` stays full contrast — a missed free throw is a real event; `0/0` is not. FT is deliberately **last**: it's three times the width of any other value, so anywhere else it pushes the columns to its right off the edge, and it's the least urgent number mid-game. The same table and order appear in the Game Summary, the live **Stats** panel and a follower's game view — the live panel is the narrowest of the three and the one a new column has to fit.
 - Players benched for the game are listed below the scorers as **DNP** rather
   than dropped — a roster that silently loses people reads as a bug, and zeroes
   would wrongly say "played, didn't score". A benched player who *did* record
@@ -124,15 +126,53 @@ A rebound is a full event, not a counter — it lands in the Score Log and can b
 
 ### 3.9 Box score PDF (#55)
 
-Game Summary → share icon → a preview of a one-page box score, with Share in the
-preview's toolbar. `GameSummaryPDF.swift` holds a **print-specific layout**, not
+Game Summary → share icon → a preview, with Share in the preview's toolbar.
+**Page 1 is the box score; the Score Log follows on page 2+** in two columns
+(#182). Each period closes with its score — `End Q1  Swish 24 – Lakeside 8` —
+rather than opening with it, which read as the score *going into* the quarter.
+Rows are zebra-striped, because the action and running total are already in
+hard columns and what fails is the eye tracking across the gap from the name.
+A log short enough for a single column is **centred on its page**, horizontally
+and vertically; a multi-page log's short final page is not, since a half-filled
+last column centred reads as a bug. Two columns rather than one because a
+rebound-heavy game is 2 pages instead of 3. `GameSummaryPDF.swift` holds a **print-specific layout**, not
 a capture of the summary screen — but it derives every number from the same
 model methods the screen uses (`Game.stats(for:)`,
 `Game.periodBreakdownCumulative()`), so the two can't disagree. Page is sized to
 its content with a US Letter minimum, so a normal game is exactly one page and a
 long roster grows rather than clipping. Players who didn't play are listed
-**DNP**. The footer's App Store link is a PDFKit **link annotation** added after
-rendering, because `ImageRenderer` emits glyphs rather than annotations.
+**DNP**. Every page carries the same footer — wordmark, App Store link, app version and
+build, page number — because a log page gets forwarded on its own and a PDF
+outlives the app that made it. The footer's App Store link is a PDFKit **link
+annotation** added to **every page** after rendering, because `ImageRenderer`
+emits glyphs rather than annotations.
+
+### 3.9a iCloud backup (#177)
+
+Every team and game is copied automatically to the owner's **private** CloudKit
+database, on a debounce like the follower publish and protected by the same
+background-task assertion. Settings shows **"Last backed up"**, what's in
+iCloud, a **Back Up Now** button, and a **browse-and-pick restore**.
+
+**Not sharing, deliberately.** Sharing is a *mirror*: unshare or delete a team
+and it's gone for followers, so it can never be the backup. The backup zone
+carries **no `CKShare` and no parent references**, so nothing in the sharing
+code — `stopSharing`'s zone delete, `deleteGamesNoLongerPresent` — can reach
+it. **One record per game**, not one archive blob, because surviving a corrupt
+record is the entire point.
+
+**Restore only ever adds.** It merges by id and never overwrites or deletes, so
+it's safe to tap when unsure — which matters, because you reach for a restore
+exactly when you can least afford a destructive surprise. A game picked from a
+team that isn't on the phone brings its team with it, or it would arrive
+orphaned. Deleting a game locally deletes it from the backup too: keeping
+everything forever sounds safer but makes the backup diverge from what the user
+believes they have.
+
+`BackupTeam`/`BackupGame` were deployed to the Production CloudKit schema on
+2026-09-17. **A new record type must be deployed before it can be used at all**
+— Development auto-creates types, Production does not, and TestFlight runs
+against Production.
 
 ### 3.10 Sharing & Following (#57)
 - **Owner:** Settings ▸ Teams ▸ ⓘ ▸ **Share with Followers** creates a CloudKit
@@ -232,7 +272,7 @@ ViewModel layer yet.
 | Error recovery | Tap-to-edit / swipe-to-delete any logged event | Fat-finger + after-the-fact fixes |
 | Game lifecycle | scheduled → inProgress → complete | Pre-enter the season, then start |
 | Color | Swish Warriors blue accent, navy scoreboard | Team identity; high courtside contrast |
-| Navigation | Tabs: Games / Roster / Settings, plus **Following** once a team is shared with you | Clear concerns; the extra tab appears only when it has content |
+| Navigation | Tabs: **Following** (first, when a team is shared with you) / Games / Roster / Settings | The extra tab appears only when it has content, so a tracker's bar is unchanged; leftmost ≠ default-selected, and an owner still lands on Games |
 | Accessibility | Dynamic Type + in-app Text Size floor | End user needs larger text |
 | Persistence | UserDefaults JSON, optional new fields | Zero setup, migration-safe |
 
@@ -243,6 +283,11 @@ ViewModel layer yet.
 Game timer/shot clock · opponent player tracking · CSV export · season
 summary/archiving · watchOS · **iPad layout** (#32 closed — iPhone-only is the
 decision, and `TARGETED_DEVICE_FAMILY = 1` enforces it).
+
+**iPad** is declined twice (#32, #192): the strongest use case — reading a box
+score on a bigger screen — is already served by the PDF, and supporting iPad
+costs a second App Store screenshot set and a second form factor to not break,
+permanently.
 
 **Sharing:** read-only followers shipped in v1.2 (§3.10), and so did the two
 things this section used to list as pending — **push notifications** for

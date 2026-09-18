@@ -61,8 +61,9 @@ anything. The tab appears only once a team has actually been shared with you.
 - **Live scoring** — tap a player → a big point pad (+2 / +3 / FT ✓ / FT ✗,
   plus **REB** for a rebound), then an optional one-tap **assist** if someone
   set it up (skipping costs nothing). Players show by **first name** for fast, unambiguous tapping. The
-  score log stays on top (with sticky period headers) and badges 3-pointers 🎉
-  so they read at a glance; players sit in the thumb zone. Bench absent
+  score log stays on top (with sticky period headers, each showing the score at
+  the end of that quarter) and badges 3-pointers 🎉 so they read at a glance;
+  players sit in the thumb zone. Bench absent
   players; reorder or edit any entry.
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
@@ -82,11 +83,17 @@ anything. The tab appears only once a team has actually been shared with you.
 - **Summary** — final score, cumulative by-period linescore, and per-player
   stats: points, 2P, 3P, assists, rebounds and free throws (`5/6`). Players who sat the
   game out are listed **DNP** rather than dropped from the roster.
-- **Box score PDF** — export the summary as a clean one-page PDF and share it
-  (AirDrop / Messages / Files). Preview it first, so you see exactly what lands
-  in the parents' group chat. It has room the phone doesn't, so it adds **FT%**
-  (`5/6 (83%)`) and any notes on the game. Players who didn't play are listed
-  **DNP**, NBA-style. Rendered on device; nothing is uploaded.
+- **Box score PDF** — export the summary and share it (AirDrop / Messages /
+  Files). Preview it first, so you see exactly what lands in the parents' group
+  chat. Page one is the box score, with room the phone doesn't have — so it adds
+  **FT%** (`5/6 (83%)`) and any notes on the game. The **full play-by-play
+  follows on page two**, with each quarter's score where it ends. Players who
+  didn't play are listed **DNP**, NBA-style. Rendered on device; nothing is
+  uploaded.
+- **iCloud backup** — every team and game is copied automatically to your own
+  iCloud, so a lost or wiped phone doesn't take the season with it. Settings
+  shows when the last backup ran, and restoring lets you pick what to bring
+  back — it only ever *adds*, never overwrites or deletes.
 
 ## Build
 
