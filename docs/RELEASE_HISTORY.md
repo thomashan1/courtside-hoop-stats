@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.8 | ? | `c774461`? | Thu 2026-09-17, 7:32 PM | *in review* | — | — | — |
+| v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | *in review* | — | — | — |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
 | v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM | Sun 2026-09-13, 12:22 PM | 7d 16h | 7d 13h 27m | 2h 22m |
@@ -30,13 +30,10 @@ Weekdays are kept because **two of seven approvals landed at a weekend** (v1.4
 Saturday, v1.5 Sunday). App Review is not on a business-day cycle, so
 "nothing will move until Monday" is wrong for this app.
 
-`?` on v1.8: the build number wasn't captured at submission. Counting pushes
-from 137 puts the last code change at 147 (`911cdae`) and the docs push after
-it at 148 — replace with what App Store Connect shows.
-
-Build 137 is **confirmed** by App Store Connect, and it lands exactly where
-counting pushes from the anchor (130 = `b060d7e`) predicted — seven pushes,
-seven builds.
+Builds 137 and 147 are both **confirmed** by App Store Connect, and both land
+exactly where counting pushes from the anchor (130 = `b060d7e`) predicted. The
+method has now been right three times running: count pushes to `main`, not
+commits.
 
 v1.7 is the second-fastest total (10h 3m, after v1.3's 3h 54m) and the
 **fastest review yet at 27 minutes** — it went in overnight and was queued
