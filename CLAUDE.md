@@ -32,8 +32,9 @@ followers, 3-pointers badged in the Score Log, a `Codable` data-loss guard).
 game, the **Score Log printed as page 2+** of the box score PDF, running totals
 in period headers, and the REB column hidden when a game has none.
 
-**v1.9 is open**: Following moved to the left of the tab bar, and a short Score
-Log centred on its PDF page.
+**v1.9 is open**: Following moved to the left of the tab bar, a short Score Log
+centred on its PDF page, and a list-density pass across Games, Following,
+Roster and the scheduled-game detail (#193).
 
 The CloudKit schema is deployed to Production and verified for **both**
 features — sharing (two TestFlight builds shared and followed each other's
@@ -81,7 +82,7 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Teams.** Multiple teams, managed in Settings; Roster and Games follow the
   active team. **Export a Backup** writes a team + roster to `.json`
   (AirDrop/Files) and Import reads one back — roster-only, and distinct from
-  sharing: a copy you own, no iCloud needed, and the only real backup.
+  both sharing and the iCloud backup: a copy you own that needs no iCloud.
 - **Sharing & Following (#57).** A team owner can share a team via CloudKit
   `CKShare`; invitees are added by Apple Account from the system share sheet and
   get a **read-only** view in a **Following** tab that appears only when
@@ -217,8 +218,11 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-**The backlog is currently empty** — no open issues, no open PRs. New work
-starts with a decision, not a pick-up.
+**One open issue, paused.** #175 (shooting percentages) needs 2P/3P *attempts*,
+i.e. tracking misses — and the field evidence from v1.7 is that even rebounds
+are too much to catch while scoring live, which is what pauses it. The narrow
+version (one team number per period) is still available if it comes back. There
+are no open PRs; new work starts with a decision, not a pick-up.
 
 **Closed doors**, with the reasoning already written down — these are settled,
 not waiting:

@@ -55,7 +55,8 @@ backend, and stays free.
 One **custom zone per shared team** (`team-<uuid>`). Sharing requires a custom
 zone — records in the default zone can't be shared — and a zone per team keeps
 hierarchies isolated, so "stop sharing" is a single zone delete that cannot
-reach another team's data.
+reach another team's data, nor the separate `backup` zone (#177) sitting in the
+same private database.
 
 - **`SharedTeam`** root record, one per shared team.
 - **`SharedGame`** child records, each holding a **parent reference** to its
@@ -274,10 +275,15 @@ stop and debug. Followers could never lose data; co-trackers can.
 
 ## Related
 
-- **Export a Backup (#40)** still earns its place next to sharing: it's a
-  **copy you own** rather than a live view of someone else's team, needs no
-  iCloud account, works offline, and is the only real backup — sharing is a
-  mirror, so deleting a team removes it from followers too. See
-  `Models/TeamTransfer.swift`.
+- **The iCloud backup (#177)** is what a backup means here — sharing is a
+  *mirror*, so unsharing or deleting a team removes it from followers too, and
+  a mirror can never be the backup. It lives in its own `backup` zone in the
+  same private database, with **no `CKShare` and no parent references**, so
+  nothing in the sharing code — `stopSharing`'s zone delete,
+  `deleteGamesNoLongerPresent` — can reach it. See
+  `Sharing/CloudKitBackupService.swift` and `REQUIREMENTS.md` §3.9a.
+- **Export a Backup (#40)** still earns its place next to both: it's a **copy
+  you own** rather than a live view or an iCloud mirror, needs no iCloud
+  account, and works offline. See `Models/TeamTransfer.swift`.
 - The app is no longer single-user: a team's games can be watched by anyone the
   owner invites, though only the owner can record them.

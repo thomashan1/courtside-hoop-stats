@@ -98,7 +98,7 @@ anything. The tab appears only once a team has actually been shared with you.
 ## Build
 
 ```bash
-open CourtsideHoopStats.xcodeproj   # Xcode 16+, iOS 26 SDK
+open CourtsideHoopStats.xcodeproj   # Xcode 26+ (iOS 26 SDK)
 ```
 
 Set your signing **Team** on the CourtsideHoopStats target the first time.

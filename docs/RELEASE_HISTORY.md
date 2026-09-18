@@ -104,8 +104,9 @@ Blank means *not known*, not *none* — don't fill these by inference.
 - **One version in review at a time.** Apple closes a version's train once
   it's approved, so the next release needs a new `MARKETING_VERSION` — not
   just a new build. The data shows this as a chain of same-day handoffs: v1.2
-  went in 2h after v1.1 was approved, v1.4 6h after v1.3, and v1.6 90 minutes
-  after v1.5. v1.7 can't be submitted until v1.6 clears.
+  went in 2h after v1.1 was approved, v1.4 6h after v1.3, v1.6 90 minutes
+  after v1.5, and v1.8 12h after v1.7. Whatever is ready for v1.9 waits on
+  v1.8 clearing.
 - **Build numbers are Xcode Cloud's, not `CURRENT_PROJECT_VERSION`'s.** They
   run in their own sequence, +1 per **push** to `main` (not per commit), and
   increment whether the build succeeds or not.

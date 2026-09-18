@@ -32,7 +32,7 @@ and a public link). See [`SHARING.md`](SHARING.md).
 | Language / UI | Swift / SwiftUI |
 | Persistence | UserDefaults + JSON (Codable) |
 | Dependencies | None (zero third-party) |
-| Sync | **CloudKit `CKShare`** for read-only followers (§3.10, `SHARING.md`). The owner's local store stays the source of truth and is mirrored up; nothing syncs back. Manual **team export/import** via a `.json` file remains, as a backup and an offline copy. |
+| Sync | **CloudKit `CKShare`** for read-only followers (§3.10, `SHARING.md`), and a **private CloudKit backup** of every team and game (§3.9a). The owner's local store stays the source of truth and is mirrored up; nothing syncs back except an explicit restore. Manual **team export/import** via a `.json` file remains, as an offline copy that needs no iCloud. |
 | Dev env | Xcode 27 beta (iOS 27 SDK); test device iPhone 17 Pro |
 
 New stored `Codable` fields are added as **optionals** so existing saved data
@@ -42,8 +42,9 @@ still decodes (a `try?` decode failure would wipe the user's games).
 
 ## 3. Features (current)
 
-**Tabs:** Games · Roster · Settings, plus a **Following** tab that appears only
-when someone has shared a team with you (§3.10). A follower sees the owner's **game notes** too, on screen and in the box score PDF — they were always published inside the game blob, so this shows what was already on their device. The editor says so where the note is typed. The "Shared by" name is **per team** on purpose — "Jean (Nicky's mom)" is a different answer for a different child's team — and the Followers screen asks for it when a shared team hasn't got one, that being the only screen where it has any effect. The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
+**Tabs:** Games · Roster · Settings, plus a **Following** tab — **first in the
+bar** — that appears only when someone has shared a team with you (§3.10).
+Leftmost is not the same as default-selected: an owner still lands on Games. A follower sees the owner's **game notes** too, on screen and in the box score PDF — they were always published inside the game blob, so this shows what was already on their device. The editor says so where the note is typed. The "Shared by" name is **per team** on purpose — "Jean (Nicky's mom)" is a different answer for a different child's team — and the Followers screen asks for it when a shared team hasn't got one, that being the only screen where it has any effect. The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
 
 ### 3.1 Roster (Roster tab)
 - Team name (editable inline), players with **name** + **jersey number** (String, handles "0"/"00").
@@ -63,8 +64,10 @@ when someone has shared a team with you (§3.10). A follower sees the owner's **
   - **Export a Backup** (`ShareLink` → a `.json` file for AirDrop/Files); the
     Teams list offers **Import Team…** (`fileImporter`) to add a team + roster
     from such a file. Roster-only — games excluded (`TeamTransfer.swift`, #40).
-    Distinct from sharing: a copy you own and can edit, needs no iCloud, works
-    offline, and is the only real backup.
+    Distinct from both sharing and the iCloud backup (§3.9a): a copy you own and
+    can edit, that needs no iCloud and works offline.
+  - **Backup** — "Last backed up", what's in iCloud, **Back Up Now**, and a
+    browse-and-pick **restore** (§3.9a).
 
 ### 3.3 Games list (Games tab)
 - Three sections, live first (mid-game it's the row you're reaching for):
@@ -212,16 +215,20 @@ against Production.
 
 Key types (see source for full detail):
 
-- `Team { name, players, homeJersey: JerseyColor?, teamColor: JerseyColor? }` +
-  `jersey(isHome:)`. Both optional so older saved teams decode; `kitColor`
-  defaults to blue, which is what they had.
+- `Team { id, name, players, homeJersey: JerseyColor?, teamColor: JerseyColor?, ownerDisplayName: String? }` +
+  `jersey(isHome:)`. The optionals are optional so older saved teams decode;
+  `kitColor` defaults to blue, which is what they had, and `ownerDisplayName`
+  is the per-team "Shared by" name (§3).
 - `Player { id, name, number }` + `firstName`.
 - `JerseyColor { white, blue }` + `opposite`.
-- `EventType { twoPoint, threePoint, ftMade, ftMissed, foul }` (+ points, labels).
-- `GameEvent { id, playerID, type, period, timestamp }`.
+- `EventType { twoPoint, threePoint, ftMade, ftMissed, rebound, foul, unknown }`
+  (+ points, labels). `foul` is retained only so older games decode; `unknown`
+  is never recorded — it's where an event type written by a *newer* build lands,
+  so it degrades instead of throwing (§3.6).
+- `GameEvent { id, playerID, type, period, timestamp, assistPlayerID: UUID? }`.
 - `PeriodFormat { quarters, halves, pickup }` (pickup = 1 running period, no breaks).
 - `PeriodEndScore { ourRunningTotal, opponentRunningTotal }` (opponent side authoritative; our side derived from events).
-- `Game { id, date, opponent, league, location, isHome, periodFormat, events, periodEndScores, notes, isComplete, hasStarted: Bool? }`
+- `Game { id, teamID: UUID?, date, opponent, league, location, locationAddress, isHome, periodFormat, events, periodEndScores, notes, benchedPlayerIDs, isComplete, hasStarted: Bool? }`
   - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, and **`lifecycle` { scheduled, inProgress, complete }**.
   - **Decodes leniently.** `Game` has a hand-written `init(from:)` (in an extension, so the memberwise init survives) reading every field with `decodeIfPresent`. This is a data-loss guard, not style: `AppStore.load()` uses `try?`, so one missing key silently wipes every saved game, and Swift's synthesized decoder throws on a missing key *even when the property has a default*. **Adding a stored property to `Game` means adding a line there**, covered by `GameMigrationTests`.
 - `PlayerStats` (derived, never stored).
@@ -232,22 +239,38 @@ Key types (see source for full detail):
 
 ```
 AppStore (ObservableObject, injected as @EnvironmentObject)
-  ├── team, games, textSizeIndex   — @Published, didSet → save() (UserDefaults JSON)
+  ├── teams, activeTeamID, games,  — @Published, didSet → save() (UserDefaults JSON)
+  │   textSizeIndex, followedTeams,
+  │   alertCadence, sharedTeamIDs
   ├── roster/game CRUD             — addPlayer, updateGame, deleteGame(id:), …
+  ├── backupSnapshot / backUpNow / — iCloud backup (§3.9a), debounced
+  │   restoreFromBackup
   └── knownLeagues / knownLocations — autocomplete sources
 
 Views
-  ContentView                 — TabView (Games / Roster / Settings) + app-wide Dynamic Type floor
+  ContentView                 — TabView (Following, when following / Games /
+                                Roster / Settings) + app-wide Dynamic Type floor
   ├── GamesListView           — sectioned list + value-based navigation
   │   ├── GameRowView, NewGameSheet
   │   ├── GameDetailView (+ EditGameSheet)   — scheduled game
-  │   ├── LiveScoringView (+ EndPeriodSheet)
-  │   └── GameSummaryView
+  │   ├── LiveScoringView (+ EndPeriodSheet, StatsPanels)
+  │   └── GameSummaryView (+ GameSummaryPDF, ScoreLogPrintout)
+  ├── FollowingView           — a follower's read-only games and game detail
+  ├── FollowersView           — the owner's side: who this team is shared with
   ├── RosterView (+ PlayerEditSheet)
   └── SettingsView            — text size; Teams list (+ TeamDetailView),
-                                team export (ShareLink) / import (fileImporter)
+                                team export (ShareLink) / import (fileImporter),
+                                backup status (+ BackupBrowserView)
   EventLogView (+ EventLogRow, EventEditSheet)  — shared editable log
   Models/TeamTransfer.swift   — TeamExport / TeamPackage (Transferable) for #40
+
+Sharing/
+  SharingService / CloudKitSharingService   — CKShare publish + fetch (#57)
+  CloudKitSchema                            — Game ⇄ CKRecord, incl. the
+                                              `laterEvents` wire guard (§3.6)
+  CloudKitBackupService                     — the private backup zone (§3.9a)
+  FollowerNotifier / FollowerAlerts         — silent push → local notification
+  ShareAcceptance                           — accepting an invite
 
 Helpers/DesignSystem.swift
   Color.teamAccent (blue, adaptive), scoreboardBackground (navy),

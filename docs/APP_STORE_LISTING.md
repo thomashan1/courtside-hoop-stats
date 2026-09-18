@@ -76,6 +76,8 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > **TRACK WHAT MATTERS**
 > • 2-point and 3-point field goals
 > • Free throws — made and missed, for accurate FT%
+> • Assists — one optional tap after a made basket, skip it and nothing is lost
+> • Rebounds — one tap, no offensive/defensive split to slow you down
 > • Team score, calculated automatically from every basket
 > • Bench players who aren't at the game so the roster stays uncluttered
 >
@@ -88,8 +90,9 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 >
 > **AFTER THE GAME**
 > • Period-by-period linescore and final result
-> • Per-player stat table: points, 2PT, 3PT, and free-throw shooting
-> • Share a one-page PDF box score straight to the team's group chat
+> • Per-player stat table: points, 2PT, 3PT, assists, rebounds, free throws
+> • Share a PDF box score straight to the team's group chat — the summary on
+>   page one, the full play-by-play after it
 > • Notes for scouting and observations
 >
 > **LET FAMILY FOLLOW ALONG**
@@ -99,9 +102,10 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > • Updates arrive in seconds with signal, and catch up after a dead-zone gym
 >
 > **YOUR DATA STAYS YOURS**
-> No sign-up. No ads. No tracking. Your games live on your device — and if you
-> choose to share a team, it goes through your own iCloud to the people you
-> invite, and nowhere else.
+> No sign-up. No ads. No tracking. Your games live on your device and back
+> themselves up to your own iCloud, so a lost phone doesn't cost you the season
+> — and if you choose to share a team, it goes through that same iCloud account
+> to the people you invite, and nowhere else.
 >
 > Perfect for youth leagues, rec teams, and any parent who wants real stats without the hassle.
 
@@ -122,7 +126,7 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.8 — not yet submitted
+### v1.8 — submitted 2026-09-17, build 147
 
 The backup leads: it's the one thing a reader would act on, and it's the
 answer to "what happens if I lose my phone" — a question the app previously
@@ -274,20 +278,23 @@ Connect privacy questions as:
 That yields a "**Data Not Collected**" label. No account, no analytics SDK, no
 ads.
 
-**Sharing does not change that answer.** A shared team's roster and games are
-written to **the user's own iCloud** (CloudKit private/shared database), where
-the developer has no access and receives no copy. Apple's questionnaire asks
-what *we* collect, and data that stays inside a user's own iCloud isn't
+**Neither sharing nor iCloud backup changes that answer.** A shared team's
+roster and games — and, since v1.8, every team and game as an automatic backup —
+are written to **the user's own iCloud** (CloudKit private/shared database),
+where the developer has no access and receives no copy. Apple's questionnaire
+asks what *we* collect, and data that stays inside a user's own iCloud isn't
 developer collection.
 
 What it *does* change is the risk profile: **new iCloud and push entitlements
 alongside an unchanged privacy answer draws more scrutiny than a routine
 update**. Two things to have ready rather than improvise:
 
-- `docs/PRIVACY_POLICY.md` is already rewritten for sharing. The pre-sharing
-  version claimed data is *"stored only on your device"* and *"never sent to any
-  server"*, which sharing made false — make sure the **hosted** copy at the
-  listing's privacy URL is the current one, not the old text.
+- `docs/PRIVACY_POLICY.md` is rewritten for sharing **and** for the automatic
+  backup (v1.8): the pre-sharing text claimed data is *"stored only on your
+  device"*, and the pre-backup text said nothing leaves the device *"unless you
+  choose to share a team"* — backup made that false too, since it happens
+  without the user starting it. Make sure the **hosted** copy at the listing's
+  privacy URL is the current one.
 - The review notes (§10) should say plainly that sharing is invite-only via
   CKShare, read-only for invitees, and that a shared roster can contain minors'
   first names and jersey numbers.
