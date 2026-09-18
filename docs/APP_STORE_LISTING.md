@@ -37,27 +37,46 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-> New: every game and team now backs itself up to your own iCloud. Lose the phone, keep the season — and restore only what you pick.
+**Rule: always name the three most recent features worth calling out.** Not one
+headline, not a slogan — three, newest first. This field is the only part of
+the listing that can change without a review, so it's where the page stays
+current; a description built to last plus a promo line that rolls every release
+is the whole strategy.
 
-_(130 chars.)_
+> New: automatic iCloud backup — lose the phone, keep the season. Every box score PDF now carries the full play-by-play, and rebounds take one tap.
 
-**This field covers whatever the description doesn't.** Since the description
-was cut to three paragraphs (§4), the backup and the box score PDF live only
-here — so this is the slot that keeps the page current, and it changes without
-a review, even mid-review.
+_(145 chars.)_
 
-The **next swap**, when the backup stops being news: "New: the box score PDF
-now carries the full play-by-play — one tap from any finished game, straight
-into the parents' group chat." (129 chars.)
+The current three, newest first — **update this list and the line together on
+every release**, dropping the oldest as a new one lands:
 
-The evergreen fallback, for when nothing is new: "Tap a player, tap the basket
-— the team score adds itself. The fastest way to keep youth-basketball stats
-from the sideline, one-handed." (136 chars.)
+| # | Feature | Shipped |
+|---|---|---|
+| 1 | Automatic iCloud backup, with browse-and-pick restore | v1.8 (#177) |
+| 2 | Full play-by-play in the box score PDF | v1.8 (#182) |
+| 3 | Rebounds, one tap | v1.7 (#174) |
 
-Editable anytime without review, so it should lead with whatever is newest —
-and it can be swapped the day something changes, without waiting on a
-submission. It sits above the description on the App Store page, so it's read
-first and often instead.
+Next in line when one drops off: **assists** (v1.6, #143), then **notes shown
+to followers** (v1.7). A polish-only release like v1.9 adds nothing to the
+list — the window just stays where it is rather than being padded with
+something nobody would call a feature.
+
+**Fitting three into 170 characters** is the constraint that shapes the line.
+What works: lead with the strongest one and give it the only bit of colour
+("lose the phone, keep the season"), then name the other two flatly. What
+doesn't: three equal clauses, which reads as a changelog and wastes the hook.
+
+This field also covers what §4's description deliberately leaves out — the
+backup and the PDF are named nowhere else on the page.
+
+Editable anytime without review, so it can be swapped the day something changes,
+without waiting on a submission — including while a version is in review. It
+sits above the description on the App Store page, so it's read first and often
+instead.
+
+The evergreen fallback, if there is ever nothing recent to name: "Tap a player,
+tap the basket — the team score adds itself. The fastest way to keep
+youth-basketball stats from the sideline, one-handed." (136 chars.)
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
