@@ -43,9 +43,9 @@ the listing that can change without a review, so it's where the page stays
 current; a description built to last plus a promo line that rolls every release
 is the whole strategy.
 
-> New: automatic iCloud backup — lose the phone, keep the season. Every box score PDF now carries the full play-by-play, and rebounds take one tap.
+> New: automatic iCloud backup — lose the phone, keep the season • full play-by-play in every box score PDF • rebounds in one tap
 
-_(145 chars.)_
+_(127 chars.)_
 
 The current three, newest first — **update this list and the line together on
 every release**, dropping the oldest as a new one lands:
@@ -63,8 +63,18 @@ something nobody would call a feature.
 
 **Fitting three into 170 characters** is the constraint that shapes the line.
 What works: lead with the strongest one and give it the only bit of colour
-("lose the phone, keep the season"), then name the other two flatly. What
-doesn't: three equal clauses, which reads as a changelog and wastes the hook.
+("lose the phone, keep the season"), then separate the other two with ` • `.
+What doesn't: three equal clauses, which reads as a changelog and wastes the
+hook.
+
+**One paragraph, never numbered items** — even though three numbered lines fit
+inside 170 characters. Promotional text renders at the **top of the
+description block**, which the product page collapses behind a *more* link
+after a few lines: a four-line promo consumes the whole visible preview and
+pushes the description's opening line — the one that says what the app is —
+out of sight. The ` • ` separators buy the scannability of a list without
+spending a line break on it. Numbering belongs in *What's New* (§5), which is
+read as a changelog; this field is the hook above it.
 
 This field also covers what §4's description deliberately leaves out — the
 backup and the PDF are named nowhere else on the page.
@@ -518,7 +528,12 @@ available.
 
 - [ ] Bump **`MARKETING_VERSION`** (not just the build) — a closed train rejects
   uploads with `ITMS-90186` / `ITMS-90062`
-- [ ] Confirm the Xcode Cloud build for the release commit reached TestFlight
+- [ ] Select the **newest** build App Store Connect offers, not the one these
+  docs happen to name — every push to `main` produces one, so a build from an
+  hour ago has already been superseded by any docs commit since. The app code
+  is identical across a run of docs-only builds, but take the latest anyway;
+  it's free before submission and there's no reason to ship an older binary
+- [ ] Confirm that build reached TestFlight
 - [ ] Re-capture store screenshots if the UI changed
   (`scripts/screenshots.sh "iPhone 14 Plus"`, then refresh `docs/img/` per the
   mapping table in `SCREENSHOTS.md`)
