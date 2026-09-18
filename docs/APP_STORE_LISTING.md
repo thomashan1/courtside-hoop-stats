@@ -37,20 +37,27 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-> New: your games and teams now back themselves up to your own iCloud, so a
-> lost phone doesn't cost you the season — restore just what you pick.
+> New: every game and team now backs itself up to your own iCloud. Lose the phone, keep the season — and restore only what you pick.
 
-_(142 chars. Swapped in for v1.8's backup; the previous text led with sharing,
-which shipped back in v1.2 and had stopped being "new".)_
+_(130 chars.)_
+
+**This field covers whatever the description doesn't.** Since the description
+was cut to three paragraphs (§4), the backup and the box score PDF live only
+here — so this is the slot that keeps the page current, and it changes without
+a review, even mid-review.
+
+The **next swap**, when the backup stops being news: "New: the box score PDF
+now carries the full play-by-play — one tap from any finished game, straight
+into the parents' group chat." (129 chars.)
+
+The evergreen fallback, for when nothing is new: "Tap a player, tap the basket
+— the team score adds itself. The fastest way to keep youth-basketball stats
+from the sideline, one-handed." (136 chars.)
 
 Editable anytime without review, so it should lead with whatever is newest —
 and it can be swapped the day something changes, without waiting on a
 submission. It sits above the description on the App Store page, so it's read
 first and often instead.
-
-The evergreen fallback, for when nothing is new: "Tap a player, tap the basket —
-the team score adds itself. The fastest way to keep youth-basketball stats from
-the sideline, one-handed." (136 chars.)
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
@@ -68,11 +75,15 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 preserves newlines literally, so a paragraph wrapped at 76 characters arrives
 on the product page broken mid-sentence.
 
-> The fast and easy way to keep your team's basketball stats — right from the sideline. Tap a player, tap what they did. The team score adds itself. Built for the one parent or coach tracking a youth game alone, with big buttons you can hit without looking away from the court.
+> The fast and easy way to keep your team’s basketball stats — right from the sideline. Tap a player, tap what they did. The team score adds itself. Built for the one parent or coach tracking a youth game alone, with buttons big enough to hit without looking away from the court.
 >
-> This app was built for my wife. An upgrade from her previous text-to-herself-during-the-game scoring "system"
+> I built this for my wife — an upgrade on her previous text-to-herself-during-the-game scoring “system”.
+>
+> Share a team and family can follow along from their own iPhone, view-only. No sign-up, no ads, no tracking: your games stay on your device and in your own iCloud.
 
-_(386 characters, against a 4000 limit.)_
+_(546 characters, against a 4000 limit. Curly quotes and apostrophes on
+purpose — they sit beside em dashes, where straight ones read as a different
+font.)_
 
 **Short on purpose.** The description is **not indexed for App Store search** —
 only the app name, subtitle and keywords (§1, §3) are — so a feature list buys
@@ -81,18 +92,15 @@ version was a five-section bullet list covering scoring, assists, rebounds,
 game management, the PDF, sharing and the iCloud backup; it read like a spec
 sheet and went stale every release, which is a cost with no matching benefit.
 
-What that trades away, knowingly:
+The third paragraph earns its place by covering the two things a reader can't
+get anywhere else on the page: that **family can follow along** (otherwise only
+screenshot 4 says so) and the **privacy stance** before they install. Adding a
+fourth would be the spec sheet coming back.
 
-- **Sharing and following** are now explained only by screenshot 4 — a reader
-  who wants to know whether family can watch has to infer it.
-- **The privacy line** ("No sign-up. No ads. No tracking…") is gone from the
-  page. It isn't required — `docs/PRIVACY_POLICY.md` is linked from the
-  listing, and App Privacy already reads *Data Not Collected* — but it was the
-  one place a parent saw it before installing.
-- **Promotional text carries more weight now** (§2), since it's the only other
-  prose on the page. It currently leads with the iCloud backup, which is the
-  most recent thing worth saying, and it can be changed any time without a
-  review.
+Two things are deliberately *not* in the description: the **iCloud backup** and
+the **box score PDF**. Promotional text (§2) carries one of them, and carries
+more weight now that it's the only other prose on the page — it can be swapped
+any time without a review, including while a version is in review.
 
 ## 5. What's New
 
