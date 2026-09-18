@@ -16,8 +16,8 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18 | *in review* | — | — | — |
-| v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18 | — | — | — |
+| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | *in review* | — | — | — |
+| v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
 | v1.5 | 106 | `f6c0820` | Sat 2026-09-05, 8:33 PM | Sun 2026-09-13, 12:22 PM | 7d 16h | 7d 13h 27m | 2h 22m |
@@ -45,10 +45,10 @@ swept into it, exactly as commits seconds apart usually share a push. When
 pushes have been rapid, treat the count as a ceiling and confirm against the
 build list.
 
-**v1.8's approval times are missing.** The date is right, the split isn't
-recorded: fill Submitted/Approved/Total/Queued/In review from that version's
-**Activity** list in App Store Connect, the same as every other row. Likewise
-v1.9's submission time.
+v1.8 is the third-fastest total (12h 22m, after v1.3 and v1.7) and repeats
+v1.7's shape exactly: submitted in the evening, picked up before dawn, done
+before 8 AM. Two overnight releases in a row is the shortest the queue has
+ever run for this app — but two isn't a trend to plan a date around.
 
 v1.7 is the second-fastest total (10h 3m, after v1.3's 3h 54m) and the
 **fastest review yet at 27 minutes** — it went in overnight and was queued
@@ -120,8 +120,8 @@ Blank means *not known*, not *none* — don't fill these by inference.
   it's approved, so the next release needs a new `MARKETING_VERSION` — not
   just a new build. The data shows this as a chain of same-day handoffs: v1.2
   went in 2h after v1.1 was approved, v1.4 6h after v1.3, v1.6 90 minutes
-  after v1.5, and v1.8 12h after v1.7. Whatever is ready for v1.9 waits on
-  v1.8 clearing.
+  after v1.5, v1.8 12h after v1.7, and v1.9 **1h 3m** after v1.8 — the fastest
+  handoff yet.
 - **Build numbers are Xcode Cloud's, not `CURRENT_PROJECT_VERSION`'s.** They
   run in their own sequence, +1 per **push** to `main` (not per commit), and
   increment whether the build succeeds or not.
