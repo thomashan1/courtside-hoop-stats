@@ -260,6 +260,14 @@ struct ScoreLogPrintoutPage: View {
     let columns: [[ScoreLogPrintRow]]
     /// The layout's column count, which the last page may not fill.
     let columnCount: Int
+    /// True when the whole log is one column on one page — not a short final
+    /// page of a longer log, which still keeps its empty columns.
+    var isSingleColumnLog: Bool = false
+
+    /// The width a column has in the normal two-column layout. A centred
+    /// single column keeps it, so the rows are the same shape whether a game
+    /// needed one column or two.
+    static var singleColumnWidth: CGFloat { (PrintPage.contentWidth - 16) / 2 }
     let pageNumber: Int
     let pageCount: Int
 
@@ -268,7 +276,16 @@ struct ScoreLogPrintoutPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+            // Vertically centred too when the log is short (trial): balances
+            // the sheet, at the cost of separating the block from the "Score
+            // Log" heading it belongs to.
+            if isSingleColumnLog { Spacer(minLength: 0) }
             HStack(alignment: .top, spacing: 16) {
+                // Centred when the whole log fits one column: the alternative
+                // was a narrow column hard left with the right half of the
+                // sheet blank, which read as a broken two-column page on a
+                // real game rather than a short one.
+                if isSingleColumnLog { Spacer(minLength: 0) }
                 ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
                     VStack(alignment: .leading, spacing: 0) {
                         // Zebra striping, counted *within a period* so the
@@ -287,14 +304,27 @@ struct ScoreLogPrintoutPage: View {
                                             ? Color.black.opacity(0.07)
                                             : Color.clear)
                         }
-                        Spacer(minLength: 0)
+                        // The column normally pushes its rows to the top of a
+                        // full-height column. A centred single column must not
+                        // — this spacer would eat the slack the page-level
+                        // ones need to centre it.
+                        if !isSingleColumnLog { Spacer(minLength: 0) }
                     }
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .frame(maxWidth: isSingleColumnLog ? Self.singleColumnWidth : .infinity,
+                           alignment: .topLeading)
                 }
-                // A short last page must not stretch its columns to full width
-                // — half a column of plays spread across 556pt reads as a
-                // layout bug rather than the end of the game.
-                if columns.count < columnCount {
+                if isSingleColumnLog { Spacer(minLength: 0) }
+                // A short *last* page must not stretch its columns to full
+                // width — half a column of plays spread across 556pt reads as
+                // a layout bug rather than the end of the game.
+                //
+                // The exception is a log that fits a single column outright
+                // (one page, one column): then this isn't a half-filled
+                // two-column page, it's a one-column page, and reserving an
+                // empty second column leaves half the sheet blank for no
+                // reason. A real game came back looking broken because of it
+                // (#182 follow-up).
+                if columns.count < columnCount && !isSingleColumnLog {
                     ForEach(columns.count..<columnCount, id: \.self) { _ in
                         Color.clear.frame(maxWidth: .infinity)
                     }

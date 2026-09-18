@@ -266,6 +266,15 @@ final class ScoreLogPDFPrototypeTests: XCTestCase {
         note("off (today)", game.events.count,
              try check(team, game, log: .off, named: "00-today-one-page", expectedPages: 1))
 
+        // A log that fits a single column — the common case for a real youth
+        // game. It must fill the page width rather than leaving the right half
+        // blank, which is what a real 41–17 game looked like before the
+        // single-column exception.
+        var short = game
+        short.events = Array(game.events.prefix(20))
+        note("short · 2col", short.events.count,
+             try check(team, short, log: .twoColumn, named: "05-short-2col", expectedPages: 2))
+
         for (option, slug) in [(ScoreLogPrintOption.oneColumn, "1col"),
                                (.twoColumn, "2col"),
                                (.threeColumn, "3col")] {

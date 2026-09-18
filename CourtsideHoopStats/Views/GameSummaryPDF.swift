@@ -571,6 +571,12 @@ enum GameSummaryPDF {
                                                roster: roster,
                                                columns: columns,
                                                columnCount: log.columns,
+                                               // One page, one column: the log
+                                               // fits outright, so the page is
+                                               // a one-column page rather than
+                                               // a half-empty two-column one.
+                                               isSingleColumnLog: logColumns.count == 1
+                                                   && columns.count == 1,
                                                pageNumber: index + 2,
                                                pageCount: totalPages)
                 .environment(\.teamKitColor, kit)
