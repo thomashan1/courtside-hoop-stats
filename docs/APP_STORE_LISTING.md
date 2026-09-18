@@ -37,10 +37,11 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-> New: share your team so family can follow the game live from their own iPhone
-> — view-only, no account to make, just like a shared photo album.
+> New: your games and teams now back themselves up to your own iCloud, so a
+> lost phone doesn't cost you the season — restore just what you pick.
 
-_(142 chars.)_
+_(142 chars. Swapped in for v1.8's backup; the previous text led with sharing,
+which shipped back in v1.2 and had stopped being "new".)_
 
 Editable anytime without review, so it should lead with whatever is newest —
 and it can be swapped the day something changes, without waiting on a
@@ -125,6 +126,27 @@ Between them they're the only per-version record the project keeps: what
 shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
+
+### v1.9 — submitted 2026-09-18, build 155
+
+A polish release with no headline feature, and the copy says so rather than
+inflating one: the tab move leads because it's the only thing that changes
+where a finger goes, and the rest is the app fitting more on screen. The
+dropped gym name is called out on purpose — a removal a user notices reads as
+a bug unless the notes own it.
+
+**Paste-ready — one line per item, no hard wraps.** App Store Connect's
+*What's New* field preserves newlines literally, so a wrapped paragraph arrives
+broken mid-sentence on the product page. Everything else in these docs wraps at
+76 characters; these blocks deliberately don't.
+
+> NEW
+> 1. Following is now the first tab, so the team you're watching is where your thumb lands.
+>
+> FIXES
+> 1. Games, Roster and Following fit more on screen — tighter rows, and less empty space between sections.
+> 2. Game rows no longer show a gym name cut off mid-word; the location is still there in full on the game itself and in the box score.
+> 3. A short play-by-play is now centred on its page in the box score PDF, instead of sitting against the left edge.
 
 ### v1.8 — submitted 2026-09-17, build 147
 
