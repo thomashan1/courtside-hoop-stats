@@ -64,52 +64,35 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 
 ## 4. Description
 
-**Paste-ready — one line per bullet and per paragraph, no hard wraps**, for the
-same reason as the *What's New* blocks in §5: App Store Connect preserves
-newlines literally, so a paragraph wrapped at 76 characters arrives on the
-product page broken mid-sentence.
+**Paste-ready — one line per paragraph, no hard wraps.** App Store Connect
+preserves newlines literally, so a paragraph wrapped at 76 characters arrives
+on the product page broken mid-sentence.
 
-> **The fastest way to keep your team's basketball stats — right from the sideline.**
+> The fast and easy way to keep your team's basketball stats — right from the sideline. Tap a player, tap what they did. The team score adds itself. Built for the one parent or coach tracking a youth game alone, with big buttons you can hit without looking away from the court.
 >
-> Courtside Hoop Stats is built for the one parent or coach tracking a youth game alone. It replaces the messy spreadsheet with two taps: tap a player, tap what they did. The team score adds itself.
->
-> **BUILT FOR SPEED, COURTSIDE**
-> • Tap a player, then a big +2 / +3 / FT button — that's the whole flow
-> • Live score log stays on top; players sit in the thumb zone
-> • Large, high-contrast buttons and scoreboard, readable in a bright gym
-> • Follows Light or Dark automatically
->
-> **TRACK WHAT MATTERS**
-> • 2-point and 3-point field goals
-> • Free throws — made and missed, for accurate FT%
-> • Assists — one optional tap after a made basket, skip it and nothing is lost
-> • Rebounds — one tap, no offensive/defensive split to slow you down
-> • Team score, calculated automatically from every basket
-> • Bench players who aren't at the game so the roster stays uncluttered
->
-> **GAME MANAGEMENT**
-> • Quarters, halves, or a no-periods pickup game — pick your league's format
-> • New game in seconds: every field is optional, then Start Game or schedule it
-> • Enter the opponent's running score at each period break
-> • Editable, reorderable score log — fix any mistake, anytime
-> • Manage multiple teams; each keeps its own roster and games
->
-> **AFTER THE GAME**
-> • Period-by-period linescore and final result
-> • Per-player stat table: points, 2PT, 3PT, assists, rebounds, free throws
-> • Share a PDF box score straight to the team's group chat — summary on page one, full play-by-play after it
-> • Notes for scouting and observations
->
-> **LET FAMILY FOLLOW ALONG**
-> • Share a team so grandparents, friends, or the other parent can watch
-> • Invite them from the normal share sheet, like an iCloud Shared Album
-> • They get a view-only screen — the score and stats, nothing they can change
-> • Updates arrive in seconds with signal, and catch up after a dead-zone gym
->
-> **YOUR DATA STAYS YOURS**
-> No sign-up. No ads. No tracking. Your games live on your device and back themselves up to your own iCloud, so a lost phone doesn't cost you the season — and if you choose to share a team, it goes through that same iCloud account to the people you invite, and nowhere else.
->
-> Perfect for youth leagues, rec teams, and any parent who wants real stats without the hassle.
+> This app was built for my wife. An upgrade from her previous text-to-herself-during-the-game scoring "system"
+
+_(386 characters, against a 4000 limit.)_
+
+**Short on purpose.** The description is **not indexed for App Store search** —
+only the app name, subtitle and keywords (§1, §3) are — so a feature list buys
+no discoverability, and the screenshots carry what the app does. The earlier
+version was a five-section bullet list covering scoring, assists, rebounds,
+game management, the PDF, sharing and the iCloud backup; it read like a spec
+sheet and went stale every release, which is a cost with no matching benefit.
+
+What that trades away, knowingly:
+
+- **Sharing and following** are now explained only by screenshot 4 — a reader
+  who wants to know whether family can watch has to infer it.
+- **The privacy line** ("No sign-up. No ads. No tracking…") is gone from the
+  page. It isn't required — `docs/PRIVACY_POLICY.md` is linked from the
+  listing, and App Privacy already reads *Data Not Collected* — but it was the
+  one place a parent saw it before installing.
+- **Promotional text carries more weight now** (§2), since it's the only other
+  prose on the page. It currently leads with the iCloud backup, which is the
+  most recent thing worth saying, and it can be changed any time without a
+  review.
 
 ## 5. What's New
 
