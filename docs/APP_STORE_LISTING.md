@@ -122,9 +122,29 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.8 — open
+### v1.8 — not yet submitted
 
-*(no notes yet)*
+The backup leads: it's the one thing a reader would act on, and it's the
+answer to "what happens if I lose my phone" — a question the app previously
+had no answer to. The PDF change is second because it's what gets sent round
+after a game.
+
+**Paste-ready — one line per item, no hard wraps.** App Store Connect's
+*What's New* field preserves newlines literally, so a wrapped paragraph arrives
+broken mid-sentence on the product page. Everything else in these docs wraps at
+76 characters; these blocks deliberately don't.
+
+> NEW
+>
+> 1. Your games and teams are now backed up automatically to your own iCloud, and you can restore them on a new phone. Settings shows when the last backup ran.
+> 2. The box score PDF now includes the full play-by-play, with each quarter's score where it ends.
+>
+> FIXES
+>
+> 1. The Score Log shows the running score at the end of each quarter, not just the points scored in it.
+> 2. Rebounds are hidden from the stats table for games where none were recorded, instead of a column of zeros.
+> 3. Long notes are no longer cut off in the PDF.
+> 4. A single damaged game can no longer stop your other games loading.
 
 ### v1.7 — submitted 2026-09-16, build 137, approved 2026-09-17
 
