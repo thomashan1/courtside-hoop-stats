@@ -64,6 +64,11 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 
 ## 4. Description
 
+**Paste-ready — one line per bullet and per paragraph, no hard wraps**, for the
+same reason as the *What's New* blocks in §5: App Store Connect preserves
+newlines literally, so a paragraph wrapped at 76 characters arrives on the
+product page broken mid-sentence.
+
 > **The fastest way to keep your team's basketball stats — right from the sideline.**
 >
 > Courtside Hoop Stats is built for the one parent or coach tracking a youth game alone. It replaces the messy spreadsheet with two taps: tap a player, tap what they did. The team score adds itself.
@@ -92,8 +97,7 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > **AFTER THE GAME**
 > • Period-by-period linescore and final result
 > • Per-player stat table: points, 2PT, 3PT, assists, rebounds, free throws
-> • Share a PDF box score straight to the team's group chat — the summary on
->   page one, the full play-by-play after it
+> • Share a PDF box score straight to the team's group chat — summary on page one, full play-by-play after it
 > • Notes for scouting and observations
 >
 > **LET FAMILY FOLLOW ALONG**
@@ -103,10 +107,7 @@ basketball,stats,scorekeeper,box score,youth,coach,team,scoring,tracker,hoops,ta
 > • Updates arrive in seconds with signal, and catch up after a dead-zone gym
 >
 > **YOUR DATA STAYS YOURS**
-> No sign-up. No ads. No tracking. Your games live on your device and back
-> themselves up to your own iCloud, so a lost phone doesn't cost you the season
-> — and if you choose to share a team, it goes through that same iCloud account
-> to the people you invite, and nowhere else.
+> No sign-up. No ads. No tracking. Your games live on your device and back themselves up to your own iCloud, so a lost phone doesn't cost you the season — and if you choose to share a team, it goes through that same iCloud account to the people you invite, and nowhere else.
 >
 > Perfect for youth leagues, rec teams, and any parent who wants real stats without the hassle.
 
