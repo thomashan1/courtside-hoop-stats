@@ -37,6 +37,102 @@ enum ScoreLogPrintOption: String, CaseIterable {
     }
 }
 
+// MARK: - Row style
+
+/// How one log row is *set* on the page — the readability question (#182).
+///
+/// Every style keeps `ScoreLogPrintRow.eventHeight` at 15pt, so pagination and
+/// page counts are identical across all of them and the options differ only in
+/// how a row reads, never in how much fits.
+///
+/// The problem being solved: in `.flushRight` the action and the running total
+/// are pushed to the right edge, leaving 120pt+ of white between a name and its
+/// action. The eye loses the row crossing it — the classic wide-gap tracking
+/// problem, and worse in two columns, where each column is narrow but the gap
+/// still reads as a gulf.
+enum ScoreLogRowStyle: String, CaseIterable {
+    /// The original prototype: name left, action and total flushed right.
+    case flushRight
+    /// `flushRight` plus an alternating row tint.
+    case zebra
+    /// `flushRight` plus a hairline rule under every fifth row of a period.
+    case groupRules
+    /// `flushRight` with a dotted leader across the gap, menu-style.
+    case leaderDots
+    /// Fixed columns: action and total sit immediately after the name, and the
+    /// assist trails as an annotation. The gap disappears rather than being
+    /// bridged.
+    case tabular
+    /// `tabular` plus the alternating tint.
+    case tabularZebra
+    /// `tabular` plus the every-fifth-row rule.
+    case tabularRules
+    /// `flushRight` with the row capped well short of the column, so there is
+    /// simply less distance to cross.
+    case tight
+
+    var isTabular: Bool {
+        switch self {
+        case .tabular, .tabularZebra, .tabularRules: return true
+        default: return false
+        }
+    }
+
+    var stripes: Bool { self == .zebra || self == .tabularZebra }
+    var groupRule: Bool { self == .groupRules || self == .tabularRules }
+    var leaders: Bool { self == .leaderDots }
+
+    /// A cap on the row's width, for `.tight`; `nil` means fill the column.
+    var rowWidth: CGFloat? { self == .tight ? 196 : nil }
+}
+
+/// A dotted leader, the way a table of contents or a menu bridges a gap.
+private struct ScoreLogLeaderDots: View {
+    var body: some View {
+        GeometryReader { geometry in
+            Path { path in
+                path.move(to: CGPoint(x: 0, y: geometry.size.height / 2))
+                path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height / 2))
+            }
+            .stroke(Color.black.opacity(0.30),
+                    style: StrokeStyle(lineWidth: 1, lineCap: .round, dash: [0.5, 3]))
+        }
+        .frame(height: 7)
+        .padding(.horizontal, 4)
+    }
+}
+
+/// A row plus the decoration its position earns it (stripe / group rule).
+/// Computed per column so the pattern restarts at every period header rather
+/// than drifting out of phase across a column break.
+struct ScoreLogDecoratedRow: Identifiable {
+    let row: ScoreLogPrintRow
+    let stripe: Bool
+    let rule: Bool
+    var id: String { row.id }
+
+    static func decorate(_ column: [ScoreLogPrintRow]) -> [ScoreLogDecoratedRow] {
+        var decorated: [ScoreLogDecoratedRow] = []
+        var indexInPeriod = 0
+        for (position, row) in column.enumerated() {
+            guard !row.isHeader else {
+                indexInPeriod = 0
+                decorated.append(.init(row: row, stripe: false, rule: false))
+                continue
+            }
+            indexInPeriod += 1
+            // No rule immediately above a period header or at the foot of a
+            // column: the header's own rule is already there, and a rule on the
+            // last line of a column reads as a truncation.
+            let nextIsHeader = position + 1 >= column.count || column[position + 1].isHeader
+            decorated.append(.init(row: row,
+                                   stripe: !indexInPeriod.isMultiple(of: 2),
+                                   rule: indexInPeriod.isMultiple(of: 5) && !nextIsHeader))
+        }
+        return decorated
+    }
+}
+
 // MARK: - Rows
 
 /// One printed line of the log. Heights are **fixed constants** rather than
