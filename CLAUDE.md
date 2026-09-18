@@ -200,14 +200,22 @@ starts with a decision, not a pick-up.
 **Closed doors**, with the reasoning already written down — these are settled,
 not waiting:
 
-1. **Read-write sharing is declined, three times over** — #57 (co-trackers),
+1. **iPad is declined, twice** — #32 ("iPhone-only is the answer") and #192.
+   The strongest iPad use case, reading a box score on a bigger screen, is
+   already served by the PDF: a real document that opens full-size anywhere
+   and carries the play-by-play since #182. What's left is the Following
+   screen looking scaled-up, against a permanent cost of a second App Store
+   screenshot set and two form factors to not break on every UI change.
+   Reopen only for something the PDF genuinely can't deliver — "it looks big"
+   isn't that.
+2. **Read-write sharing is declined, three times over** — #57 (co-trackers),
    #169 (co-admin), and a public share link. Don't re-propose it without new
    information: participant management is the *owner's* privilege in CloudKit,
    so a second writer would not have solved the need that prompted #169
    ("add other followers"). `docs/SHARING.md` keeps the full analysis, and the
    prototypes are archived at `archive/144-live-lineup` and
    `archive/169-co-admin-prototype`.
-2. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
+3. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
    deferred — mid-game lineup tracking is too much work for the tracker. The
    salvaged part (the `Codable` guard) shipped separately.
 
