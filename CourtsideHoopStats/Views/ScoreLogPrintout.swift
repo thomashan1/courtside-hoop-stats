@@ -276,6 +276,10 @@ struct ScoreLogPrintoutPage: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+            // Vertically centred too when the log is short (trial): balances
+            // the sheet, at the cost of separating the block from the "Score
+            // Log" heading it belongs to.
+            if isSingleColumnLog { Spacer(minLength: 0) }
             HStack(alignment: .top, spacing: 16) {
                 // Centred when the whole log fits one column: the alternative
                 // was a narrow column hard left with the right half of the
@@ -300,7 +304,11 @@ struct ScoreLogPrintoutPage: View {
                                             ? Color.black.opacity(0.07)
                                             : Color.clear)
                         }
-                        Spacer(minLength: 0)
+                        // The column normally pushes its rows to the top of a
+                        // full-height column. A centred single column must not
+                        // — this spacer would eat the slack the page-level
+                        // ones need to centre it.
+                        if !isSingleColumnLog { Spacer(minLength: 0) }
                     }
                     .frame(maxWidth: isSingleColumnLog ? Self.singleColumnWidth : .infinity,
                            alignment: .topLeading)

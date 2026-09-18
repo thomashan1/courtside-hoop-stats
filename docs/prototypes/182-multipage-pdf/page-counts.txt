@@ -1,11 +1,11 @@
-off (today)                  36 events → 1 pages,  53.6 KB
-short · 2col                 20 events → 2 pages,  83.8 KB
-demo · 1col                  36 events → 3 pages,  95.7 KB
-rebound-heavy · 1col         72 events → 3 pages, 114.6 KB
-long log · 1col             144 events → 5 pages, 159.5 KB
-demo · 2col                  36 events → 2 pages,  91.8 KB
-rebound-heavy · 2col         72 events → 2 pages, 110.9 KB
-long log · 2col             144 events → 3 pages, 152.5 KB
-demo · 3col                  36 events → 2 pages,  91.8 KB
-rebound-heavy · 3col         72 events → 2 pages, 110.9 KB
-long log · 3col             144 events → 3 pages, 152.3 KB
+off (today)                  36 events → 1 pages,  53.7 KB
+short · 2col                 20 events → 2 pages,  83.9 KB
+demo · 1col                  36 events → 3 pages,  95.8 KB
+rebound-heavy · 1col         72 events → 3 pages, 114.7 KB
+long log · 1col             144 events → 5 pages, 159.6 KB
+demo · 2col                  36 events → 2 pages,  91.9 KB
+rebound-heavy · 2col         72 events → 2 pages, 111.0 KB
+long log · 2col             144 events → 3 pages, 152.7 KB
+demo · 3col                  36 events → 2 pages,  92.0 KB
+rebound-heavy · 3col         72 events → 2 pages, 111.0 KB
+long log · 3col             144 events → 3 pages, 152.4 KB
