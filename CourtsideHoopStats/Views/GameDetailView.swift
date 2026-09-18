@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Detail screen for a scheduled (not-yet-started) game. Shows the matchup you
 /// pre-entered read-only, with an Edit button (Cancel/Save sheet, like the
-/// roster's player editor), a Start Game action, and Delete.
+/// roster's player editor), a Start Game action, and a confirmed Delete.
 struct GameDetailView: View {
     @EnvironmentObject var store: AppStore
     @Environment(\.dismiss) private var dismiss
@@ -13,6 +13,7 @@ struct GameDetailView: View {
 
     @State private var game: Game
     @State private var editing = false
+    @State private var confirmingDelete = false
 
     init(gameID: UUID, onStart: @escaping (UUID) -> Void) {
         self.gameID = gameID
@@ -47,8 +48,12 @@ struct GameDetailView: View {
                 }
             }
 
-            // Both actions in one section: two single-button cards cost ~90pt
-            // of gap to separate a button from a button.
+            // Start Game gets a section to itself. #193 merged these two to
+            // save the ~90pt gap between them, which was right when both were
+            // ordinary rows — but a destructive action sitting flush against
+            // the primary one reads as a pair of equals and is easy to hit by
+            // mistake. Here the gap *is* the design, and this screen has room
+            // to spend on it.
             Section {
                 Button {
                     start()
@@ -64,13 +69,29 @@ struct GameDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+            }
 
+            // No card and no pill — plain red text under the Start Game card,
+            // the way iOS puts a destructive action at the foot of a screen. A
+            // tinted pill inside a white row was a container within a
+            // container, and it still read as Start Game's equal. The tap
+            // target is held at 44pt by the row's own height (#195).
+            Section {
                 Button(role: .destructive) {
-                    delete()
+                    confirmingDelete = true
                 } label: {
-                    Label("Delete Game", systemImage: "trash")
-                        .foregroundStyle(.red)
+                    HStack(spacing: 6) {
+                        Image(systemName: "trash")
+                            .accessibilityHidden(true)
+                        Text("Delete Game")
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
+                .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
             }
         }
         .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
@@ -87,6 +108,17 @@ struct GameDetailView: View {
         // button to just its chevron shrinks that width mismatch.
         .toolbarRole(.editor)
         .onAppear(perform: load)
+        // A confirmation this screen didn't need while Delete was a small text
+        // row. Sharing Start Game's shape and sitting directly under it, it's
+        // now as easy to hit by accident, and there is no undo (#195).
+        .confirmationDialog("Delete this game?",
+                            isPresented: $confirmingDelete,
+                            titleVisibility: .visible) {
+            Button("Delete Game", role: .destructive, action: delete)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This can't be undone.")
+        }
         .sheet(isPresented: $editing) {
             EditGameSheet(game: game) { updated in
                 store.updateGame(updated)
