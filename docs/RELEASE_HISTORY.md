@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | *in review* | — | — | — |
+| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | — | — |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
@@ -45,13 +45,13 @@ swept into it, exactly as commits seconds apart usually share a push. When
 pushes have been rapid, treat the count as a ceiling and confirm against the
 build list.
 
-v1.8 is the third-fastest total (12h 22m, after v1.3 and v1.7) and repeats
-v1.7's shape exactly: submitted in the evening, picked up before dawn, done
-before 8 AM. Two overnight releases in a row is the shortest the queue has
-ever run for this app — but two isn't a trend to plan a date around.
+The queue has collapsed over three releases: v1.7 10h 3m, v1.8 12h 22m, then
+v1.9 at **2h 25m** — a record, and the first one approved the same morning it
+went in. **v1.9's queue/review split is still missing**; fill it from the
+*In Review* timestamp in that version's Activity list.
 
-v1.7 is the second-fastest total (10h 3m, after v1.3's 3h 54m) and the
-**fastest review yet at 27 minutes** — it went in overnight and was queued
+v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
+**fastest review at 27 minutes** — it went in overnight and was queued
 9h 36m, which is most of it.
 
 ## The wait is the queue. The review is hours.
@@ -84,13 +84,13 @@ signal; elapsed time is not.
 
 | | |
 |---|---|
-| Fastest | 3h 54m (v1.3) |
+| Fastest | **2h 25m (v1.9)** |
 | Slowest | 13d 9h (v1.0) |
 | Median | ~3 days |
 
 **Total turnaround has no relation to the size of the change.** v1.3 was a
 bigger release than v1.4 and cleared in under four hours; v1.5 was small and
-took a week. What varies is queue depth on the day, which is unknowable in
+took a week; v1.9 was pure polish and set the record at 2h 25m. What varies is queue depth on the day, which is unknowable in
 advance — so don't plan a release date around a predicted approval.
 
 The one visible pattern is that the queue got dramatically shorter after the
