@@ -82,14 +82,33 @@ struct EventLogView: View {
             Rectangle()
                 .fill(Color(.separator))
                 .frame(height: 1)
-            // One `Text`, not two: a second view here competes with the rule
-            // for width and gets squeezed to nothing.
-            Text(periodTotals(period))
+            // `fixedSize` on both: without it they compete with the rule for
+            // width and get squeezed to nothing — the first attempt at this
+            // compiled fine and rendered invisibly.
+            Text("\(ourPoints(in: period)) pts")
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .fixedSize()
+            // The running total, in the same column the rows put theirs in, so
+            // it reads straight down the log instead of being a differently
+            // shaped number on a different line (#183).
+            Text("\(cumulativePoints(through: period))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .fixedSize()
+            // An invisible chevron, so the total lands in the same column as a
+            // row's when rows carry one. Rows put the chevron *after* the
+            // total, so without this placeholder the header's number sits a
+            // chevron's width to the right of every row's.
+            if isEditable {
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .hidden()
+            }
         }
+        .padding(.horizontal, 10)
         .padding(.vertical, 4)
         // Opaque behind the sticky header so scrolling rows don't show through.
         .background(pinsPeriodHeaders ? Color(.systemGroupedBackground) : Color.clear)
@@ -132,21 +151,6 @@ struct EventLogView: View {
     /// Our score at the end of `period` — every event up to and including it.
     private func cumulativePoints(through period: Int) -> Int {
         game.events.filter { $0.period <= period }.reduce(0) { $0 + $1.type.points }
-    }
-
-    /// `7 pts` in the first scoring period, `17 pts · 34 total` after that.
-    ///
-    /// The running total is what the header is really for — "what was the
-    /// score at the end of the third?" — but in the opening period it repeats
-    /// the number beside it, so it's left off rather than printed twice (#183).
-    ///
-    /// Computed *through* the period rather than "everything above this row",
-    /// so it still reads correctly in a follower's log, which runs
-    /// newest-period-first.
-    private func periodTotals(_ period: Int) -> String {
-        let scored = ourPoints(in: period)
-        let total = cumulativePoints(through: period)
-        return scored == total ? "\(scored) pts" : "\(scored) pts · \(total) total"
     }
 
     /// Cumulative team points after each event, in chronological order,
