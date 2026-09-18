@@ -43,6 +43,8 @@ final class AppStore: ObservableObject {
     private let followedKey = "chs.followedTeams.v1"
     private let sharedKey = "chs.sharedTeams.v1"
     private let cadenceKey = "chs.alertCadence.v1"
+    /// Last-backed-up state, so Settings can say so at launch (#177).
+    private let backupStateKey = "chs.backupState.v1"
     /// Where the raw bytes go when a game or team can't be decoded, so the
     /// unreadable record survives the load that skipped it (#180).
     private static let gamesQuarantineKey = "chs.games.unreadable.v1"
@@ -51,6 +53,8 @@ final class AppStore: ObservableObject {
     /// Backend for publishing local edits to followers. Injected at app launch;
     /// nil in tests and previews, which disables publishing entirely.
     var sharingService: (any TeamSharingService)?
+    /// Automatic backup of everything to the owner's own iCloud (#177).
+    var backupService: (any BackupService)?
     private var publishTask: Task<Void, Never>?
     /// How long to wait after the last edit before pushing. Live scoring writes
     /// on every basket, so publishing per-mutation would hammer CloudKit; this
@@ -152,6 +156,13 @@ final class AppStore: ObservableObject {
             activeTeamID = first.id
         }
 
+        if let data = UserDefaults.standard.data(forKey: backupStateKey),
+           let state = try? decoder.decode(StoredBackupState.self, from: data) {
+            backupSnapshot = BackupSnapshot(backedUpAt: state.backedUpAt,
+                                            teamCount: state.teamCount,
+                                            gameCount: state.gameCount)
+        }
+
         if let data = UserDefaults.standard.data(forKey: gamesKey) {
             games = Self.salvagingElements([Game].self, from: data,
                                             quarantinedAs: Self.gamesQuarantineKey)
@@ -241,6 +252,138 @@ final class AppStore: ObservableObject {
         }
         UserDefaults.standard.set(alertCadence.rawValue, forKey: cadenceKey)
         schedulePublish()
+        scheduleBackup()
+    }
+
+    // MARK: - Backup to the owner's iCloud (#177)
+
+    /// What to show in Settings. Persisted so the screen can say "last backed
+    /// up" straight away rather than after a network round trip — a backup you
+    /// can't see the state of is one you can't trust.
+    @Published private(set) var backupSnapshot: BackupSnapshot = .none
+    /// True while a backup or restore is in flight, so the UI can say so.
+    @Published private(set) var isBackingUp = false
+    @Published private(set) var backupError: String?
+
+    private var backupTask: Task<Void, Never>?
+    /// Much longer than the publish debounce: followers want the score within
+    /// seconds, a backup only has to be current by the end of the game.
+    var backupDebounce: Duration = .seconds(30)
+
+    /// Back up now, on the user's command.
+    @MainActor
+    func backUpNow() async {
+        guard let service = backupService, service.isAvailable else { return }
+        backupTask?.cancel()
+        await performBackup(using: service)
+    }
+
+    /// Restores from iCloud by **merging**, never replacing.
+    ///
+    /// Anything already on the device wins and nothing is deleted, so running
+    /// this can only ever add back what's missing. That makes it safe to tap
+    /// when you're unsure — which matters, because the moment you reach for a
+    /// restore is the moment you can least afford a destructive surprise.
+    /// Returns how many games and teams were added.
+    @MainActor
+    func restoreFromBackup() async -> (teams: Int, games: Int) {
+        guard let service = backupService, service.isAvailable else { return (0, 0) }
+        isBackingUp = true
+        backupError = nil
+        defer { isBackingUp = false }
+
+        do {
+            let backup = try await service.fetchBackup()
+            let knownTeams = Set(teams.map(\.id))
+            let newTeams = backup.teams.filter { !knownTeams.contains($0.id) }
+            let knownGames = Set(games.map(\.id))
+            let newGames = backup.games.filter { !knownGames.contains($0.id) }
+
+            teams.append(contentsOf: newTeams)
+            games.append(contentsOf: newGames)
+            backupSnapshot = backup.snapshot
+            persistBackupState()
+            return (newTeams.count, newGames.count)
+        } catch {
+            backupError = error.localizedDescription
+            return (0, 0)
+        }
+    }
+
+    /// Restores a chosen subset, for the browse-and-pick screen.
+    ///
+    /// Additive like `restoreFromBackup`: anything already here is skipped
+    /// rather than replaced, so a restore can never cost you data.
+    @MainActor
+    func restore(teams newTeams: [Team], games newGames: [Game]) {
+        let knownTeams = Set(self.teams.map(\.id))
+        let knownGames = Set(self.games.map(\.id))
+        self.teams.append(contentsOf: newTeams.filter { !knownTeams.contains($0.id) })
+        self.games.append(contentsOf: newGames.filter { !knownGames.contains($0.id) })
+    }
+
+    /// Debounced like `schedulePublish`, and background-protected for the same
+    /// reason: iOS suspends the app before a bare timer fires, which silently
+    /// dropped a publish once (#155).
+    private func scheduleBackup() {
+        guard let service = backupService, service.isAvailable else { return }
+
+        backupTask?.cancel()
+
+        var backgroundTaskID = UIBackgroundTaskIdentifier.invalid
+        var hasEnded = false
+        func endOnce() {
+            guard !hasEnded, backgroundTaskID != .invalid else { return }
+            hasEnded = true
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        }
+
+        let task = Task { @MainActor [weak self] in
+            defer { endOnce() }
+            try? await Task.sleep(for: self?.backupDebounce ?? .seconds(30))
+            guard !Task.isCancelled, let self else { return }
+            await self.performBackup(using: service)
+        }
+        backupTask = task
+
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "BackUpToICloud") {
+            task.cancel()
+            endOnce()
+        }
+    }
+
+    @MainActor
+    private func performBackup(using service: any BackupService) async {
+        isBackingUp = true
+        backupError = nil
+        defer { isBackingUp = false }
+        do {
+            backupSnapshot = try await service.backUp(teams: teams, games: games)
+            persistBackupState()
+        } catch {
+            // Never surfaced as an alert: a failed backup must not interrupt a
+            // game. Settings shows it, and the next save retries.
+            backupError = error.localizedDescription
+        }
+    }
+
+#if DEBUG
+    /// Seeds a plausible backup state for the screenshot harness, which runs
+    /// offline. Without it Settings captures "Last backed up: Never" — the one
+    /// state this feature exists to avoid.
+    func seedBackupStateForUITests(_ snapshot: BackupSnapshot) {
+        backupSnapshot = snapshot
+    }
+#endif
+
+    private func persistBackupState() {
+        guard !ephemeral else { return }
+        let state = StoredBackupState(backedUpAt: backupSnapshot.backedUpAt,
+                                      teamCount: backupSnapshot.teamCount,
+                                      gameCount: backupSnapshot.gameCount)
+        if let data = try? encoder.encode(state) {
+            UserDefaults.standard.set(data, forKey: backupStateKey)
+        }
     }
 
     // MARK: - Publishing to followers (#57)

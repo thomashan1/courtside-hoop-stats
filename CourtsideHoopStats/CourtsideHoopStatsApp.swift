@@ -25,6 +25,10 @@ struct CourtsideHoopStatsApp: App {
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
             let demo = DemoSharingService(sharedTeamID: appStore.team.id)
             appStore.sharingService = demo
+            appStore.backupService = DemoBackupService()
+            appStore.seedBackupStateForUITests(
+                BackupSnapshot(backedUpAt: Date().addingTimeInterval(-8 * 60),
+                               teamCount: 2, gameCount: 6))
             sharing = demo
             _store = StateObject(wrappedValue: appStore)
             return
@@ -32,6 +36,9 @@ struct CourtsideHoopStatsApp: App {
         #endif
         let service = CloudKitSharingService()
         appStore.sharingService = service
+        // Backup is separate from sharing on purpose — sharing is a mirror, a
+        // backup has to outlive the live copy (#177).
+        appStore.backupService = CloudKitBackupService()
         sharing = service
         _store = StateObject(wrappedValue: appStore)
     }
