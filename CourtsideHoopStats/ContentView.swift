@@ -13,6 +13,22 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            // **First**, for anyone who has it (#189). The tab only exists
+            // when you actually follow someone (#57) — a tracker running only
+            // their own team never sees it — so putting it left costs nothing
+            // for them, and it matches what a follower-only person already
+            // sees, where Following is the first tab by default.
+            //
+            // The trade: someone who both owns and follows loses Games as
+            // their leftmost tab. Worth it because the reason to open the app
+            // as a follower is time-sensitive (a game happening now), while
+            // the reason to open it as a tracker is deliberate.
+            if !store.followedTeams.isEmpty {
+                FollowingView()
+                    .tabItem { Label("Following", systemImage: "binoculars") }
+                    .tag(Tab.following)
+            }
+
             // Hidden for a pure follower (#115) — someone who only watches
             // others' teams and has never touched their own local, blank
             // default team. Reappears the moment they add a player or a game.
@@ -24,14 +40,6 @@ struct ContentView: View {
                 RosterView()
                     .tabItem { Label("Roster", systemImage: "person.3.fill") }
                     .tag(Tab.roster)
-            }
-
-            // Only for people actually following someone (#57) — a tracker
-            // running their own team should never see an empty extra tab.
-            if !store.followedTeams.isEmpty {
-                FollowingView()
-                    .tabItem { Label("Following", systemImage: "binoculars") }
-                    .tag(Tab.following)
             }
 
             SettingsView()
@@ -46,6 +54,11 @@ struct ContentView: View {
         .environment(\.teamKitColor, store.team.kitColor)
         // A pure follower reopening the app has no Games/Roster tabs, so start
         // them on Following rather than a tab that no longer exists (#115).
+        //
+        // Note this is deliberately *not* "start on the first tab". Following
+        // is leftmost for anyone who has it (#189), but a tracker who also
+        // follows should still land on their own games — leftmost and
+        // default-selected are different questions.
         .onAppear {
             if store.isPureFollower { selectedTab = .following }
         }
