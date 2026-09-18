@@ -34,9 +34,11 @@ final class GameSummaryPDFTests: XCTestCase {
     }
 
     @MainActor
-    private func render(_ team: Team, _ game: Game) throws -> PDFDocument {
+    private func render(_ team: Team, _ game: Game,
+                        log: ScoreLogPrintOption = .twoColumn) throws -> PDFDocument {
         let url = try XCTUnwrap(
-            GameSummaryPDF.render(game: game, teamName: team.name, roster: team.players),
+            GameSummaryPDF.render(game: game, teamName: team.name,
+                                  roster: team.players, log: log),
             "PDF render returned nil"
         )
         let data = try Data(contentsOf: url)
@@ -58,7 +60,10 @@ final class GameSummaryPDFTests: XCTestCase {
         // and it can only do that job from a fixed baseline.
         var baseline = game
         baseline.notes = "Good game."
-        let pdf = try render(team, baseline)
+        // Page 1 only: the Score Log now follows on page 2+, so the contract
+        // this test protects is "the summary fits one Letter page", not "the
+        // document is one page" (#182).
+        let pdf = try render(team, baseline, log: .off)
 
         XCTAssertEqual(pdf.pageCount, 1)
 
@@ -83,7 +88,7 @@ final class GameSummaryPDFTests: XCTestCase {
         var wordy = game
         wordy.notes = "Game ended early by 4 minutes due to Coach Rich got into argument with one of the referees and they gave him 2 techs, which resulted in immediately game end"
 
-        let pdf = try render(team, wordy)
+        let pdf = try render(team, wordy, log: .off)
         let text = try XCTUnwrap(pdf.string)
 
         // The tail of the note is what used to disappear.
@@ -141,11 +146,13 @@ final class GameSummaryPDFTests: XCTestCase {
         game.benchedPlayerIDs.append(topScorer.player.id)
         XCTAssertGreaterThan(topScorer.points, 0, "fixture should have a scorer")
 
-        let text = try XCTUnwrap(render(team, game).string)
+        // Page 1 only. The claim is about the stats table — one row, not also
+        // a DNP — and the Score Log on page 2+ legitimately names the same
+        // player on every play they made (#182).
+        let summary = try XCTUnwrap(render(team, game, log: .off).string)
         let name = try XCTUnwrap(PlayerDisplayName.map(for: team.players)[topScorer.player.id])
 
-        // Appears exactly once — as a stats row, not also as a DNP.
-        let occurrences = text.components(separatedBy: name).count - 1
+        let occurrences = summary.components(separatedBy: name).count - 1
         XCTAssertEqual(occurrences, 1, "benched scorer should be listed exactly once")
 
         // And the column still adds up.
