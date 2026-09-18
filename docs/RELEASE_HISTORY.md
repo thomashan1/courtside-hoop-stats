@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.9 | 158 | — | Fri 2026-09-18 | *in review* | — | — | — |
+| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18 | *in review* | — | — | — |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18 | — | — | — |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
@@ -34,9 +34,16 @@ Saturday, v1.5 Sunday). App Review is not on a business-day cycle, so
 Builds 137 and 147 are both **confirmed** by App Store Connect, and both land
 exactly where counting pushes from the anchor (130 = `b060d7e`) predicted. The
 method has now been right three times running: count pushes to `main`, not
-commits. **158 is an estimate** — eleven pushes past the confirmed 147 — so
-check it against the build App Store Connect actually offers, and fill in the
-commit column once it's confirmed there.
+commits — with one caveat found the hard way on v1.9.
+
+**Two pushes seconds apart can share a build.** `7d74293` and `d375957` went
+up 17 seconds apart and Xcode Cloud started one build for the pair, so eleven
+pushes past the confirmed 147 produced ten builds and the estimate ran one
+high (158 predicted, 157 actual, user-confirmed). The rule is still "count
+pushes, not commits" — but a push that lands while a build is starting can be
+swept into it, exactly as commits seconds apart usually share a push. When
+pushes have been rapid, treat the count as a ceiling and confirm against the
+build list.
 
 **v1.8's approval times are missing.** The date is right, the split isn't
 recorded: fill Submitted/Approved/Total/Queued/In review from that version's
