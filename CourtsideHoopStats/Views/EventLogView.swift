@@ -90,10 +90,10 @@ struct EventLogView: View {
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .fixedSize()
-            // The running total, in the same column the rows put theirs in, so
-            // it reads straight down the log instead of being a differently
-            // shaped number on a different line (#183).
-            Text("\(cumulativePoints(through: period))")
+            // The running total, bracketed — and the rows bracket theirs the
+            // same way, so the parentheses read as one consistent column
+            // rather than a quirk of the header (#183).
+            Text("(\(cumulativePoints(through: period)))")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -268,7 +268,11 @@ struct EventLogRow: View {
                         // label, since the badge is there for a sighted glance.
                         .accessibilityLabel(event.type.scoreLogLabel)
                     if event.type.points > 0 {
-                        Text("\(runningTotal)")
+                        // Bracketed to match the period header: two bare
+                        // numbers side by side read as one quantity, and the
+                        // running total is a different kind of number from the
+                        // points just scored (#183).
+                        Text("(\(runningTotal))")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
