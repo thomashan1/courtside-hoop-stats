@@ -235,7 +235,7 @@ struct GameSummaryPrintout: View {
                     Text("2P").frame(maxWidth: .infinity)
                     Text("3P").frame(maxWidth: .infinity)
                     Text("AST").frame(maxWidth: .infinity)
-                    Text("REB").frame(maxWidth: .infinity)
+                    if showsRebounds { Text("REB").frame(maxWidth: .infinity) }
                     // Last, matching the on-screen table.
                     Text("FT").frame(maxWidth: .infinity)
                 }
@@ -261,7 +261,9 @@ struct GameSummaryPrintout: View {
                         statCell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         statCell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         statCell("\(stat.assists)", isNothing: stat.assists == 0)
-                        statCell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
+                        if showsRebounds {
+                            statCell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
+                        }
                         statCell(stat.freeThrowDisplayWithPercent, isNothing: stat.ftAttempts == 0)
                     }
                     .padding(.horizontal, 10)
@@ -326,7 +328,9 @@ struct GameSummaryPrintout: View {
             statCell("\(stats.reduce(0) { $0 + $1.twoPointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.threePointers })", bold: true)
             statCell("\(stats.reduce(0) { $0 + $1.assists })", bold: true)
-            statCell("\(stats.reduce(0) { $0 + $1.rebounds })", bold: true)
+            if showsRebounds {
+                statCell("\(stats.reduce(0) { $0 + $1.rebounds })", bold: true)
+            }
             statCell(ftText, bold: true)
         }
         .padding(.horizontal, 10)
@@ -341,6 +345,13 @@ struct GameSummaryPrintout: View {
     /// `isNothing` fades a stat the player didn't record, matching the
     /// on-screen table. Grey rather than absent: this is a box score people
     /// print and hand around, and a blank cell reads as an omission.
+    /// Whether anyone in this game has a rebound. A column of zeroes reads as
+    /// "nobody got one" rather than "nobody recorded one", and rebounds are
+    /// hard to catch while scoring live (#187).
+    private var showsRebounds: Bool {
+        stats.contains { $0.rebounds > 0 }
+    }
+
     private func statCell(_ text: String, bold: Bool = false,
                           isNothing: Bool = false) -> some View {
         Text(text)

@@ -235,6 +235,24 @@ struct PlayerStatsTable: View {
             .foregroundStyle(isNothing ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
     }
 
+    /// Whether anyone in this game has a rebound.
+    ///
+    /// Rebounds are hard to catch while scoring live, so a column of zeroes is
+    /// the common case — and it costs width in a table that already had to move
+    /// FT% to the PDF to fit. Worse, it reads as "nobody got a rebound" rather
+    /// than "nobody recorded one" (#187).
+    ///
+    /// A live game gains the column the moment the first one is tapped, which
+    /// is right: the table describes what's been recorded.
+    private var showsRebounds: Bool {
+        stats.contains { $0.rebounds > 0 }
+    }
+
+    /// Stat columns after the player name — what the DNP row has to span.
+    private var statColumnCount: Int {
+        showsRebounds ? 6 : 5
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
@@ -244,7 +262,7 @@ struct PlayerStatsTable: View {
                     Text("2P")
                     Text("3P")
                     Text("AST")
-                    Text("REB")
+                    if showsRebounds { Text("REB") }
                     // Last on purpose — see the note above.
                     Text("FT")
                 }
@@ -262,7 +280,9 @@ struct PlayerStatsTable: View {
                         cell("\(stat.twoPointers)", isNothing: stat.twoPointers == 0)
                         cell("\(stat.threePointers)", isNothing: stat.threePointers == 0)
                         cell("\(stat.assists)", isNothing: stat.assists == 0)
-                        cell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
+                        if showsRebounds {
+                            cell("\(stat.rebounds)", isNothing: stat.rebounds == 0)
+                        }
                         // Only "no attempts" recedes. `0/1 (0%)` is a real
                         // trip to the line and reads as such.
                         cell(stat.freeThrowDisplay, isNothing: stat.ftAttempts == 0)
@@ -281,7 +301,7 @@ struct PlayerStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
                         Text("DNP")
-                            .gridCellColumns(6)
+                            .gridCellColumns(statColumnCount)
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
