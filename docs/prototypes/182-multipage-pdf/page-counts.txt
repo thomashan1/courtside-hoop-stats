@@ -1,4 +1,5 @@
-off (today)                  36 events → 1 pages,  53.8 KB
+off (today)                  36 events → 1 pages,  53.6 KB
+short · 2col                 20 events → 2 pages,  83.8 KB
 demo · 1col                  36 events → 3 pages,  95.7 KB
 rebound-heavy · 1col         72 events → 3 pages, 114.6 KB
 long log · 1col             144 events → 5 pages, 159.5 KB
