@@ -242,6 +242,16 @@ not waiting:
    ("add other followers"). `docs/SHARING.md` keeps the full analysis, and the
    prototypes are archived at `archive/144-live-lineup` and
    `archive/169-co-admin-prototype`.
+
+**Branches are not an archive.** `origin` carries `main` plus whatever is
+genuinely in flight — nothing else. A merged or closed PR's branch is deleted
+(GitHub keeps the head ref, so it restores from the PR page), and a branch with
+**no PR** gets an `archive/*` tag *before* it's deleted, since nothing else
+would hold it: `archive/182-multipage-pdf-prototype` (the 1-vs-2-vs-3 column
+comparison that chose two) and `archive/182-row-style-prototype` (eight ways to
+set a printed log row, before zebra striping won) are there for that reason.
+The one live exception is `proposal/175-shooting-options`, kept because #175 is
+still open.
 3. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
    deferred — mid-game lineup tracking is too much work for the tracker. The
    salvaged part (the `Codable` guard) shipped separately.
