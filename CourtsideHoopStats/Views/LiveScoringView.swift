@@ -474,8 +474,13 @@ struct LiveScoringView: View {
                 // The whole roster goes in: `stats(for:)` leaves benched players
                 // out, except any who already scored — hiding those would make
                 // the table disagree with the scoreboard (#59).
-                PlayerStatsTable(stats: game.stats(for: store.team.players),
-                                 didNotPlay: game.didNotPlay(from: store.team.players))
+                // No DNP rows here. "Did not play" is a *post-game* verdict; in
+                // a live game those players are **benched**, and the bench
+                // strip below already names them. This panel is the most
+                // cramped view in the app — wedged between the scoreboard and
+                // the player deck — and the DNP rows were spending two of its
+                // rows to say something wrong (#193).
+                PlayerStatsTable(stats: game.stats(for: store.team.players))
             }
             .padding(.top, 12)
         } label: {

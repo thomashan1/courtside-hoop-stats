@@ -43,6 +43,9 @@ struct FollowingView: View {
                     emptyState
                 }
             }
+            // Same as the Games list: one or two rows per section, so the
+            // default gaps separate almost nothing (#193).
+            .listSectionSpacing(.compact)
             .navigationTitle(selected?.team.name ?? "Following")
             // Freshness (and who shared it, #120) belongs in chrome, not
             // content: it's always visible, system-styled, and costs no room

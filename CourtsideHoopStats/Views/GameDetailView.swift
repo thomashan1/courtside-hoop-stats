@@ -22,7 +22,20 @@ struct GameDetailView: View {
 
     var body: some View {
         Form {
-            Section("Details") {
+            // One section, not three. "Details" held a single row (Format) for
+            // a header, a card and a gap — about 140pt for one value — and the
+            // split between "Details" and "Opponent" was arbitrary: every row
+            // here describes the same game (#193).
+            //
+            // `Opponent` itself is gone: the navigation title already reads
+            // "vs Riverside", so the row restated what was on screen.
+            Section {
+                LabeledContent("Date", value: game.date.gameDayAndTime)
+                LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
+                LabeledContent("Jersey") {
+                    JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
+                }
+                LabeledContent("Format", value: game.periodFormat.displayName)
                 if !game.league.isEmpty { LabeledContent("League", value: game.league) }
                 if !game.location.isEmpty {
                     VStack(alignment: .leading, spacing: 2) {
@@ -32,18 +45,10 @@ struct GameDetailView: View {
                         }
                     }
                 }
-                LabeledContent("Format", value: game.periodFormat.displayName)
             }
 
-            Section("Opponent") {
-                LabeledContent("Opponent", value: game.opponent)
-                LabeledContent("Home / Away", value: game.isHome ? "Home" : "Away")
-                LabeledContent("Jersey") {
-                    JerseyIndicator(color: store.team.jersey(isHome: game.isHome))
-                }
-                LabeledContent("Date", value: game.date.gameDayAndTime)
-            }
-
+            // Both actions in one section: two single-button cards cost ~90pt
+            // of gap to separate a button from a button.
             Section {
                 Button {
                     start()
@@ -59,9 +64,7 @@ struct GameDetailView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-            }
 
-            Section {
                 Button(role: .destructive) {
                     delete()
                 } label: {
