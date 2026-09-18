@@ -209,7 +209,11 @@ final class ScreenshotUITests: XCTestCase {
 
         // 4) Roster tab.
         app.tabBars.buttons["Roster"].tap()
-        XCTAssertTrue(app.staticTexts["Players"].waitForExistence(timeout: 10))
+        // A player, not the section header: the header is gone (#193), and a
+        // name proves the roster actually rendered rather than proving a label
+        // exists. The Roster keeps full names where the game screens shorten
+        // them.
+        XCTAssertTrue(app.staticTexts["Nicholas H."].waitForExistence(timeout: 10))
         snap(app, "04-roster")
 
         // 4b) Settings → team management (#20).

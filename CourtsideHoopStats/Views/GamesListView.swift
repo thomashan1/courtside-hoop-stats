@@ -94,6 +94,10 @@ struct GamesListView: View {
                 }
             }
             // Show the active team name (multi-team) — the tab bar labels it "Games".
+            // Sections here hold one or two rows each — Playing Now and
+            // Coming Up are usually a single game — so the default
+            // inset-grouped gaps cost ~90pt to separate almost nothing (#193).
+            .listSectionSpacing(.compact)
             .navigationTitle(store.team.name)
             .navigationSubtitle(sharedSubtitle)
             .confirmationDialog("Delete this game?",
@@ -324,10 +328,12 @@ struct GameRowView: View {
                     // this row exists to answer.
                     Text(game.date.gameDayCompact)
                         .layoutPriority(1)
-                    if !game.location.isEmpty {
-                        Text("·")
-                        Text(game.location)
-                    }
+                    // Location is deliberately absent. At this width it
+                    // truncated to "Bayview Middl…" / "Riverside Comm…", which
+                    // identifies no gym — and the date is what distinguishes
+                    // one game from another in this list anyway. It's in full
+                    // on the detail and summary screens (#193).
+                    
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

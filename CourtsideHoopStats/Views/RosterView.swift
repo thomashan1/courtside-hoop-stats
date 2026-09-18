@@ -10,7 +10,10 @@ struct RosterView: View {
             List {
                 // Roster is players-only. Team name/jersey and switching the
                 // active team all live in Settings now.
-                Section("Players") {
+                // No section header: the tab says Roster and the title says the
+                // team name. A third label for one list earned nothing but
+                // ~30pt (#193).
+                Section {
                     if store.team.players.isEmpty {
                         Text("No players yet. Tap ✚ to add your roster.")
                             .foregroundStyle(.secondary)
@@ -21,7 +24,17 @@ struct RosterView: View {
                             editingPlayer = player
                         } label: {
                             HStack(spacing: 12) {
-                                JerseyBadge(number: player.number, size: 36)
+                                // 28, not 36: the badge was setting the row
+                                // height, and a roster of 12 didn't fit a
+                                // screen for a name and a number (#193).
+                                //
+                                // No `minHeight: 44` here — that was the first
+                                // attempt and it made rows *taller*, because
+                                // the content is shorter than 44 so the floor
+                                // added height and the list's own insets
+                                // stacked on top. 28 + default insets already
+                                // clears 44.
+                                JerseyBadge(number: player.number, size: 28)
                                 Text(player.name)
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -30,6 +43,10 @@ struct RosterView: View {
                                     .foregroundStyle(.tertiary)
                             }
                         }
+                        // Without this the Button tints its whole label, so the
+                        // names rendered accent-blue and read as links despite
+                        // being explicitly `.primary` (#193).
+                        .buttonStyle(.plain)
                     }
                     .onDelete { store.deletePlayers(at: $0) }
                 }
