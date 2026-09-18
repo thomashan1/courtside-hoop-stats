@@ -32,9 +32,17 @@ followers, 3-pointers badged in the Score Log, a `Codable` data-loss guard).
 game, the **Score Log printed as page 2+** of the box score PDF, running totals
 in period headers, and the REB column hidden when a game has none.
 
-**v1.9 is open**: Following moved to the left of the tab bar, a short Score Log
-centred on its PDF page, and a list-density pass across Games, Following,
-Roster and the scheduled-game detail (#193).
+**v1.9 is in review** (build 157, submitted 2026-09-18): Following moved to the
+left of the tab bar, a short Score Log centred on its PDF page, and a
+list-density pass across Games, Following, Roster and the scheduled-game
+detail (#193).
+
+**v1.10 is the open train** — `MARKETING_VERSION` was bumped while v1.9 was
+still in review, which is the pattern that avoids `ITMS-90186`: approval closes
+a train, and since Xcode Cloud builds every push, the first commit after
+approval fails otherwise. **1.10, not 2.0** — App Store Connect compares
+version components numerically, so 1.10 > 1.9, and 2.0 should be spent on a
+release that earns it.
 
 The CloudKit schema is deployed to Production and verified for **both**
 features — sharing (two TestFlight builds shared and followed each other's

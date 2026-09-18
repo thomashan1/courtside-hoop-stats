@@ -490,9 +490,15 @@ ever exercised the Development schema.
 4. Testers install through the **TestFlight app**.
 
 **Xcode Cloud assigns its own build numbers** — they run in their own sequence
-(70s at the time of writing) rather than following `CURRENT_PROJECT_VERSION`.
+(150s at the time of writing) rather than following `CURRENT_PROJECT_VERSION`.
 So there's normally no need to bump that by hand for a TestFlight build;
 `MARKETING_VERSION` still has to change for a new App Store version.
+
+`CURRENT_PROJECT_VERSION` used to mirror the marketing version with the dot
+removed (1.9 → 19). That convention **breaks at a two-digit minor**: 1.10 → 110
+would make a later 2.0 → 20 a *decrease*, which Apple rejects on a manual
+upload. It's now simply incremented (1.10 ships as 20), since the only thing
+that reads it is the manual-archive fallback.
 
 ⚠️ **Production CloudKit is a different store**, and switching between them
 splits cleanly along that line. Verified by installing a TestFlight build over a
