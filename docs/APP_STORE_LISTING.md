@@ -37,56 +37,23 @@ screenshots or iPad review required.**
 
 ## 2. Promotional text (170 char max — editable anytime, no review)
 
-**Rule: always name the three most recent features worth calling out.** Not one
-headline, not a slogan — three, newest first. This field is the only part of
-the listing that can change without a review, so it's where the page stays
-current; a description built to last plus a promo line that rolls every release
-is the whole strategy.
+**Left empty, deliberately.** It renders *above* the description on the product
+page, in the same block and the same type, so it reads as the app's opening
+line — and a feature list in that slot buried the actual opening ("The fast and
+easy way to keep your team's basketball stats"). Thomas removed it 2026-09-18
+after seeing it live.
 
-> New: automatic iCloud backup — lose the phone, keep the season • full play-by-play in every box score PDF • rebounds in one tap
+An earlier rule here was to keep the three most recent features in this field,
+rotating them each release. That's retired with the field.
 
-_(127 chars.)_
+**What this costs:** the **iCloud backup** and the **full play-by-play in the
+box score PDF** are now named nowhere in the listing — the description (§4)
+covers scoring, the story, sharing and privacy, and nothing else does. If
+either should be visible to a reader before install, it belongs in the
+description at the next version, not here.
 
-The current three, newest first — **update this list and the line together on
-every release**, dropping the oldest as a new one lands:
-
-| # | Feature | Shipped |
-|---|---|---|
-| 1 | Automatic iCloud backup, with browse-and-pick restore | v1.8 (#177) |
-| 2 | Full play-by-play in the box score PDF | v1.8 (#182) |
-| 3 | Rebounds, one tap | v1.7 (#174) |
-
-Next in line when one drops off: **assists** (v1.6, #143), then **notes shown
-to followers** (v1.7). A polish-only release like v1.9 adds nothing to the
-list — the window just stays where it is rather than being padded with
-something nobody would call a feature.
-
-**Fitting three into 170 characters** is the constraint that shapes the line.
-What works: lead with the strongest one and give it the only bit of colour
-("lose the phone, keep the season"), then separate the other two with ` • `.
-What doesn't: three equal clauses, which reads as a changelog and wastes the
-hook.
-
-**One paragraph, never numbered items** — even though three numbered lines fit
-inside 170 characters. Promotional text renders at the **top of the
-description block**, which the product page collapses behind a *more* link
-after a few lines: a four-line promo consumes the whole visible preview and
-pushes the description's opening line — the one that says what the app is —
-out of sight. The ` • ` separators buy the scannability of a list without
-spending a line break on it. Numbering belongs in *What's New* (§5), which is
-read as a changelog; this field is the hook above it.
-
-This field also covers what §4's description deliberately leaves out — the
-backup and the PDF are named nowhere else on the page.
-
-Editable anytime without review, so it can be swapped the day something changes,
-without waiting on a submission — including while a version is in review. It
-sits above the description on the App Store page, so it's read first and often
-instead.
-
-The evergreen fallback, if there is ever nothing recent to name: "Tap a player,
-tap the basket — the team score adds itself. The fastest way to keep
-youth-basketball stats from the sideline, one-handed." (136 chars.)
+If it's ever re-enabled, one short line, and never a list: whatever is newest,
+in the app's own voice.
 
 ## 3. Keywords (100 char max, comma-separated, NO spaces)
 
