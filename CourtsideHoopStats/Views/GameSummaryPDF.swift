@@ -13,7 +13,10 @@ import PDFKit
 
 // MARK: - Page geometry
 
-private enum Page {
+/// Shared by page 1 (`GameSummaryPrintout`) and the Score Log pages
+/// (`ScoreLogPrintoutPage`), so every sheet in the document has the same
+/// trim and margin. Internal rather than file-private for that reason.
+enum PrintPage {
     /// US Letter at 72dpi. Letter rather than A4 because the audience is a US
     /// youth league; it also prints acceptably on A4 with default scaling.
     static let size = CGSize(width: 612, height: 792)
@@ -94,12 +97,12 @@ struct GameSummaryPrintout: View {
             Spacer(minLength: 0)
             footer
         }
-        .padding(Page.margin)
+        .padding(PrintPage.margin)
         // `minHeight` rather than a fixed height: a normal game lands on exactly
         // one Letter page (the Spacer absorbing the slack), while an unusually
         // long roster grows the page instead of being clipped or shrunk.
-        .frame(width: Page.size.width)
-        .frame(minHeight: Page.size.height, alignment: .topLeading)
+        .frame(width: PrintPage.size.width)
+        .frame(minHeight: PrintPage.size.height, alignment: .topLeading)
         .background(Color.white)
         // Paper is white regardless of the device appearance, and print output
         // must not depend on the reader's Dynamic Type setting.
@@ -410,9 +413,18 @@ struct GameSummaryPrintout: View {
                     .foregroundStyle(Color.teamAccent)
             }
             Spacer()
-            Text(Date.now.formatted(date: .abbreviated, time: .shortened))
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(Date.now.formatted(date: .abbreviated, time: .shortened))
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                // Which build produced this sheet. A PDF outlives the app that
+                // made it — it gets forwarded, saved and quoted back weeks
+                // later — so when someone reports a number looking wrong, this
+                // is the only way to know what was actually running.
+                Text("v\(BuildInfo.version) (\(BuildInfo.build))")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.top, 4)
         .overlay(alignment: .top) {
@@ -485,12 +497,15 @@ enum GameSummaryPDF {
     static let appStoreURL = URL(string:
         "https://apps.apple.com/us/app/courtside-hoop-stats/id6791865094")!
 
-    /// Renders the box score to a single-page PDF in the temporary directory
-    /// and returns its URL, or `nil` if the PDF context couldn't be created.
+    /// Renders the box score to a PDF in the temporary directory and returns its
+    /// URL, or `nil` if the PDF context couldn't be created.
     ///
-    /// The page is scaled to fit rather than paginated: a box score is far more
-    /// useful to share as one page, and a youth roster comfortably fits. A very
-    /// large roster shrinks slightly instead of spilling onto a second page.
+    /// **Page 1 is the box score and is never paginated**: a box score is far
+    /// more useful as one page, and a youth roster comfortably fits. A long
+    /// roster or a long note grows that page rather than spilling onto a second.
+    ///
+    /// `log` optionally appends the **Score Log** on page 2+ (#182) — a separate
+    /// print layout with its own pagination, which cannot affect page 1.
     /// - Parameter roster: the **full** team roster; benched players are listed
     ///   as DNP rows rather than dropped.
     /// - Parameter kit: the team's colour, for the jersey bubbles. Passed rather
@@ -498,16 +513,24 @@ enum GameSummaryPDF {
     ///   view hierarchy, so nothing set by the presenting screen reaches here.
     @MainActor
     static func render(game: Game, teamName: String, roster: [Player],
-                       kit: JerseyColor = .blue) -> URL? {
+                       kit: JerseyColor = .blue,
+                       log: ScoreLogPrintOption = .twoColumn) -> URL? {
         let page = GameSummaryPrintout(game: game, teamName: teamName, roster: roster)
             .environment(\.teamKitColor, kit)
 
         let renderer = ImageRenderer(content: page)
-        renderer.proposedSize = ProposedViewSize(width: Page.size.width, height: nil)
+        renderer.proposedSize = ProposedViewSize(width: PrintPage.size.width, height: nil)
 
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(filename(for: game, teamName: teamName))
-        var result: URL?
+
+        // Paginated up front, so the page count is known before anything is
+        // drawn — the footer says "Page 2 of 3", which can't be written while
+        // still discovering how many there are.
+        let logColumns = paginatedLog(for: game, option: log)
+        let totalPages = 1 + logColumns.count
+
+        var context: CGContext?
 
         // The media box is taken from the *rendered* size rather than forced to
         // Letter. The page already carries a Letter minimum, so this is Letter
@@ -516,19 +539,70 @@ enum GameSummaryPDF {
         renderer.render { size, drawInContext in
             var mediaBox = CGRect(origin: .zero, size: size)
             guard let consumer = CGDataConsumer(url: url as CFURL),
-                  let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
+                  let pdf = CGContext(consumer: consumer, mediaBox: &mediaBox, nil)
             else { return }
 
-            context.beginPDFPage(nil)
-            drawInContext(context)
-            context.endPDFPage()
-            context.closePDF()
-            result = url
+            pdf.beginPDFPage(nil)
+            drawInContext(pdf)
+            pdf.endPDFPage()
+            context = pdf
         }
 
-        guard let written = result else { return nil }
-        addAppStoreLink(to: written)
-        return written
+        guard let context else { return nil }
+
+        // Each log page carries its **own** media box. The document's default
+        // box is page 1's rendered height, which a long note can push past
+        // Letter — without a per-page box, a tall page 1 would silently make
+        // every log page tall too.
+        for (index, columns) in logColumns.enumerated() {
+            let logPage = ScoreLogPrintoutPage(game: game,
+                                               teamName: teamName,
+                                               roster: roster,
+                                               columns: columns,
+                                               columnCount: log.columns,
+                                               pageNumber: index + 2,
+                                               pageCount: totalPages)
+                .environment(\.teamKitColor, kit)
+
+            let logRenderer = ImageRenderer(content: logPage)
+            logRenderer.proposedSize = ProposedViewSize(width: PrintPage.size.width,
+                                                        height: PrintPage.size.height)
+            logRenderer.render { size, drawInContext in
+                context.beginPDFPage(pageInfo(mediaBox: CGRect(origin: .zero, size: size)))
+                drawInContext(context)
+                context.endPDFPage()
+            }
+        }
+
+        context.closePDF()
+        addAppStoreLink(to: url)
+        return url
+    }
+
+    /// The log split into pages of columns, or empty when the log is off or the
+    /// game has no events.
+    static func paginatedLog(for game: Game,
+                             option: ScoreLogPrintOption) -> [[[ScoreLogPrintRow]]] {
+        guard option != .off, !game.events.isEmpty else { return [] }
+        return ScoreLogPaginator.paginate(rows: ScoreLogPaginator.rows(for: game),
+                                          columns: option.columns,
+                                          columnHeight: logColumnHeight)
+    }
+
+    /// Height available to a column of log rows on a Letter page: the trim, less
+    /// both margins, the repeated header and the footer.
+    static let logColumnHeight: CGFloat =
+        PrintPage.size.height - PrintPage.margin * 2
+        - 26   // header line + rule
+        - 8    // stack spacing under the header
+        - 22   // footer rule + line
+
+    /// A per-page media box, for a document whose pages aren't all the same
+    /// size. `kCGPDFContextMediaBox` takes the `CGRect` as raw `CFData`.
+    private static func pageInfo(mediaBox: CGRect) -> CFDictionary {
+        var box = mediaBox
+        let data = withUnsafeBytes(of: &box) { Data($0) } as CFData
+        return [kCGPDFContextMediaBox as String: data] as CFDictionary
     }
 
     /// e.g. `Swish-Warriors-vs-Lakeside-Lightning-2026-08-02.pdf`.
@@ -555,22 +629,26 @@ enum GameSummaryPDF {
     /// a separate layer, so they have to be added afterwards — here via PDFKit
     /// (a system framework, so no new dependency).
     private static func addAppStoreLink(to url: URL) {
-        guard let document = PDFDocument(url: url),
-              let page = document.page(at: 0)
-        else { return }
+        guard let document = PDFDocument(url: url) else { return }
 
         // PDF coordinates put the origin at the *bottom* left, so the footer is
         // a fixed offset from y = 0 no matter how tall the page ended up. The
         // box deliberately covers both footer lines, making the wordmark
         // tappable as well as the "Get the app" line.
-        let hotspot = CGRect(x: Page.margin,
-                             y: Page.margin - 4,
+        let hotspot = CGRect(x: PrintPage.margin,
+                             y: PrintPage.margin - 4,
                              width: 200,
                              height: 30)
 
-        let link = PDFAnnotation(bounds: hotspot, forType: .link, withProperties: nil)
-        link.action = PDFActionURL(url: appStoreURL)
-        page.addAnnotation(link)
+        // Every page, not just the first: a log page travels on its own once
+        // someone forwards or prints it, and a footer that looks tappable but
+        // isn't is worse than no link at all.
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { continue }
+            let link = PDFAnnotation(bounds: hotspot, forType: .link, withProperties: nil)
+            link.action = PDFActionURL(url: appStoreURL)
+            page.addAnnotation(link)
+        }
 
         document.write(to: url)
     }
