@@ -135,12 +135,10 @@ broken mid-sentence on the product page. Everything else in these docs wraps at
 76 characters; these blocks deliberately don't.
 
 > NEW
->
 > 1. Your games and teams are now backed up automatically to your own iCloud, and you can restore them on a new phone. Settings shows when the last backup ran.
 > 2. The box score PDF now includes the full play-by-play, with each quarter's score where it ends.
 >
 > FIXES
->
 > 1. The Score Log shows the running score at the end of each quarter, not just the points scored in it.
 > 2. Rebounds are hidden from the stats table for games where none were recorded, instead of a column of zeros.
 > 3. Long notes are no longer cut off in the PDF.
@@ -153,12 +151,10 @@ from the person who actually tracks the games. The Score Log changes are real
 but small, so they ride as fixes rather than taking a numbered slot.
 
 > NEW
->
 > 1. Track rebounds — tap a player, then REB. One tap, no offensive/defensive
 >    split to slow you down, and they show up in the box score and the PDF.
 >
 > FIXES
->
 > 1. Threes now stand out in the Score Log, so you can tell a 2 from a 3 at a
 >    glance mid-game.
 > 2. The Score Log fits more of the game on screen.
@@ -186,7 +182,6 @@ up.
 > • Players who didn't record a stat now fade back, so the scorers stand out.
 >
 > FIXES
->
 > • The invite link screen now explains that a person has to be added before
 >   the link will work for them.
 > • Games you delete now sync to followers more reliably, even if you close the
@@ -199,12 +194,10 @@ up.
 ### v1.5 — submitted 2026-09-05
 
 > NEW
->
 > 1. Started a game by mistake? Move it back to Scheduled — as long as
 >    nothing's been scored yet.
 >
 > FIXES
->
 > 1. The scheduled game screen's title is now properly centered.
 > 2. The Start Game button's icon is back, sitting next to a centered label.
 > 3. The box score PDF's quarter-by-quarter table now lines up correctly
@@ -213,7 +206,6 @@ up.
 ### v1.4 — submitted 2026-09-02
 
 > NEW
->
 > 1. See who shared a team with you — "Shared by Jean."
 > 2. Follow more than one team and switch between them right from the
 >    Following tab.
@@ -222,12 +214,10 @@ up.
 ### v1.3 — submitted 2026-09-02
 
 > NEW
->
 > 1. Following a team now looks simpler — just Following and Settings, no
 >    unused Games/Roster tabs cluttering things up.
 >
 > FIXES
->
 > 1. Tapping a shared team invite now shows it's working instead of looking
 >    stuck, and takes you straight to the game.
 > 2. Scoring a three no longer pauses for a celebration animation — faster,
@@ -236,13 +226,11 @@ up.
 ### v1.2 — submitted 2026-08-17, approved and released 2026-08-18
 
 > NEW
->
 > 1. Share a team so family can follow the live score and player stats from
 >    their own iPhone — with optional alerts each quarter and at the final.
 > 2. Choose your team's colour.
 >
 > FIXES
->
 > 1. Stays readable and usable at the largest text sizes.
 > 2. Buttons in Settings and on the scoring screen no longer miss taps.
 > 3. Deleting a team now asks first.
@@ -268,11 +256,9 @@ later release's notes once it isn't news.
 ### v1.1 — submitted 2026-08-04, approved 2026-08-17
 
 > NEW
->
 > 1. Share a one-page PDF box score after the game.
 >
 > FIXES
->
 > 1. The "+" button on the Games tab no longer misses taps.
 > 2. Player totals now match the final score when someone is benched.
 
