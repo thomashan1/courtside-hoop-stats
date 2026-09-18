@@ -82,11 +82,33 @@ struct EventLogView: View {
             Rectangle()
                 .fill(Color(.separator))
                 .frame(height: 1)
+            // `fixedSize` on both: without it they compete with the rule for
+            // width and get squeezed to nothing — the first attempt at this
+            // compiled fine and rendered invisibly.
             Text("\(ourPoints(in: period)) pts")
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
+                .fixedSize()
+            // The running total, bracketed — and the rows bracket theirs the
+            // same way, so the parentheses read as one consistent column
+            // rather than a quirk of the header (#183).
+            Text("(\(cumulativePoints(through: period)))")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .fixedSize()
+            // An invisible chevron, so the total lands in the same column as a
+            // row's when rows carry one. Rows put the chevron *after* the
+            // total, so without this placeholder the header's number sits a
+            // chevron's width to the right of every row's.
+            if isEditable {
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .hidden()
+            }
         }
+        .padding(.horizontal, 10)
         .padding(.vertical, 4)
         // Opaque behind the sticky header so scrolling rows don't show through.
         .background(pinsPeriodHeaders ? Color(.systemGroupedBackground) : Color.clear)
@@ -124,6 +146,11 @@ struct EventLogView: View {
 
     private func ourPoints(in period: Int) -> Int {
         game.events.filter { $0.period == period }.reduce(0) { $0 + $1.type.points }
+    }
+
+    /// Our score at the end of `period` — every event up to and including it.
+    private func cumulativePoints(through period: Int) -> Int {
+        game.events.filter { $0.period <= period }.reduce(0) { $0 + $1.type.points }
     }
 
     /// Cumulative team points after each event, in chronological order,
@@ -241,7 +268,11 @@ struct EventLogRow: View {
                         // label, since the badge is there for a sighted glance.
                         .accessibilityLabel(event.type.scoreLogLabel)
                     if event.type.points > 0 {
-                        Text("\(runningTotal)")
+                        // Bracketed to match the period header: two bare
+                        // numbers side by side read as one quantity, and the
+                        // running total is a different kind of number from the
+                        // points just scored (#183).
+                        Text("(\(runningTotal))")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
