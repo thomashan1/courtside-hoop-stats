@@ -22,11 +22,19 @@ Editors that follow this: `PlayerEditSheet`, `EditGameSheet`, `EventEditSheet`,
 
 - **Swipe-to-delete** (trailing) in every list: Roster, Games, Score Log editor.
 - A red destructive **"Delete …"** button at the bottom of that record's edit
-  sheet (the Contacts pattern).
-- **Confirm only when the delete loses *other* data** — deleting a team removes
-  its games; deleting a played game removes its recorded scores. Use a
-  `confirmationDialog`. Simple deletes (a player, an empty scheduled game) don't
-  need confirmation — swipe is already deliberate.
+  sheet (the Contacts pattern) — or, on a detail screen that has no edit sheet
+  of its own, at the foot of the screen as **plain red text: no card, no pill,
+  no fill**, below the primary action's card (the scheduled game's Delete
+  Game). A filled or tinted button there ranks the delete alongside the primary
+  action and invites the tap; plain text still reads as destructive because of
+  the colour and the trash glyph. Keep the row at 44pt (#195).
+- **Confirm when the delete loses *other* data, or when one tap can trigger it**
+  — deleting a team removes its games; deleting a played game removes its
+  recorded scores; and a delete that sits on screen as its own control is one
+  mis-tap from gone. Use a `confirmationDialog`. A **swipe** delete of something
+  cheap (a player, an empty scheduled game) still needs none — the swipe is
+  already deliberate. That's the split: the gesture carries the intent, a
+  button doesn't.
 
 ### Confirming a swipe delete — the crash to avoid
 
