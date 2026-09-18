@@ -52,6 +52,10 @@ enum ScoreLogPrintRow: Identifiable {
     /// column that carries on a period started in the previous one.
     case periodHeader(period: Int, our: Int, opponent: Int?, continued: Bool)
     case event(GameEvent, runningTotal: Int)
+    /// Closes a period with the score **at the buzzer**. A real row rather
+    /// than an overlay, so the paginator accounts for its height and a period
+    /// can't be split from the line that closes it.
+    case periodFooter(period: Int, our: Int, opponent: Int?)
 
     var id: String {
         switch self {
@@ -59,6 +63,8 @@ enum ScoreLogPrintRow: Identifiable {
             return "h\(period)\(continued ? "c" : "")"
         case let .event(event, _):
             return event.id.uuidString
+        case let .periodFooter(period, _, _):
+            return "f\(period)"
         }
     }
 
@@ -66,6 +72,7 @@ enum ScoreLogPrintRow: Identifiable {
         switch self {
         case .periodHeader: return Self.headerHeight
         case .event:        return Self.eventHeight
+        case .periodFooter: return Self.footerHeight
         }
     }
 
@@ -74,11 +81,14 @@ enum ScoreLogPrintRow: Identifiable {
     static let eventHeight: CGFloat = 15
     /// The period header carries its own rule and breathing space above.
     static let headerHeight: CGFloat = 22
+    /// The closing line: a rule plus the score, no taller than it has to be.
+    static let footerHeight: CGFloat = 14
 
     var period: Int {
         switch self {
         case let .periodHeader(period, _, _, _): return period
         case let .event(event, _):               return event.period
+        case let .periodFooter(period, _, _):    return period
         }
     }
 
@@ -120,6 +130,10 @@ enum ScoreLogPaginator {
                                     .sorted(by: { $0.timestamp < $1.timestamp }) {
                 rows.append(.event(event, runningTotal: totals[event.id] ?? 0))
             }
+            // The score belongs where the period ends. On the header it read as
+            // the score going *into* the quarter, which is the opposite of what
+            // it means.
+            rows.append(.periodFooter(period: period, our: ours, opponent: line?.opponent))
         }
         return rows
     }
@@ -257,8 +271,21 @@ struct ScoreLogPrintoutPage: View {
             HStack(alignment: .top, spacing: 16) {
                 ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
                     VStack(alignment: .leading, spacing: 0) {
-                        ForEach(column) { row in
+                        // Zebra striping, counted *within a period* so the
+                        // banding restarts under each header rather than
+                        // drifting out of phase after an odd-length quarter.
+                        //
+                        // The action and the running total are already in hard
+                        // columns; what fails is the eye tracking across the
+                        // gap from the name. A tint is the standard fix for
+                        // that in printed tables, and it costs no vertical
+                        // space — which matters when the whole point is
+                        // fitting the log in as few sheets as possible.
+                        ForEach(Array(column.enumerated()), id: \.element.id) { index, row in
                             rowView(row)
+                                .background(stripe(at: index, in: column)
+                                            ? Color.black.opacity(0.07)
+                                            : Color.clear)
                         }
                         Spacer(minLength: 0)
                     }
@@ -310,16 +337,33 @@ struct ScoreLogPrintoutPage: View {
             .joined(separator: "  ·  ")
     }
 
+    /// Same furniture as page 1's footer — wordmark, tappable App Store line,
+    /// version — plus the page number.
+    ///
+    /// A log page gets forwarded, printed or screenshotted on its own, so a
+    /// page that can't say what made it or where to get it is a dead end. The
+    /// link annotation is attached to **every** page after rendering, for the
+    /// same reason (`GameSummaryPDF.addAppStoreLink`).
     private var footer: some View {
-        HStack {
-            Text("Courtside Hoop Stats")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(.secondary)
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Courtside Hoop Stats")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text("Get the app on the App Store ↗")
+                    .font(.system(size: 8.5))
+                    .foregroundStyle(Color.teamAccent)
+            }
             Spacer()
-            Text("Page \(pageNumber) of \(pageCount)")
-                .font(.system(size: 9))
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text("Page \(pageNumber) of \(pageCount)")
+                    .font(.system(size: 9))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                Text("v\(BuildInfo.version) (\(BuildInfo.build))")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.top, 4)
         .overlay(alignment: .top) {
@@ -329,6 +373,19 @@ struct ScoreLogPrintoutPage: View {
 
     // MARK: Rows
 
+    /// Whether this row takes the tint. Period headers never do — they're
+    /// already the strongest thing in the column — and the count restarts at
+    /// each one.
+    private func stripe(at index: Int, in column: [ScoreLogPrintRow]) -> Bool {
+        guard !column[index].isHeader else { return false }
+        var position = 0
+        for row in column[..<index].reversed() {
+            if row.isHeader { break }
+            position += 1
+        }
+        return position.isMultiple(of: 2)
+    }
+
     @ViewBuilder
     private func rowView(_ row: ScoreLogPrintRow) -> some View {
         switch row {
@@ -336,7 +393,35 @@ struct ScoreLogPrintoutPage: View {
             periodHeader(period: period, our: our, opponent: opponent, continued: continued)
         case let .event(event, runningTotal):
             eventRow(event, runningTotal: runningTotal)
+        case let .periodFooter(period, our, opponent):
+            periodFooter(period: period, our: our, opponent: opponent)
         }
+    }
+
+    /// The closing line: a rule, then the score at the buzzer.
+    private func periodFooter(period: Int, our: Int, opponent: Int?) -> some View {
+        VStack(spacing: 2) {
+            Rectangle()
+                .fill(Color.black.opacity(0.28))
+                .frame(height: 0.6)
+            HStack(spacing: 4) {
+                Spacer()
+                Text("End \(game.periodFormat.periodLabel(period))")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+                // Named, not a bare "24–8": a log page gets read on its own,
+                // and which number belongs to whom is exactly what a reader
+                // can't infer from two digits. First word only — the full
+                // names don't fit a two-column page.
+                Text(scoreLine(our: our, opponent: opponent))
+                    .font(.system(size: 9, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+        }
+        .frame(height: ScoreLogPrintRow.footerHeight)
     }
 
     /// `Q1` on the left, the score at the buzzer on the right.
@@ -354,14 +439,20 @@ struct ScoreLogPrintoutPage: View {
                 .foregroundStyle(Color.teamAccent)
                 .tracking(0.5)
             Rectangle().fill(Color.black.opacity(0.12)).frame(height: 0.5)
-            if let opponent {
-                Text("\(our)–\(opponent)")
-                    .font(.system(size: 9, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
+            // The score used to sit here, which read as the score *going into*
+            // the quarter. It closes the period instead — see `periodFooter`.
         }
         .frame(height: ScoreLogPrintRow.headerHeight, alignment: .bottom)
+    }
+
+    /// `Swish 24 – Lakeside 8`, or just our score when the opponent's wasn't
+    /// recorded for that period.
+    private func scoreLine(our: Int, opponent: Int?) -> String {
+        let us = teamName.split(separator: " ").first.map(String.init) ?? teamName
+        guard let opponent else { return "\(us) \(our)" }
+        let them = game.opponent.split(separator: " ").first.map(String.init)
+            ?? (game.opponent.isEmpty ? "Opp" : game.opponent)
+        return "\(us) \(our) – \(them) \(opponent)"
     }
 
     private func eventRow(_ event: GameEvent, runningTotal: Int) -> some View {
@@ -420,7 +511,10 @@ struct ScoreLogPrintoutPage: View {
     static func printLabel(for type: EventType) -> String {
         switch type {
         case .twoPoint:   return "2PT"
-        case .threePoint: return "3PT"
+        // Badged on paper too, matching the screen (#172). The printed log is
+        // the same document read the same way — a three should be findable
+        // without reading every row here as well.
+        case .threePoint: return "\u{1F389} 3PT"
         case .ftMade:     return "FT"
         case .ftMissed:   return "FT ✗"
         case .rebound:    return "REB"

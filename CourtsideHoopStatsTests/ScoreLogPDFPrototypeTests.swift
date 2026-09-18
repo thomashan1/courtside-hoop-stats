@@ -304,12 +304,19 @@ final class ScoreLogPDFPrototypeTests: XCTestCase {
         XCTAssertTrue(logText.contains("Page 2 of \(pdf.pageCount)"), "page numbering missing")
         XCTAssertTrue(logText.contains(team.name), "log page doesn't say whose game it is")
 
-        // The App Store link annotation stays on page 1 only.
-        XCTAssertEqual(try XCTUnwrap(pdf.page(at: 0)).annotations.filter { $0.type == "Link" }.count, 1)
-        for index in 1..<pdf.pageCount {
-            XCTAssertTrue(try XCTUnwrap(pdf.page(at: index)).annotations.isEmpty,
-                          "unexpected annotation on a log page")
+        // **Every** page carries the App Store link, not just page 1: a log
+        // page gets forwarded or printed on its own, and a footer that looks
+        // tappable but isn't is worse than no link at all.
+        for index in 0..<pdf.pageCount {
+            let links = try XCTUnwrap(pdf.page(at: index)).annotations
+                .filter { $0.type == "Link" }
+            XCTAssertEqual(links.count, 1,
+                           "page \(index + 1) should carry exactly one App Store link")
         }
+
+        // And every page says which build made it, for the same reason.
+        XCTAssertTrue(logText.contains("v\(BuildInfo.version)"),
+                      "log page doesn't say which build produced it")
     }
 
     /// The running total on the printed log has to be the same number the screen

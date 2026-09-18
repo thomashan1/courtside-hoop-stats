@@ -413,9 +413,18 @@ struct GameSummaryPrintout: View {
                     .foregroundStyle(Color.teamAccent)
             }
             Spacer()
-            Text(Date.now.formatted(date: .abbreviated, time: .shortened))
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 1) {
+                Text(Date.now.formatted(date: .abbreviated, time: .shortened))
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                // Which build produced this sheet. A PDF outlives the app that
+                // made it — it gets forwarded, saved and quoted back weeks
+                // later — so when someone reports a number looking wrong, this
+                // is the only way to know what was actually running.
+                Text("v\(BuildInfo.version) (\(BuildInfo.build))")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.top, 4)
         .overlay(alignment: .top) {
@@ -505,7 +514,7 @@ enum GameSummaryPDF {
     @MainActor
     static func render(game: Game, teamName: String, roster: [Player],
                        kit: JerseyColor = .blue,
-                       log: ScoreLogPrintOption = .off) -> URL? {
+                       log: ScoreLogPrintOption = .twoColumn) -> URL? {
         let page = GameSummaryPrintout(game: game, teamName: teamName, roster: roster)
             .environment(\.teamKitColor, kit)
 
@@ -620,9 +629,7 @@ enum GameSummaryPDF {
     /// a separate layer, so they have to be added afterwards — here via PDFKit
     /// (a system framework, so no new dependency).
     private static func addAppStoreLink(to url: URL) {
-        guard let document = PDFDocument(url: url),
-              let page = document.page(at: 0)
-        else { return }
+        guard let document = PDFDocument(url: url) else { return }
 
         // PDF coordinates put the origin at the *bottom* left, so the footer is
         // a fixed offset from y = 0 no matter how tall the page ended up. The
@@ -633,9 +640,15 @@ enum GameSummaryPDF {
                              width: 200,
                              height: 30)
 
-        let link = PDFAnnotation(bounds: hotspot, forType: .link, withProperties: nil)
-        link.action = PDFActionURL(url: appStoreURL)
-        page.addAnnotation(link)
+        // Every page, not just the first: a log page travels on its own once
+        // someone forwards or prints it, and a footer that looks tappable but
+        // isn't is worse than no link at all.
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { continue }
+            let link = PDFAnnotation(bounds: hotspot, forType: .link, withProperties: nil)
+            link.action = PDFActionURL(url: appStoreURL)
+            page.addAnnotation(link)
+        }
 
         document.write(to: url)
     }
