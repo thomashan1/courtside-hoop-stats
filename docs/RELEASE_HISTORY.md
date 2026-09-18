@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | — | — |
+| v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | **42m** | 1h 43m |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
 | v1.6 | 128 | `f3e960d` | Sun 2026-09-13, 1:52 PM | Wed 2026-09-16, 4:19 PM | 3d 2h 27m | 3d 0h 5m | 2h 22m |
@@ -47,8 +47,9 @@ build list.
 
 The queue has collapsed over three releases: v1.7 10h 3m, v1.8 12h 22m, then
 v1.9 at **2h 25m** — a record, and the first one approved the same morning it
-went in. **v1.9's queue/review split is still missing**; fill it from the
-*In Review* timestamp in that version's Activity list.
+went in. Its **42-minute queue** is the shortest ever recorded here, less than
+half the previous best (v1.3, 1h 46m), and it is the rare release where review
+time (1h 43m) is the larger half.
 
 v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
 **fastest review at 27 minutes** — it went in overnight and was queued
@@ -58,7 +59,7 @@ v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
 
 | | Range | Spread |
 |---|---|---|
-| **Queued** (*Waiting for Review*) | 1h 46m → 13d 9h | **180×** |
+| **Queued** (*Waiting for Review*) | 42m → 13d 9h | **460×** |
 | **In review** (*In Review*) | 17m → 3h 29m | 12× |
 
 v1.6 fits the pattern exactly: **3d 0h queued, 2h 22m in review.**
