@@ -210,7 +210,9 @@ struct EditGameSheet: View {
                 Section("Opponent") {
                     TextField("Opponent", text: $opponent)
                         .textInputAutocapitalization(.words)
-                    Toggle("Home game", isOn: $isHome)
+                    HomeAwayToggle(isHome: $isHome,
+                                   teamName: store.team.name,
+                                   opponent: opponent)
                         .tint(.teamAccent)
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))

@@ -66,7 +66,7 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
     from such a file. Roster-only — games excluded (`TeamTransfer.swift`, #40).
     Distinct from both sharing and the iCloud backup (§3.9a): a copy you own and
     can edit, that needs no iCloud and works offline.
-  - **Backup** — "Last backed up", what's in iCloud, **Back Up Now**, and a
+  - **Backup** — "Last Backed Up", what's in iCloud, **Back Up Now**, and a
     browse-and-pick **restore** (§3.9a).
 
 ### 3.3 Games list (Games tab)
@@ -154,7 +154,7 @@ emits glyphs rather than annotations.
 
 Every team and game is copied automatically to the owner's **private** CloudKit
 database, on a debounce like the follower publish and protected by the same
-background-task assertion. Settings shows **"Last backed up"**, what's in
+background-task assertion. Settings shows **"Last Backed Up"**, what's in
 iCloud, a **Back Up Now** button, and a **browse-and-pick restore**.
 
 **Not sharing, deliberately.** Sharing is a *mirror*: unshare or delete a team

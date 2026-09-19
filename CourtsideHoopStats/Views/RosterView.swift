@@ -104,7 +104,7 @@ struct PlayerEditSheet: View {
             Form {
                 TextField("Name", text: $name)
                     .textInputAutocapitalization(.words)
-                TextField("Jersey number", text: $number)
+                TextField("Jersey Number", text: $number)
                     .keyboardType(.numbersAndPunctuation)
 
                 // Delete lives here too, so you don't have to swipe the row.

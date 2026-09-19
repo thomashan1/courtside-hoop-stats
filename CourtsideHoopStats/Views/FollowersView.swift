@@ -218,7 +218,7 @@ struct FollowersView: View {
     /// say that.
     private var ownerNameSection: some View {
         Section {
-            TextField("Your name", text: $ownerName)
+            TextField("Your Name", text: $ownerName)
                 .textInputAutocapitalization(.words)
                 .onSubmit(saveOwnerName)
             Button("Save") { saveOwnerName() }
