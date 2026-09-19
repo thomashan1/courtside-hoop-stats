@@ -237,7 +237,9 @@ struct NewGameSheet: View {
                             Text(format.displayName).tag(format)
                         }
                     }
-                    Toggle("Home game", isOn: $isHome)
+                    HomeAwayToggle(isHome: $isHome,
+                                   teamName: store.team.name,
+                                   opponent: opponent)
                         .tint(.teamAccent)
                     LabeledContent("Jersey") {
                         JerseyIndicator(color: store.team.jersey(isHome: isHome))

@@ -64,7 +64,7 @@ final class ScreenshotUITests: XCTestCase {
         // Typing it must stick: the section reads the team back from the store
         // rather than the value passed in, so a write that didn't land would
         // leave the prompt sitting there filled in.
-        let nameField = app.textFields["Your name"]
+        let nameField = app.textFields["Your Name"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 5),
                       "A team with no owner name should be asked for one here")
         nameField.tap()

@@ -369,7 +369,7 @@ final class AppStore: ObservableObject {
 
 #if DEBUG
     /// Seeds a plausible backup state for the screenshot harness, which runs
-    /// offline. Without it Settings captures "Last backed up: Never" — the one
+    /// offline. Without it Settings captures "Last Backed Up: Never" — the one
     /// state this feature exists to avoid.
     func seedBackupStateForUITests(_ snapshot: BackupSnapshot) {
         backupSnapshot = snapshot

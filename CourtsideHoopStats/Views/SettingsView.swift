@@ -81,7 +81,7 @@ struct SettingsView: View {
                 // scoring their own game has nothing to be notified about.
                 if !store.followedTeams.isEmpty {
                     Section {
-                        Picker("Notify me", selection: $store.alertCadence) {
+                        Picker("Notify Me", selection: $store.alertCadence) {
                             ForEach(FollowerAlertCadence.allCases) { cadence in
                                 Text(cadence.label).tag(cadence)
                             }
@@ -117,7 +117,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .alert("New Team", isPresented: $showAddTeam) {
-                TextField("Team name", text: $newTeamName)
+                TextField("Team Name", text: $newTeamName)
                 Button("Cancel", role: .cancel) {}
                 Button("Add") { store.addTeam(name: newTeamName) }
             } message: {
@@ -161,7 +161,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var backupSection: some View {
         Section {
-            LabeledContent("Last backed up") {
+            LabeledContent("Last Backed Up") {
                 if store.isBackingUp {
                     Text("Backing up…").foregroundStyle(.secondary)
                 } else if let at = store.backupSnapshot.backedUpAt {
@@ -446,7 +446,7 @@ struct TeamDetailView: View {
     var body: some View {
         Form {
             Section("Team Name") {
-                TextField("Team name", text: $name)
+                TextField("Team Name", text: $name)
                     .textInputAutocapitalization(.words)
             }
 
@@ -454,7 +454,7 @@ struct TeamDetailView: View {
                 // Nearly every team is white plus one colour, so this asks for
                 // the colour and which one is worn at home, rather than making
                 // both jerseys free-form.
-                Picker("Team colour", selection: $teamColor) {
+                Picker("Team Colour", selection: $teamColor) {
                     ForEach(JerseyColor.teamColors) { color in
                         Label {
                             Text(color.label)
@@ -527,7 +527,7 @@ struct TeamDetailView: View {
                 // between accepted participants — so it's set here instead,
                 // by you, and published with the team.
                 Section {
-                    TextField("Your name", text: $ownerDisplayName)
+                    TextField("Your Name", text: $ownerDisplayName)
                         .textInputAutocapitalization(.words)
                 } header: {
                     Text("Your Name")

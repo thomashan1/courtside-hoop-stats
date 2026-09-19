@@ -862,7 +862,7 @@ struct EndPeriodSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    LabeledContent("Our score (auto)") {
+                    LabeledContent("Our Score (Auto)") {
                         Text("\(ourScore)").bold().monospacedDigit()
                     }
                     // Starts empty so you can just type — pre-filling meant

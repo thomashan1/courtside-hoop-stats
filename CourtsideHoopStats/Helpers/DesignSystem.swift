@@ -372,3 +372,39 @@ extension EnvironmentValues {
         set { self[TeamKitColorKey.self] = newValue }
     }
 }
+
+// MARK: - Home / away
+
+/// The home-or-away switch, with a line naming **which** team is at home.
+///
+/// "Home game" on its own left unanswered the very question it was asked to
+/// settle — whose home? — and the answer picks the jersey, so a wrong guess
+/// dresses the team in the wrong kit on the day (#197). Shared by the New Game
+/// and Edit Game sheets so the two can't drift.
+struct HomeAwayToggle: View {
+    @Binding var isHome: Bool
+    let teamName: String
+    /// May be empty: the opponent is optional, and in the New Game form it's
+    /// typed *after* this switch.
+    var opponent: String = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Toggle("Home Game", isOn: $isHome)
+            Text(explanation)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var explanation: String {
+        let us = teamName.trimmingCharacters(in: .whitespaces)
+        let them = opponent.trimmingCharacters(in: .whitespaces)
+        let ourName = us.isEmpty ? "Your team" : us
+
+        if isHome {
+            return them.isEmpty ? "\(ourName) is hosting." : "\(ourName) hosts \(them)."
+        }
+        return them.isEmpty ? "Playing at the opponent's gym." : "\(them) hosts \(ourName)."
+    }
+}

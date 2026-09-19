@@ -172,7 +172,7 @@ struct StoredBackupState: Codable {
 #if DEBUG
 /// Offline stand-in for the screenshot harness.
 ///
-/// Without it the Settings capture shows "Last backed up: Never", which is the
+/// Without it the Settings capture shows "Last Backed Up: Never", which is the
 /// one state the feature exists to avoid — the same trap the followers section
 /// hit before `DemoSharingService` existed.
 final class DemoBackupService: BackupService {
