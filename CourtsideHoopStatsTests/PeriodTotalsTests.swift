@@ -77,3 +77,81 @@ struct PeriodTotalsTests {
         }
     }
 }
+
+/// Overtime: periods past the format's count (#199).
+struct OvertimeTests {
+
+    private func tiedAfterRegulation() -> Game {
+        let scorer = UUID()
+        var game = Game(opponent: "Central")
+        game.events = [GameEvent(playerID: scorer, type: .twoPoint, period: 4)]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            2: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            3: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+        ]
+        return game
+    }
+
+    @Test func periodsPastRegulationAreLabelledAsOvertime() {
+        let quarters = PeriodFormat.quarters
+        #expect(quarters.periodLabel(4) == "Q4")
+        #expect(quarters.periodLabel(5) == "OT")
+        #expect(quarters.periodLabel(6) == "2OT")
+        #expect(quarters.periodLabel(7) == "3OT")
+
+        // Halves run out after two, so overtime starts one period earlier.
+        #expect(PeriodFormat.halves.periodLabel(2) == "H2")
+        #expect(PeriodFormat.halves.periodLabel(3) == "OT")
+
+        // A pickup game has no periods to run out of.
+        #expect(PeriodFormat.pickup.periodLabel(5) == "Game")
+        #expect(PeriodFormat.pickup.isOvertime(5) == false)
+    }
+
+    @Test func overtimeIsOfferedOnlyWhenLevelAfterRegulation() {
+        // Q4, and the entered total ties our 2 points.
+        let game = tiedAfterRegulation()
+        #expect(game.currentPeriod == 4)
+        #expect(game.endingPeriodAllowsOvertime(opponentTotal: 2))
+        #expect(game.endingPeriodAllowsOvertime(opponentTotal: 3) == false,
+                "not level, so the game is over")
+
+        // Same score, but there are quarters left to play.
+        var earlier = game
+        earlier.periodEndScores = [1: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0)]
+        #expect(earlier.endingPeriodAllowsOvertime(opponentTotal: 2) == false)
+    }
+
+    @Test func theLinescoreIncludesOvertimeRows() {
+        var game = tiedAfterRegulation()
+        game.periodEndScores[4] = PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 2)
+        game.events.append(GameEvent(playerID: UUID(), type: .threePoint, period: 5))
+        game.periodEndScores[5] = PeriodEndScore(ourRunningTotal: 5, opponentRunningTotal: 4)
+        game.isComplete = true      // the overtime marker is in; the game is over
+
+        let rows = game.periodBreakdownCumulative()
+        #expect(rows.count == 5, "overtime used to be counted but never listed")
+        #expect(rows.last?.our == game.ourScore)
+        #expect(rows.last?.opponent == 4)
+        #expect(game.isInOvertime == false, "the game is over, not still in overtime")
+
+        // Deltas, not cumulative: overtime contributed 3 and 2.
+        let deltas = game.periodBreakdown()
+        #expect(deltas.last?.our == 3)
+        #expect(deltas.last?.opponent == 2)
+    }
+
+    @Test func reorderingKeepsOvertimeRatherThanClampingItAway() {
+        var game = tiedAfterRegulation()
+        game.periodEndScores[4] = PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 2)
+        game.events.append(GameEvent(playerID: UUID(), type: .twoPoint, period: 5))
+        game.periodEndScores[5] = PeriodEndScore(ourRunningTotal: 4, opponentRunningTotal: 2)
+
+        let reordered = game.applyingReorderedLog(game.orderedLog())
+        #expect(reordered.periodEndScores.keys.max() == 5,
+                "the clamp used to cap at the format's period count")
+        #expect(reordered.events.map(\.period).max() == 5)
+        #expect(reordered.ourScore == game.ourScore)
+    }
+}

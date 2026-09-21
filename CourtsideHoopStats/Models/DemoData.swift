@@ -414,12 +414,14 @@ enum DemoData {
         )
     }
 
-    // MARK: - Loss (38–44), so the LOSS / "L" badge appears somewhere.
+    // MARK: - Loss in overtime (40–46) — the LOSS / "L" badge, and the only
+    // game that goes past regulation, so OT has somewhere to show up (#199).
 
     private static func lostGame(team: Team) -> Game {
         let p = team.players
-        // Our per-quarter deltas: 9, 11, 8, 10 = 38. Nicholas still leads with
-        // 19 — losing the game is the point, not losing the player narrative.
+        // Our per-quarter deltas: 9, 11, 8, 10 = 38, level at the buzzer, then
+        // a 2-point overtime against their 8. Nicholas still leads with 19 —
+        // losing the game is the point, not losing the player narrative.
         let script: [(Int, EventType, Int)] = [
             // Q1 = 9
             (8, .threePoint, 1), (2, .twoPoint, 1), (7, .twoPoint, 1),
@@ -432,6 +434,9 @@ enum DemoData {
             (8, .ftMade, 3), (8, .ftMissed, 3),
             // Q4 = 10
             (8, .threePoint, 4), (8, .threePoint, 4), (5, .twoPoint, 4), (2, .twoPoint, 4),
+            // OT = 2. Period 5 with four quarters is overtime; nothing is
+            // stored to say so, the period number carries it.
+            (6, .twoPoint, 5), (3, .ftMissed, 5),
         ]
         return Game(
             date: gameDate(daysFromRef: -3, hour: 3),     // 1:00 PM
@@ -441,14 +446,16 @@ enum DemoData {
             isHome: false,
             periodFormat: .quarters,
             events: events(from: script, roster: p),
-            // Opponent running totals: 12, 22, 34, 44 (final 44 > our 38).
+            // Opponent running totals: 12, 22, 34, 38 — level after four —
+            // then 46 in overtime, against our 40.
             periodEndScores: [
                 1: PeriodEndScore(ourRunningTotal: 9, opponentRunningTotal: 12),
                 2: PeriodEndScore(ourRunningTotal: 20, opponentRunningTotal: 22),
                 3: PeriodEndScore(ourRunningTotal: 28, opponentRunningTotal: 34),
-                4: PeriodEndScore(ourRunningTotal: 38, opponentRunningTotal: 44),
+                4: PeriodEndScore(ourRunningTotal: 38, opponentRunningTotal: 38),
+                5: PeriodEndScore(ourRunningTotal: 40, opponentRunningTotal: 46),
             ],
-            notes: "Cold from the line in the third. Rebounding cost us this one.",
+            notes: "Level at the buzzer, then they hit everything in overtime.",
             isComplete: true,
             hasStarted: true
         )

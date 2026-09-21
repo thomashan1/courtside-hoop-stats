@@ -176,7 +176,12 @@ struct ModelsTests {
         #expect(game.currentPeriod == 2)
     }
 
-    @Test func currentPeriodCapsAtFormatCount() {
+    /// `currentPeriod` used to cap at the format's count. It can't any more:
+    /// overtime is period 5 of a four-quarter game, and the cap is what made
+    /// that unreachable (#199). What still holds is that ending the fourth
+    /// quarter finishes a game nobody sends to overtime — `isFinalPeriod`
+    /// carries that, and it means "regulation is over", not "the game is".
+    @Test func currentPeriodRunsPastFormatCountForOvertime() {
         var game = Game(opponent: "Hawks")   // 4 quarters
         game.periodEndScores = [
             1: PeriodEndScore(ourRunningTotal: 4, opponentRunningTotal: 5),
@@ -184,8 +189,14 @@ struct ModelsTests {
             3: PeriodEndScore(ourRunningTotal: 12, opponentRunningTotal: 14),
             4: PeriodEndScore(ourRunningTotal: 20, opponentRunningTotal: 18),
         ]
-        #expect(game.currentPeriod == 4)     // capped, not 5
-        #expect(game.isFinalPeriod == true)
+        #expect(game.currentPeriod == 5)
+        #expect(game.isFinalPeriod == true, "regulation is behind us either way")
+        #expect(game.isInOvertime == true)
+        #expect(game.periodFormat.periodLabel(game.currentPeriod) == "OT")
+
+        // …and a finished one isn't playing anything.
+        game.isComplete = true
+        #expect(game.isInOvertime == false)
     }
 
     @Test func isFinalPeriodForHalves() {

@@ -55,7 +55,7 @@ range, not one happy path:
 | Dimension | Covered by |
 |---|---|
 | Sections | Playing Now (Northgate), Coming Up (Summit), Final Scores (four games) |
-| Results | **win** (Lakeside 48–41), **loss** (Central 38–44), **tie** (Pine Ridge 30–30) |
+| Results | **win** (Lakeside 48–41), **loss in overtime** (Central 40–46), **tie** (Pine Ridge 30–30) |
 | Period formats | quarters, **halves** (Pine Ridge), **pickup** (Bayview — no periods, no location) |
 | Edge cases | a DNP row (Wesley benched), a missed FT so the `5/6` split isn't always clean (and FT% isn't 100% in the PDF), greyed zero cells, optional fields left blank on the pickup game |
 | iCloud backup (#177) | `DemoBackupService` reports a plausible "8 minutes ago" and a populated iCloud, and `seedBackupStateForUITests` primes the Settings row. The harness runs offline, so without these the capture shows **"Last Backed Up: Never"** — the one state the feature exists to avoid, and exactly the trap the followers section hit before `DemoSharingService` existed |

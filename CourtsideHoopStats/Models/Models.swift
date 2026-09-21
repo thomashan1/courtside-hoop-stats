@@ -295,8 +295,21 @@ enum PeriodFormat: String, Codable, CaseIterable {
     }
 
     /// Human label for a specific period, e.g. "Q1" or "H2"; "Game" for pickup.
+    ///
+    /// Past regulation the format's own scheme stops applying: a fifth quarter
+    /// is not "Q5", it's overtime. Broadcast convention numbers the periods
+    /// *after* the first — OT, 2OT, 3OT — rather than "OT1" (#199).
     func periodLabel(_ period: Int) -> String {
-        self == .pickup ? "Game" : "\(label)\(period)"
+        if self == .pickup { return "Game" }
+        guard period > periodCount else { return "\(label)\(period)" }
+        let overtime = period - periodCount
+        return overtime == 1 ? "OT" : "\(overtime)OT"
+    }
+
+    /// Whether `period` is past regulation. Pickup has no periods to run out
+    /// of, so it never reaches overtime.
+    func isOvertime(_ period: Int) -> Bool {
+        self != .pickup && period > periodCount
     }
 }
 
@@ -364,11 +377,30 @@ struct Game: Identifiable, Codable {
     /// The period currently being scored (1-based). Once every period has an
     /// end-score recorded the game is complete and this caps at the last period.
     var currentPeriod: Int {
-        min(periodEndScores.count + 1, periodFormat.periodCount)
+        periodEndScores.count + 1
     }
 
+    /// The last period of **regulation** — not necessarily the last period
+    /// played, since a tie can send the game to overtime (#199).
     var isFinalPeriod: Bool {
         currentPeriod >= periodFormat.periodCount
+    }
+
+    /// Whether the period **now being played** is overtime. False once the
+    /// game is finished: `currentPeriod` keeps counting past the last marker,
+    /// so a completed overtime game would otherwise report itself as forever
+    /// playing one more period.
+    var isInOvertime: Bool {
+        !isComplete && periodFormat.isOvertime(currentPeriod)
+    }
+
+    /// Whether ending the current period should *offer* overtime: the scores
+    /// are level and regulation is over. Offered, never forced — a youth league
+    /// will happily let a tie stand, so the tracker decides (#199).
+    func endingPeriodAllowsOvertime(opponentTotal: Int) -> Bool {
+        periodFormat != .pickup
+            && currentPeriod >= periodFormat.periodCount
+            && ourScore == opponentTotal
     }
 
     enum Result { case win, loss, tie }
@@ -386,7 +418,10 @@ struct Game: Identifiable, Codable {
     func periodBreakdown() -> [(period: Int, our: Int, opponent: Int)] {
         var rows: [(Int, Int, Int)] = []
         var prevOpp = 0
-        for period in 1...periodFormat.periodCount {
+        // Up to the highest period actually recorded, not the format's count:
+        // overtime periods sit past it, and stopping early counted their
+        // points in the final score while dropping their row (#199).
+        for period in 1...max(periodFormat.periodCount, periodEndScores.keys.max() ?? 0) {
             guard let score = periodEndScores[period] else { break }
             let ourDelta = events
                 .filter { $0.period == period }
@@ -404,7 +439,7 @@ struct Game: Identifiable, Codable {
     func periodBreakdownCumulative() -> [(period: Int, our: Int, opponent: Int)] {
         var rows: [(Int, Int, Int)] = []
         var ourTotal = 0
-        for period in 1...periodFormat.periodCount {
+        for period in 1...max(periodFormat.periodCount, periodEndScores.keys.max() ?? 0) {
             guard let score = periodEndScores[period] else { break }
             ourTotal += events
                 .filter { $0.period == period }
@@ -436,11 +471,14 @@ struct Game: Identifiable, Codable {
     /// **derived** from how many period-end markers precede it, so dragging an
     /// event or a period boundary reassigns periods across quarters/halves.
     /// Opponent running totals ride with their marker; our running totals are
-    /// recomputed from the new event order. Periods are clamped to the format's
-    /// period count so a stray drag can't invent an extra period.
+    /// recomputed from the new event order. Periods are clamped so a stray drag
+    /// can't invent an extra one — to the format's count, or to however many
+    /// periods this game actually reached if it went to overtime (#199).
     func applyingReorderedLog(_ items: [ScoreLogItem]) -> Game {
         var copy = self
-        let cap = periodFormat.periodCount
+        let cap = max(periodFormat.periodCount,
+                      periodEndScores.keys.max() ?? 0,
+                      events.map(\.period).max() ?? 0)
         var newEvents: [GameEvent] = []
         var newScores: [Int: PeriodEndScore] = [:]
         var currentPeriod = 1
