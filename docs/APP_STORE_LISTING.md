@@ -115,7 +115,7 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.10 — not yet submitted
+### v1.10 — submitted 2026-09-20, build 167, approved 2026-09-21
 
 Overtime leads because it's the only thing here a reader can act on: the app
 could not follow a tied game past the buzzer, and now it can. The rest is

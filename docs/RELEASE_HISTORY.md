@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.10 | 167 | — | Sun 2026-09-20, 8:48 PM | *in review* | — | — | — |
+| v1.10 | 167 | — | Sun 2026-09-20, 8:48 PM | Mon 2026-09-21, 3:42 PM | 18h 54m | 16h 23m | 2h 31m |
 | v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | **42m** | 1h 43m |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
@@ -54,11 +54,15 @@ swept into it, exactly as commits seconds apart usually share a push. When
 pushes have been rapid, treat the count as a ceiling and confirm against the
 build list.
 
-The queue has collapsed over three releases: v1.7 10h 3m, v1.8 12h 22m, then
-v1.9 at **2h 25m** — a record, and the first one approved the same morning it
-went in. Its **42-minute queue** is the shortest ever recorded here, less than
-half the previous best (v1.3, 1h 46m), and it is the rare release where review
-time (1h 43m) is the larger half.
+Four releases in a row have cleared inside a day: v1.7 10h 3m, v1.8 12h 22m,
+v1.9 **2h 25m** (the record, and the only one approved the same morning it went
+in), v1.10 18h 54m. v1.9's **42-minute queue** is still the shortest recorded
+here, less than half the previous best (v1.3, 1h 46m).
+
+**Submitting at night buys nothing.** v1.8 and v1.10 both went in during the
+evening and both waited out the night — 10h 34m and 16h 23m queued. v1.9 went
+in on a weekday morning and was picked up in 42 minutes. One data point each
+way, so it's a hint, not a rule.
 
 v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
 **fastest review at 27 minutes** — it went in overnight and was queued
