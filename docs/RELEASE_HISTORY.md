@@ -16,6 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
+| v1.10 | 167 | — | Sun 2026-09-20, 8:48 PM | *in review* | — | — | — |
 | v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | **42m** | 1h 43m |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |
 | v1.7 | 137 | `9a1a24d` | Wed 2026-09-16, 9:39 PM | Thu 2026-09-17, 7:42 AM | **10h 3m** | 9h 36m | **27m** |
@@ -35,6 +36,14 @@ Builds 137 and 147 are both **confirmed** by App Store Connect, and both land
 exactly where counting pushes from the anchor (130 = `b060d7e`) predicted. The
 method has now been right three times running: count pushes to `main`, not
 commits — with one caveat found the hard way on v1.9.
+
+**Pushing a PR branch builds too, and the count has to include it.** v1.10
+went out as build **167** where counting pushes to `main` predicted 162 — five
+low, across a stretch with three feature branches (#196, #198, #200). Branch
+pushes consume numbers alongside merges, so "+1 per push to `main`" only holds
+for a release built straight off `main`. Where PRs were involved, the number
+from counting is a **floor**; read the real one off the build list, which names
+each build's source branch.
 
 **Two pushes seconds apart can share a build.** `7d74293` and `d375957` went
 up 17 seconds apart and Xcode Cloud started one build for the pair, so eleven
