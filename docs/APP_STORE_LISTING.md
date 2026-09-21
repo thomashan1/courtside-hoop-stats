@@ -115,6 +115,30 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
+### v1.10 — not yet submitted
+
+Overtime leads because it's the only thing here a reader can act on: the app
+could not follow a tied game past the buzzer, and now it can. The rest is
+polish, and reads as polish rather than being inflated. The label
+capitalisation pass isn't mentioned at all — nobody noticed it was
+inconsistent, so saying it out loud only advertises that it was.
+
+**Paste-ready — one line per item, no hard wraps.** App Store Connect's
+*What's New* field preserves newlines literally, so a wrapped paragraph arrives
+broken mid-sentence on the product page. Everything else in these docs wraps at
+76 characters; these blocks deliberately don't.
+
+> NEW
+> 1. Tied at the buzzer? The app now offers overtime — tap Start Overtime when you enter the final score, or Finish to let the tie stand. OT gets its own line in the box score.
+>
+> FIXES
+> 1. The Home Game switch now says which team is at home, so a mix-up can't put the team in the wrong jersey.
+> 2. On a scheduled game, Delete no longer sits flush against Start Game, and asks before it deletes.
+
+**Screenshots to re-upload:** slot 7 (`07-games.png`) — the demo game now reads
+40–46 in overtime — **plus slots 4, 5 and 8**, which v1.9 needed for the tab-bar
+move and never shipped. Four in total.
+
 ### v1.9 — submitted 2026-09-18, build 155
 
 A polish release with no headline feature, and the copy says so rather than
