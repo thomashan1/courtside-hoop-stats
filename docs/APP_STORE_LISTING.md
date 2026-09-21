@@ -135,9 +135,13 @@ broken mid-sentence on the product page. Everything else in these docs wraps at
 > 1. The Home Game switch now says which team is at home, so a mix-up can't put the team in the wrong jersey.
 > 2. On a scheduled game, Delete no longer sits flush against Start Game, and asks before it deletes.
 
-**Screenshots to re-upload:** slot 7 (`07-games.png`) — the demo game now reads
-40–46 in overtime — **plus slots 4, 5 and 8**, which v1.9 needed for the tab-bar
-move and never shipped. Four in total.
+**Screenshots to re-upload:** slot 7 (`07-games.png`) — the demo game's final
+score changed with the overtime seed — **plus slots 4, 5 and 8**, which v1.9
+needed for the tab-bar move and never shipped. Four in total.
+
+Overtime itself is **not** visible in any of the ten: it shows in the linescore,
+and no slot carries one. Putting it on the page would mean displacing a
+screenshot, since App Store Connect takes exactly ten.
 
 ### v1.9 — submitted 2026-09-18, build 155
 
