@@ -196,7 +196,7 @@ struct LiveScoringView: View {
                 ourScore: game.ourScore,
                 previousOpponentTotal: previousOpponentTotal,
                 isFinalPeriod: game.isFinalPeriod,
-                onConfirm: endPeriod(opponentTotal:)
+                onConfirm: endPeriod(opponentTotal:startOvertime:)
             )
         }
         .sheet(isPresented: $showOpponentTotals) {
@@ -529,13 +529,16 @@ struct LiveScoringView: View {
         store.updateGame(game)
     }
 
-    private func endPeriod(opponentTotal: Int) {
+    private func endPeriod(opponentTotal: Int, startOvertime: Bool) {
         let period = game.currentPeriod
         game.periodEndScores[period] = PeriodEndScore(
             ourRunningTotal: game.ourScore,
             opponentRunningTotal: opponentTotal
         )
-        if period >= game.periodFormat.periodCount {
+        // Recording the period advances `currentPeriod` on its own, so
+        // choosing overtime is simply *not* finishing: the next period is
+        // period 5, which labels itself OT (#199).
+        if period >= game.periodFormat.periodCount && !startOvertime {
             game.isComplete = true
         }
         store.updateGame(game)
@@ -838,7 +841,9 @@ struct EndPeriodSheet: View {
     let ourScore: Int
     let previousOpponentTotal: Int
     let isFinalPeriod: Bool
-    let onConfirm: (Int) -> Void
+    /// The total entered, and whether the tracker chose to play on into
+    /// overtime rather than let a tie stand (#199).
+    let onConfirm: (Int, Bool) -> Void
 
     @State private var opponentTotalText = ""
     /// Opens straight onto the number pad — ending a period is a one-field
@@ -850,6 +855,19 @@ struct EndPeriodSheet: View {
     /// period's points.
     private var opponentPlaceholder: String {
         previousOpponentTotal > 0 ? "Was \(previousOpponentTotal)" : "Opponent running total"
+    }
+
+    /// The total as typed, falling back to the previous one — blank means
+    /// "they haven't scored since", which is how the field already behaves.
+    private var enteredTotal: Int {
+        Int(opponentTotalText) ?? previousOpponentTotal
+    }
+
+    /// Regulation is over and the scores are level, so overtime is on the
+    /// table. Only *offered*: a youth league will let a tie stand, and this
+    /// one does (#199).
+    private var offersOvertime: Bool {
+        isFinalPeriod && enteredTotal == ourScore
     }
 
     private var opponentFooter: String {
@@ -876,6 +894,25 @@ struct EndPeriodSheet: View {
                 } footer: {
                     Text(opponentFooter)
                 }
+
+                if offersOvertime {
+                    Section {
+                        Button {
+                            onConfirm(enteredTotal, true)
+                            dismiss()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                                    .accessibilityHidden(true)
+                                Text("Start Overtime")
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    } footer: {
+                        Text("Level at \(ourScore)–\(enteredTotal). Start overtime, or Finish to let the tie stand.")
+                    }
+                }
             }
             .navigationTitle(isFinalPeriod ? "Finish Game" : "End \(periodLabel)")
             .navigationBarTitleDisplayMode(.inline)
@@ -885,7 +922,7 @@ struct EndPeriodSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isFinalPeriod ? "Finish" : "Next Period") {
-                        onConfirm(Int(opponentTotalText) ?? previousOpponentTotal)
+                        onConfirm(enteredTotal, false)
                         dismiss()
                     }
                 }

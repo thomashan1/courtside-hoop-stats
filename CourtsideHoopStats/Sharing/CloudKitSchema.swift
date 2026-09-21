@@ -33,6 +33,21 @@ enum CloudKitSchema {
         /// **outside** `events` inside the same JSON payload. See
         /// `payload(for:)`.
         static let laterEvents = "laterEvents"
+        /// The true period numbers of an overtime game, held **outside** the
+        /// regulation-shaped `events`/`periodEndScores` an older build reads.
+        /// See `payload(for:)`.
+        static let laterPeriods = "laterPeriods"
+    }
+
+    /// The overtime detail an older build can't represent: the real period map,
+    /// and the real period of any event that had to be folded back into
+    /// regulation for the wire (#199).
+    private struct OvertimeSidecar: Codable {
+        /// Period number (as a string, since JSON object keys are strings) to
+        /// that period's end score.
+        var periodEndScores: [String: PeriodEndScore]
+        /// Event id to its true period. Only carries events past regulation.
+        var eventPeriods: [String: Int]
     }
 
     private static let encoder = JSONEncoder()
@@ -111,23 +126,89 @@ enum CloudKitSchema {
     /// own answer.
     static func payload(for game: Game) -> Data? {
         let later = game.events.filter { !typesEveryShippedBuildKnows.contains($0.type) }
-        guard !later.isEmpty else { return try? encoder.encode(game) }
+        let overtime = overtimeSidecar(for: game)
+        guard !later.isEmpty || overtime != nil else { return try? encoder.encode(game) }
 
         var trimmed = game
-        trimmed.events = game.events.filter { typesEveryShippedBuildKnows.contains($0.type) }
+        if !later.isEmpty {
+            trimmed.events = game.events.filter { typesEveryShippedBuildKnows.contains($0.type) }
+        }
+        if overtime != nil {
+            trimmed = foldingOvertimeIntoRegulation(trimmed, of: game)
+        }
 
         guard let base = try? encoder.encode(trimmed),
-              var object = try? JSONSerialization.jsonObject(with: base) as? [String: Any],
-              let laterData = try? encoder.encode(later),
-              let laterArray = try? JSONSerialization.jsonObject(with: laterData) as? [Any]
+              var object = try? JSONSerialization.jsonObject(with: base) as? [String: Any]
         else {
-            // Worst case, publish without the newer events rather than not at
+            // Worst case, publish without the newer detail rather than not at
             // all: the game still reaches every follower, score intact.
             return try? encoder.encode(trimmed)
         }
-        object[Key.laterEvents] = laterArray
+
+        if !later.isEmpty {
+            guard let laterData = try? encoder.encode(later),
+                  let laterArray = try? JSONSerialization.jsonObject(with: laterData) as? [Any]
+            else { return try? encoder.encode(trimmed) }
+            object[Key.laterEvents] = laterArray
+        }
+        if let overtime,
+           let data = try? encoder.encode(overtime),
+           let dictionary = try? JSONSerialization.jsonObject(with: data) {
+            object[Key.laterPeriods] = dictionary
+        }
+
         return (try? JSONSerialization.data(withJSONObject: object))
             ?? (try? encoder.encode(trimmed))
+    }
+
+    /// The overtime sidecar for a game that went past regulation, or nil for
+    /// one that didn't.
+    private static func overtimeSidecar(for game: Game) -> OvertimeSidecar? {
+        let regulation = game.periodFormat.periodCount
+        let highest = max(game.periodEndScores.keys.max() ?? 0,
+                          game.events.map(\.period).max() ?? 0)
+        guard game.periodFormat != .pickup, highest > regulation else { return nil }
+
+        var periods: [String: PeriodEndScore] = [:]
+        for (period, score) in game.periodEndScores { periods["\(period)"] = score }
+
+        var eventPeriods: [String: Int] = [:]
+        for event in game.events where event.period > regulation {
+            eventPeriods[event.id.uuidString] = event.period
+        }
+        return OvertimeSidecar(periodEndScores: periods, eventPeriods: eventPeriods)
+    }
+
+    /// Reshapes an overtime game so a build that has never heard of overtime
+    /// still reads it correctly (#199).
+    ///
+    /// An older `periodBreakdown()` loops `1...periodCount`, so overtime rows
+    /// simply don't exist for it — while `ourScore`, summed from every event,
+    /// does include the overtime baskets. Left alone, that build would show a
+    /// linescore ending at 48–48 under a scoreboard reading 52–48.
+    ///
+    /// So the wire copy folds overtime into the last regulation period: its
+    /// events move there, and that period's marker carries the **final**
+    /// totals. An old follower sees exactly what a tracker sees when they keep
+    /// scoring into Q4 rather than starting overtime — the workaround this
+    /// feature replaces — with the score right and one fewer row. A current
+    /// build puts the true periods back from the sidecar.
+    private static func foldingOvertimeIntoRegulation(_ wire: Game, of game: Game) -> Game {
+        let regulation = game.periodFormat.periodCount
+        var folded = wire
+        folded.events = wire.events.map { event in
+            var copy = event
+            copy.period = min(event.period, regulation)
+            return copy
+        }
+
+        var scores = wire.periodEndScores.filter { $0.key <= regulation }
+        if let lastPlayed = game.periodEndScores.keys.max(), lastPlayed > regulation,
+           let finalScore = game.periodEndScores[lastPlayed] {
+            scores[regulation] = finalScore
+        }
+        folded.periodEndScores = scores
+        return folded
     }
 
     /// Rebuilds a game from `payload(for:)`, restoring `laterEvents` into
@@ -138,8 +219,11 @@ enum CloudKitSchema {
     /// order deliberately out of timestamp order, and re-sorting would undo it.
     static func game(fromPayload data: Data) -> Game? {
         guard var game = try? decoder.decode(Game.self, from: data) else { return nil }
-        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let raw = object[Key.laterEvents],
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return game }
+        game = restoringOvertime(game, from: object)
+
+        guard let raw = object[Key.laterEvents],
               let laterData = try? JSONSerialization.data(withJSONObject: raw),
               let later = try? decoder.decode([GameEvent].self, from: laterData)
         else { return game }
@@ -150,6 +234,30 @@ enum CloudKitSchema {
             game.events.insert(event, at: index)
         }
         return game
+    }
+
+    /// Puts an overtime game's real periods back, undoing the fold that
+    /// `payload(for:)` applies for older builds (#199).
+    private static func restoringOvertime(_ game: Game, from object: [String: Any]) -> Game {
+        guard let raw = object[Key.laterPeriods],
+              let data = try? JSONSerialization.data(withJSONObject: raw),
+              let sidecar = try? decoder.decode(OvertimeSidecar.self, from: data)
+        else { return game }
+
+        var restored = game
+        var periods: [Int: PeriodEndScore] = [:]
+        for (key, score) in sidecar.periodEndScores {
+            guard let period = Int(key) else { continue }
+            periods[period] = score
+        }
+        if !periods.isEmpty { restored.periodEndScores = periods }
+
+        for index in restored.events.indices {
+            if let period = sidecar.eventPeriods[restored.events[index].id.uuidString] {
+                restored.events[index].period = period
+            }
+        }
+        return restored
     }
 
     /// Write a game's fields (and its parent links) onto an existing record.

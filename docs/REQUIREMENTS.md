@@ -101,6 +101,7 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
 - **Scoreboard:** solid navy banner (both appearances); our score auto-calculated (blue), opponent score in white; period label. Score scales with Dynamic Type (capped). A compact top bar (Back / Details) replaces the system nav bar; nav + tab bars are hidden while scoring.
 - **Point pad:** tapping a player card raises a big point pad — **2 PT / 3 PT / FT ✓ / FT ✗**, with **REB** on its own full-width row below — recorded immediately; selection then clears. There is no floating action bar and no undo/redo. REB sits apart from the scoring buttons on purpose: it's worth no points, so a mis-tap beside `+2` would silently change the score.
 - **End Period:** a tappable **quarter/half boundary at the top of the Score Log** opens a sheet to enter the opponent's cumulative total, then advances / finishes. (A pickup game has no period breaks — it just ends via **Finish Game**.)
+- **Overtime (#199):** when the total typed at the end of regulation **ties** the score, that same sheet offers **Start Overtime** beside Finish. Offered, never forced — a youth league will let a tie stand, and this one does. Overtime is simply the next period number, labelled **OT / 2OT / 3OT**; still level at the end of OT and the offer repeats. Nothing new is stored: `GameEvent.period` and `periodEndScores` are already `Int`-keyed, so no schema change and no migration.
 - **Score Log:** grouped by period with quarter/half separators + per-period points; each row shows a concise action label + running team total, with **3-pointers badged 🎉** so they're distinguishable from a two at a glance; **tap to edit** (player/action) or **swipe to delete**.
 
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), **rebound (0)**. *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
@@ -108,6 +109,15 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
 Period headers in the Score Log show the points scored in that period **and the running total at the end of it** — `4 pts (11)`. Computed *through* the period rather than "everything above this row", so it still reads correctly in a follower's log, which runs newest-period-first. Every running total in the log is bracketed, rows included, so they form one column.
 
 A rebound is a full event, not a counter — it lands in the Score Log and can be edited, reordered or deleted there like anything else, because error recovery matters more than tidiness. It renders as a **subordinate row**: no card, indented, one grey line. At a real game's rebound volume, full cards buried the baskets and the log stopped answering the question it exists for — what just happened to the score. An **FT miss is not** subordinate: it's an attempt, it moves FT%, and it's half of a stat the table shows.
+
+**Overtime is folded into regulation on the wire.** An older build's
+`periodBreakdown()` loops `1...periodCount`, so it can't see a period past
+regulation — while `ourScore`, summed from every event, can. It would show a
+linescore ending 38–38 under a scoreboard reading 40–46. So the published copy
+moves overtime events into the last regulation period and gives that period's
+marker the **final** totals, parking the true periods under `laterPeriods`. An
+old follower sees what a tracker used to do by hand — overtime scored inside Q4
+— with the score right; a current one puts the periods back.
 
 **A new `EventType` case must never reach `events` on the wire.** A `Game` reaches followers as one JSON blob, and an older build's `GameEvent` decoder throws on a type it doesn't recognise — failing *the whole game*, so `CloudKitSchema.game(from:)` returns nil, the caller skips it, and the game silently disappears from that follower's list. (Assists escaped this because `assistPlayerID` is an optional *property* and unknown keys are ignored; a new enum case is different.)
 

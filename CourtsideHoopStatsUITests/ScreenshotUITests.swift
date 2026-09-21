@@ -95,6 +95,20 @@ final class ScreenshotUITests: XCTestCase {
         app.navigationBars["vs Pine Ridge Panthers"].buttons.firstMatch.tap()
         XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
+        // 1b) The overtime game (#199). The only place OT is visible is a
+        // linescore that runs past regulation, so it needs its own capture —
+        // and the assertions below are the real test: "OT" present, "Q5"
+        // absent. A period past the format used to be unreachable.
+        app.staticTexts["vs Central Cyclones"].tap()
+        XCTAssertTrue(app.navigationBars["vs Central Cyclones"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["OT"].waitForExistence(timeout: 5),
+                      "an overtime period should be labelled OT")
+        XCTAssertFalse(app.staticTexts["Q5"].exists,
+                       "a fifth quarter is overtime, not Q5")
+        snap(app, "27-overtime-summary")
+        app.navigationBars["vs Central Cyclones"].buttons.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+
         // 2) Finished game → Summary (final score, period grid, player stats).
         app.staticTexts["vs Lakeside Lightning"].tap()
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))

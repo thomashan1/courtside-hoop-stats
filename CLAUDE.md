@@ -70,6 +70,10 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   one tap, no offensive/defensive split (that would cost a decision on every
   board, and speed wins courtside). Worth 0 points, so it's safe against games
   whose period totals are already written down.
+- **Overtime.** A tie at the end of regulation *offers* **Start Overtime** in
+  the same sheet that takes the opponent's total — never forces it, because a
+  youth league lets ties stand. Overtime is the next period number, labelled
+  **OT / 2OT / 3OT**; no schema change, since periods were already `Int`.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
   editable opponent totals, editable log.
@@ -158,6 +162,14 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   would make an old follower compute a wrong total and needs its own answer.
   `EventType` also decodes unknown raw values to `.unknown` as a second line of
   defence. `CloudKitWireCompatibilityTests` is the proof.
+- **A period past regulation is invisible to an older build.** Overtime needed
+  no new stored property — it's period 5 — which is exactly what makes it
+  dangerous: an old `periodBreakdown()` loops `1...periodCount` and drops the
+  row, while `ourScore` counts the baskets, so the linescore stops short of the
+  scoreboard. `CloudKitSchema` folds overtime into the last regulation period
+  for the wire and parks the truth under `laterPeriods`
+  (`OvertimeWireCompatibilityTests`). Same shape of answer as `laterEvents`,
+  and the two compose — a rebound in overtime is both problems at once.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a

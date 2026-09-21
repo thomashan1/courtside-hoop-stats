@@ -239,3 +239,115 @@ struct CloudKitWireCompatibilityTests {
         #expect(NSDictionary(dictionary: object) == NSDictionary(dictionary: plainObject))
     }
 }
+
+/// Overtime on the wire (#199).
+///
+/// Overtime needs no new stored property — it's just period 5 — which is
+/// exactly why it's dangerous. An older build's `periodBreakdown()` loops
+/// `1...periodCount`, so it never sees period 5, while `ourScore` sums every
+/// event and does. Left alone, that build shows a linescore ending 38–38 under
+/// a scoreboard reading 40–46.
+struct OvertimeWireCompatibilityTests {
+
+    /// Four quarters level at 38–38, then a 2-point overtime lost 40–46.
+    private func overtimeGame() -> Game {
+        let scorer = UUID()
+        var game = Game(opponent: "Central")
+        let t = Date()
+        game.events = [
+            GameEvent(playerID: scorer, type: .twoPoint, period: 1, timestamp: t),
+            GameEvent(playerID: scorer, type: .twoPoint, period: 4, timestamp: t + 1),
+            GameEvent(playerID: scorer, type: .twoPoint, period: 5, timestamp: t + 2),
+        ]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 10),
+            2: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 20),
+            3: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 30),
+            4: PeriodEndScore(ourRunningTotal: 4, opponentRunningTotal: 38),
+            5: PeriodEndScore(ourRunningTotal: 6, opponentRunningTotal: 46),
+        ]
+        game.isComplete = true
+        return game
+    }
+
+    /// The load-bearing one: nothing past regulation reaches the wire copy of
+    /// `events` or `periodEndScores`.
+    @Test func theWirePayloadHoldsNoPeriodPastRegulation() throws {
+        let game = overtimeGame()
+        let data = try #require(CloudKitSchema.payload(for: game))
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        let events = try #require(object["events"] as? [[String: Any]])
+        for event in events {
+            let period = try #require(event["period"] as? Int)
+            #expect(period <= 4, "period \(period) is past regulation")
+        }
+        #expect(object["laterPeriods"] != nil, "the real periods have to go somewhere")
+    }
+
+    /// An old build must land on a linescore whose last row *is* the final
+    /// score — the failure this whole mechanism exists to prevent.
+    @Test func anOlderBuildSeesALinescoreThatReachesTheFinalScore() throws {
+        let game = overtimeGame()
+        let data = try #require(CloudKitSchema.payload(for: game))
+
+        // Decoded with `laterPeriods` still present: an old build receives the
+        // key and has to ignore it.
+        let decoded = try JSONDecoder().decode(Game.self, from: data)
+
+        #expect(decoded.ourScore == game.ourScore, "every basket still counts")
+
+        let rows = decoded.periodBreakdownCumulative()
+        #expect(rows.count == 4, "an old build has four periods and no more")
+        let last = try #require(rows.last)
+        #expect(last.our == game.ourScore)
+        #expect(last.opponent == 46, "the last regulation row carries the final total")
+    }
+
+    /// A current build gets the real shape back.
+    @Test func aCurrentBuildRestoresOvertime() throws {
+        let game = overtimeGame()
+        let published = try #require(CloudKitSchema.payload(for: game))
+        let restored = try #require(CloudKitSchema.game(fromPayload: published))
+
+        #expect(restored.events.map(\.period) == game.events.map(\.period))
+        #expect(restored.periodEndScores.keys.max() == 5)
+        #expect(restored.ourScore == game.ourScore)
+
+        let rows = restored.periodBreakdownCumulative()
+        #expect(rows.count == 5)
+        #expect(rows.last?.opponent == 46)
+    }
+
+    /// A game that never went to overtime must be published exactly as before,
+    /// with no sidecar at all.
+    @Test func aRegulationGameCarriesNoOvertimeSidecar() throws {
+        var game = Game(opponent: "Lakeside")
+        game.events = [GameEvent(playerID: UUID(), type: .twoPoint, period: 4)]
+        game.periodEndScores = [4: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 1)]
+
+        let data = try #require(CloudKitSchema.payload(for: game))
+        let object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(object["laterPeriods"] == nil)
+    }
+
+    /// Rebounds *and* overtime in one game — the two mechanisms have to
+    /// compose, since a rebound in overtime is both.
+    @Test func reboundsAndOvertimeSurviveTogether() throws {
+        var game = overtimeGame()
+        let boarder = UUID()
+        game.events.append(GameEvent(playerID: boarder, type: .rebound, period: 5,
+                                     timestamp: game.events.last!.timestamp + 1))
+
+        let published = try #require(CloudKitSchema.payload(for: game))
+        let object = try #require(try JSONSerialization.jsonObject(with: published) as? [String: Any])
+        let wireEvents = try #require(object["events"] as? [[String: Any]])
+        #expect(wireEvents.allSatisfy { ($0["period"] as? Int) ?? 0 <= 4 })
+        #expect(wireEvents.allSatisfy { ($0["type"] as? String) != "rebound" })
+
+        let restored = try #require(CloudKitSchema.game(fromPayload: published))
+        let rebound = try #require(restored.events.first { $0.type == .rebound })
+        #expect(rebound.period == 5, "a rebound in overtime keeps both facts")
+        #expect(restored.ourScore == game.ourScore)
+    }
+}
