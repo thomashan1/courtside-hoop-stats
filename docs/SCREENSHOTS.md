@@ -148,6 +148,13 @@ call — so a new screen has to displace one, and the reasoning for the current
 ten (and for the two that were cut) lives in
 [`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) §9, next to the upload it serves.
 
+**Promote all ten and upload all ten** at each submission, rather than working
+out which changed: the simulator clock moves every capture so a byte compare
+proves nothing, and two releases in a row shipped notes claiming a change the
+committed file didn't have. Promotion is a separate step from capture — the
+harness writes `screenshots/` (git-ignored), and `docs/img/` only changes when
+these files are copied across.
+
 If the order changes, renumber the whole set and update the README's `src`
 paths in the same commit — a stale number is worse than none, and a renumber
 that skips the README leaves it rendering files that no longer exist.
