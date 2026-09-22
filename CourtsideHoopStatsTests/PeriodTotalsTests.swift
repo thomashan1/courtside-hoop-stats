@@ -155,3 +155,102 @@ struct OvertimeTests {
         #expect(reordered.ourScore == game.ourScore)
     }
 }
+
+/// Resuming a game that finished level, and the arithmetic that makes it
+/// possible (#201).
+struct ResumingIntoOvertimeTests {
+
+    /// Four quarters, level at 38–38, finished.
+    private func finishedLevel() -> Game {
+        var game = Game(opponent: "Central")
+        let scorer = UUID()
+        game.events = [GameEvent(playerID: scorer, type: .twoPoint, period: 4)]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            2: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            3: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            4: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 2),
+        ]
+        game.isComplete = true
+        return game
+    }
+
+    @Test func aFinishedLevelGameCanBeResumedIntoOvertime() {
+        var game = finishedLevel()
+        #expect(game.result == .tie)
+        #expect(game.isInOvertime == false, "it's finished, not playing")
+
+        // What the Score Log's divider does: clears completion and nothing else.
+        game.isComplete = false
+
+        #expect(game.currentPeriod == 5)
+        #expect(game.isInOvertime)
+        #expect(game.periodFormat.periodLabel(game.currentPeriod) == "OT")
+        #expect(game.periodEndScores.count == 4, "the recorded periods stand")
+        #expect(game.ourScore == 2, "and so does the score")
+    }
+
+    /// `currentPeriod` counts from the highest recorded period, not from how
+    /// many there are. With a gap, counting them returns a period that already
+    /// has a score — which ending the period would overwrite.
+    @Test func currentPeriodComesFromTheHighestPeriodNotTheCount() {
+        var game = Game(opponent: "Hawks")
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 4, opponentRunningTotal: 5),
+            3: PeriodEndScore(ourRunningTotal: 9, opponentRunningTotal: 11),
+        ]
+        #expect(game.currentPeriod == 4, "counting entries would say 3, which is taken")
+        #expect(game.periodEndScores[game.currentPeriod] == nil,
+                "the current period must never already have a score")
+    }
+
+    @Test func aFinishedGameThatIsNotLevelStaysFinished() {
+        var game = finishedLevel()
+        game.periodEndScores[4] = PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 5)
+        #expect(game.result == .loss)
+        // The UI only offers overtime on a level game; this is the guard it reads.
+        #expect(game.ourScore != game.opponentScore)
+    }
+}
+
+/// What the scoreboard shows, which is not the same as what you'd score into
+/// (#201).
+struct DisplayPeriodTests {
+
+    private func finished(_ format: PeriodFormat, periods: Int) -> Game {
+        var game = Game(opponent: "Hawks")
+        game.periodFormat = format
+        for period in 1...periods {
+            game.periodEndScores[period] = PeriodEndScore(ourRunningTotal: period,
+                                                          opponentRunningTotal: period)
+        }
+        game.isComplete = true
+        return game
+    }
+
+    @Test func aFinishedGameShowsItsLastPeriodNotTheNextOne() {
+        let game = finished(.quarters, periods: 4)
+        #expect(game.currentPeriod == 5, "scoring would go into period 5")
+        #expect(game.displayPeriod == 4, "but the scoreboard says Q4")
+        #expect(game.periodFormat.periodLabel(game.displayPeriod) == "Q4",
+                "a finished game read OT before #201")
+    }
+
+    @Test func aFinishedOvertimeGameStillSaysOvertime() {
+        let game = finished(.quarters, periods: 5)
+        #expect(game.periodFormat.periodLabel(game.displayPeriod) == "OT")
+    }
+
+    @Test func aRunningGameShowsThePeriodBeingPlayed() {
+        var game = finished(.quarters, periods: 2)
+        game.isComplete = false
+        #expect(game.displayPeriod == 3)
+        #expect(game.periodFormat.periodLabel(game.displayPeriod) == "Q3")
+    }
+
+    @Test func aGameWithNothingRecordedShowsItsFirstPeriod() {
+        var game = Game(opponent: "Hawks")
+        game.isComplete = true
+        #expect(game.displayPeriod == 1, "never zero, which has no label")
+    }
+}

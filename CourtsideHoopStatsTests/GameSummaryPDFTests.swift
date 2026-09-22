@@ -226,3 +226,40 @@ final class GameSummaryPDFTests: XCTestCase {
                        "Swish Warriors")
     }
 }
+
+/// The overtime linescore in print (#199/#201).
+///
+/// The screen grid grows by a row; the PDF's is columnar, so an overtime column
+/// has to share the width. Nothing rendered one until this test.
+final class OvertimePDFTests: XCTestCase {
+
+    @MainActor
+    func testTheLinescorePrintsAnOvertimeColumn() throws {
+        let team = DemoData.makeTeam()
+        let game = try XCTUnwrap(
+            DemoData.makeGames(team: team).first {
+                ($0.periodEndScores.keys.max() ?? 0) > $0.periodFormat.periodCount
+            },
+            "the demo needs a game that goes past regulation"
+        )
+
+        let url = try XCTUnwrap(GameSummaryPDF.render(game: game, teamName: team.name,
+                                                      roster: team.players, log: .off))
+        let data = try Data(contentsOf: url)
+        let pdf = try XCTUnwrap(PDFDocument(data: data))
+        let text = try XCTUnwrap(pdf.string)
+
+        XCTAssertTrue(text.contains("OT"), "the overtime column is missing from the linescore")
+        XCTAssertFalse(text.contains("Q5"), "a fifth quarter is overtime, not Q5")
+
+        // Five columns instead of four must not widen or overflow the page.
+        let bounds = try XCTUnwrap(pdf.page(at: 0)).bounds(for: .mediaBox)
+        XCTAssertEqual(bounds.width, 612, accuracy: 1)
+        XCTAssertEqual(pdf.pageCount, 1)
+
+        let attachment = XCTAttachment(data: data, uniformTypeIdentifier: "com.adobe.pdf")
+        attachment.name = "91-overtime-box-score.pdf"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

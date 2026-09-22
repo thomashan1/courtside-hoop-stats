@@ -20,6 +20,9 @@ struct LiveScoringView: View {
     /// Presented from the inert "Final" divider when re-editing a finished game,
     /// so opponent totals can still be corrected after the game ends (#23).
     @State private var showOpponentTotals = false
+    /// Choosing between fixing the totals and playing overtime, on a game that
+    /// finished level (#201).
+    @State private var choosingAfterTie = false
     /// Presents the List-based score-log editor (reorder + delete, #9).
     @State private var showLogEditor = false
     /// Presents the game-details editor (location, notes, matchup) so details
@@ -101,7 +104,7 @@ struct LiveScoringView: View {
                 ourScore: game.ourScore,
                 opponentName: game.opponent,
                 opponentScore: game.opponentScore,
-                periodLabel: game.periodFormat.periodLabel(game.currentPeriod)
+                periodLabel: game.periodFormat.periodLabel(game.displayPeriod)
             )
 
             // Pinned Score Log header — stays put while the entries scroll.
@@ -174,6 +177,15 @@ struct LiveScoringView: View {
         // navigation away from a live game.
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadGameIfNeeded)
+        .confirmationDialog("This game finished level",
+                            isPresented: $choosingAfterTie,
+                            titleVisibility: .visible) {
+            Button("Start Overtime") { resumeIntoOvertime() }
+            Button("Edit Opponent Totals") { showOpponentTotals = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Play overtime, or correct the opponent's totals if the scores shouldn't be level.")
+        }
         .sheet(isPresented: $showFollowers) {
             FollowersView(team: store.team)
         }
@@ -419,17 +431,42 @@ struct LiveScoringView: View {
         return game.isFinalPeriod ? "End \(label) & Finish" : "End \(label)"
     }
 
+    /// A finished game that ended level, where overtime is still a possibility
+    /// the app should offer. Reaching this means either the tie was meant to
+    /// stand and the teams played on anyway, or Finish was tapped by mistake —
+    /// and before #201 neither could be recorded, since #199 only offered
+    /// overtime at the moment a period was ended.
+    /// Kept as a `String` rather than inlined as a ternary: `Label`'s overloads
+    /// can't type-check a conditional of two literals here, and the compiler
+    /// gives up with "failed to produce diagnostic" rather than saying so.
+    private var finishedDividerLabel: String {
+        isFinishedAndTied ? "Tied · Edit or play overtime"
+                          : "Final · Edit opponent totals"
+    }
+
+    private var isFinishedAndTied: Bool {
+        game.isComplete
+            && game.periodFormat != .pickup
+            && game.ourScore == game.opponentScore
+    }
+
     @ViewBuilder
     private var endPeriodDivider: some View {
         if game.isComplete {
             // Inert as a period control (editing never re-finishes, #8), but
-            // tappable to correct opponent totals after the game ends (#23).
+            // tappable to correct opponent totals after the game ends (#23) —
+            // and, on a game that ended level, to play overtime after all
+            // (#201).
             Button {
-                showOpponentTotals = true
+                if isFinishedAndTied {
+                    choosingAfterTie = true
+                } else {
+                    showOpponentTotals = true
+                }
             } label: {
                 HStack(spacing: 10) {
                     dividerLine
-                    Label("Final · Edit opponent totals", systemImage: "flag.checkered")
+                    Label(finishedDividerLabel, systemImage: "flag.checkered")
                         .font(.subheadline).bold()
                         .foregroundStyle(.secondary)
                         .fixedSize()
@@ -526,6 +563,14 @@ struct LiveScoringView: View {
     private func recordAssist(_ assistPlayerID: UUID, for eventID: UUID) {
         guard let index = game.events.firstIndex(where: { $0.id == eventID }) else { return }
         game.events[index].assistPlayerID = assistPlayerID
+        store.updateGame(game)
+    }
+
+    /// Reopens a game that finished level so the next period — overtime — can
+    /// be scored. Nothing recorded is rewritten: the periods stand, and
+    /// `currentPeriod` is already one past the last of them (#201).
+    private func resumeIntoOvertime() {
+        game.isComplete = false
         store.updateGame(game)
     }
 
