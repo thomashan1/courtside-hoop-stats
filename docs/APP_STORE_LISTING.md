@@ -135,9 +135,19 @@ broken mid-sentence on the product page. Everything else in these docs wraps at
 > 1. The Home Game switch now says which team is at home, so a mix-up can't put the team in the wrong jersey.
 > 2. On a scheduled game, Delete no longer sits flush against Start Game, and asks before it deletes.
 
-**Screenshots to re-upload:** slot 7 (`07-games.png`) — the demo game's final
-score changed with the overtime seed — **plus slots 4, 5 and 8**, which v1.9
-needed for the tab-bar move and never shipped. Four in total.
+**Screenshots to re-upload — five, and they have now ridden along unuploaded
+through two releases:**
+
+| Slot | File | Why it differs from the store |
+|---|---|---|
+| 4 | `04-following-game.png` | Following moved to the left of the tab bar (v1.9) |
+| 5 | `05-game-summary.png` | same tab bar |
+| 7 | `07-games.png` | tab bar, tighter rows, no truncated gym name, and the demo game's score changed with the overtime seed |
+| 8 | `08-roster.png` | tab bar, and rows tight enough to fit a ten-player roster |
+| 9 | `09-new-game.png` | the Home Game switch now names the home team (v1.11) |
+
+Unchanged: 1, 2 and 3 (Live Scoring hides the tab bar, and the pad and assist
+sheets cover it), 6 (full-screen PDF preview), and 10 (a sheet).
 
 Overtime itself is **not** visible in any of the ten: it shows in the linescore,
 and no slot carries one. Putting it on the page would mean displacing a
