@@ -92,6 +92,7 @@ final class ScreenshotUITests: XCTestCase {
                       "A halves game should label its periods H1/H2, not Q1–Q4")
         XCTAssertFalse(app.staticTexts["Q1"].exists, "Quarter labels leaked into a halves game")
         snap(app, "15-game-summary-halves")
+
         app.navigationBars["vs Pine Ridge Panthers"].buttons.firstMatch.tap()
         XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
@@ -344,6 +345,35 @@ final class ScreenshotUITests: XCTestCase {
 
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
         snap(app, "15-scheduled-game-detail")
+
+        // 9) Last, because it *changes* the seed: a game that finished level
+        // can still be sent to overtime (#201). Running it earlier would move
+        // Pine Ridge out of Final Scores and into Playing Now, under captures
+        // taken after it.
+        //
+        // It follows the flow through rather than backing out, because a
+        // confirmationDialog's Cancel isn't reachable from the app's element
+        // tree — tapping it is what failed the first time this was written.
+        app.navigationBars.buttons.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["vs Pine Ridge Panthers"].waitForExistence(timeout: 10))
+        app.staticTexts["vs Pine Ridge Panthers"].tap()
+        app.buttons["Edit Scores"].tap()
+
+        XCTAssertTrue(app.buttons["Tied · Edit or play overtime"].waitForExistence(timeout: 10),
+                      "a finished level game should offer overtime")
+        snap(app, "28-finished-tie-divider")
+
+        app.buttons["Tied · Edit or play overtime"].tap()
+        XCTAssertTrue(app.buttons["Start Overtime"].waitForExistence(timeout: 5))
+        snap(app, "28a-finished-tie-choice")
+
+        app.buttons["Start Overtime"].tap()
+        // A halves game, so regulation is two periods and overtime is the
+        // third — the label has to come from the format, not a hard-coded Q4.
+        XCTAssertTrue(app.buttons["End OT & Finish"].waitForExistence(timeout: 10),
+                      "the reopened game should be playing overtime")
+        XCTAssertFalse(app.staticTexts["H3"].exists, "a third half is overtime, not H3")
+        snap(app, "28b-playing-overtime")
     }
 
 }

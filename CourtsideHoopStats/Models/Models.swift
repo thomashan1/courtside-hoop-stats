@@ -374,16 +374,36 @@ struct Game: Identifiable, Codable {
             .flatMap { periodEndScores[$0]?.opponentRunningTotal } ?? 0
     }
 
-    /// The period currently being scored (1-based). Once every period has an
-    /// end-score recorded the game is complete and this caps at the last period.
+    /// The period currently being scored (1-based): one past the last period
+    /// that has an end score. It does **not** cap at the format's period count
+    /// — that cap is what made overtime unreachable (#199) — and on a finished
+    /// game it names the period that *would* be next, which is what makes
+    /// resuming into overtime possible.
+    ///
+    /// Taken from the highest recorded period rather than the *number* of them,
+    /// so a gap can't produce a period that already has a score to overwrite.
+    /// Nothing creates a gap today (markers can't be deleted), which is
+    /// exactly why the arithmetic shouldn't depend on that staying true.
     var currentPeriod: Int {
-        periodEndScores.count + 1
+        (periodEndScores.keys.max() ?? 0) + 1
     }
 
     /// The last period of **regulation** — not necessarily the last period
     /// played, since a tie can send the game to overtime (#199).
     var isFinalPeriod: Bool {
         currentPeriod >= periodFormat.periodCount
+    }
+
+    /// The period to **show**, as opposed to the one to score into.
+    ///
+    /// `currentPeriod` names the period that would come *next*, which is right
+    /// while a game is running and wrong the moment it ends: on a finished
+    /// four-quarter game it reads 5, so the scoreboard labelled a completed
+    /// game "OT" — for a game that never went to one (#201, a regression from
+    /// #199 removing the cap). On a finished game this is the last period
+    /// actually played.
+    var displayPeriod: Int {
+        isComplete ? max(periodEndScores.keys.max() ?? 1, 1) : currentPeriod
     }
 
     /// Whether the period **now being played** is overtime. False once the
