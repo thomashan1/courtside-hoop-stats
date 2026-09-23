@@ -473,7 +473,20 @@ private struct FollowedGameView: View {
                         Image(systemName: "binoculars.fill").font(.caption)
                     }
                 } trailing: {
-                    if game.lifecycle == .inProgress { liveBadge }
+                    // The owner's band carries the date here; a follower's
+                    // carried nothing, so a finished game showed *no* day
+                    // anywhere on the screen — the caption under the badge
+                    // only names a date for a game that hasn't tipped off
+                    // yet (#203).
+                    //
+                    // A live game keeps the pill instead and loses nothing:
+                    // it's being played now, so the date is today.
+                    if game.lifecycle == .inProgress {
+                        liveBadge
+                    } else if game.lifecycle == .complete {
+                        Text(game.date.gameDayShort)
+                            .font(.subheadline.weight(.semibold))
+                    }
                 }
             }
 

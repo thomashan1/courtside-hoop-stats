@@ -117,6 +117,18 @@ final class FollowingScreenshotTests: XCTestCase {
         XCTAssertTrue(finished.waitForExistence(timeout: 10))
         finished.tap()
 
+        // The band has to name the day. A follower's card says "Following"
+        // where the owner's says the date, and the caption under the badge
+        // only names one for a game that hasn't tipped off — so before #203 a
+        // finished game showed no date at all. Matched by shape rather than by
+        // a literal, since the demo dates move with the run.
+        let dated = app.staticTexts.containing(
+            NSPredicate(format: "label MATCHES %@", "^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), .*")
+        ).firstMatch
+        XCTAssertTrue(dated.waitForExistence(timeout: 10),
+                      "a finished followed game should say when it was played")
+        snap("21a-following-finished")
+
         // The tracker's note, on the follower's side.
         //
         // `notes` has always been published — a game crosses the wire as one
