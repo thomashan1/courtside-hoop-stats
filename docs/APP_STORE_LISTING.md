@@ -115,7 +115,7 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.11 — not yet submitted
+### v1.11 — submitted 2026-09-27
 
 No NEW section: nothing user-facing was added, and inventing a headline for a
 fix release is how release notes stop being read. Item 2 is a regression that
@@ -150,6 +150,9 @@ broken mid-sentence on the product page. Everything else in these docs wraps at
 > FIXES
 > 1. The Home Game switch now says which team is at home, so a mix-up can't put the team in the wrong jersey.
 > 2. On a scheduled game, Delete no longer sits flush against Start Game, and asks before it deletes.
+
+**All ten were uploaded with v1.11 (2026-09-27)**, clearing a backlog that had
+ridden along unuploaded since v1.8. The listing's images now match the app.
 
 **Screenshots: re-upload all ten, every submission.** Not the changed ones —
 all of them. Working out which slots differ is guesswork against clock churn

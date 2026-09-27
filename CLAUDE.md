@@ -38,7 +38,10 @@ now saying which team is at home (#197). v1.9 before it moved Following to the
 left of the tab bar, centred a short Score Log on its PDF page, and tightened
 list density.
 
-**v1.11 is the open train.** Bump `MARKETING_VERSION` as soon as a version is
+**v1.11 is in review** (submitted 2026-09-27): overtime can be started on a
+game that already finished level, a finished game no longer claims to be in
+overtime (a v1.10 regression), and a follower can see the day a finished game
+was played. **v1.12 is the open train.** Bump `MARKETING_VERSION` as soon as a version is
 approved — approval closes that train, and since Xcode Cloud builds every push,
 the next commit fails with `ITMS-90186` even if it only touched Markdown.
 Minor versions go 1.9 → 1.10 → 1.11: App Store Connect compares components
