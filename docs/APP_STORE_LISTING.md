@@ -115,6 +115,22 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
+### v1.11 — not yet submitted
+
+No NEW section: nothing user-facing was added, and inventing a headline for a
+fix release is how release notes stop being read. Item 2 is a regression that
+shipped in v1.10 — it's the reason not to sit on this one.
+
+**Paste-ready — one line per item, no hard wraps.** App Store Connect's
+*What's New* field preserves newlines literally, so a wrapped paragraph arrives
+broken mid-sentence on the product page. Everything else in these docs wraps at
+76 characters; these blocks deliberately don't.
+
+> FIXES
+> 1. Finished a tied game and they played overtime anyway? Tap the "Tied" line at the end of the score log to play it out — it's no longer stuck as a final score.
+> 2. A finished game no longer shows "OT" above the score when it never went to overtime.
+> 3. If someone shares a team with you, a finished game now shows the day it was played.
+
 ### v1.10 — submitted 2026-09-20, build 167, approved 2026-09-21
 
 Overtime leads because it's the only thing here a reader can act on: the app
