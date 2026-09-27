@@ -25,27 +25,27 @@ tap targets, and error recovery are the top UX priorities.**
 
 Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` for
 what's in a release, and `docs/RELEASE_HISTORY.md` for build numbers and review
-turnaround. **v1.7 was approved 2026-09-17** (rebounds, notes shown to
-followers, 3-pointers badged in the Score Log, a `Codable` data-loss guard).
+turnaround.
 
-**v1.8 is in review**, build 147: automatic **iCloud backup** of every team and
-game, the **Score Log printed as page 2+** of the box score PDF, running totals
-in period headers, and the REB column hidden when a game has none.
+**v1.11 is in review** (submitted 2026-09-27): overtime can be started on a
+game that already finished level (#201), a finished game no longer claims to be
+in overtime — a regression that shipped in v1.10 — and a follower can see the
+day a finished game was played (#203).
 
 **v1.10 was approved 2026-09-21** (build 167): **overtime** for a tied game
 (#199), the scheduled game's actions rebuilt (#195), and the Home Game switch
-now saying which team is at home (#197). v1.9 before it moved Following to the
-left of the tab bar, centred a short Score Log on its PDF page, and tightened
-list density.
+saying which team is at home (#197). Before it: v1.9 moved Following to the
+left of the tab bar and tightened list density; v1.8 added **iCloud backup**
+and printed the **Score Log as page 2+** of the PDF; v1.7 added **rebounds**.
 
-**v1.11 is in review** (submitted 2026-09-27): overtime can be started on a
-game that already finished level, a finished game no longer claims to be in
-overtime (a v1.10 regression), and a follower can see the day a finished game
-was played. **v1.12 is the open train.** Bump `MARKETING_VERSION` as soon as a version is
-approved — approval closes that train, and since Xcode Cloud builds every push,
-the next commit fails with `ITMS-90186` even if it only touched Markdown.
-Minor versions go 1.9 → 1.10 → 1.11: App Store Connect compares components
-numerically, so 1.10 > 1.9, and 2.0 is saved for a release that earns it.
+**v1.12 is the open train.** Bump `MARKETING_VERSION` **while the previous
+version is still in review**, not after it's approved: approval closes that
+train, and since Xcode Cloud builds every push, the first commit after approval
+fails with `ITMS-90186` even if it only touched Markdown. Bumping early has no
+cost — a build at the new version simply isn't offered for the submitted one.
+Minor versions keep counting, 1.9 → 1.10 → 1.11 → 1.12: App Store Connect
+compares components numerically, so 1.10 > 1.9, and 2.0 is saved for a release
+that earns it.
 
 The CloudKit schema is deployed to Production and verified for **both**
 features — sharing (two TestFlight builds shared and followed each other's
