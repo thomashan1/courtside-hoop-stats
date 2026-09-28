@@ -530,8 +530,15 @@ private struct FollowedGameView: View {
             // A game that hasn't tipped off would otherwise get a full roster of
             // zeros, contradicting the card above it.
             if game.lifecycle != .scheduled, !stats.isEmpty {
-                Section("Player Stats") {
+                Section {
                     PlayerStatsTable(stats: stats, didNotPlay: game.didNotPlay(from: roster))
+                } header: {
+                    Text("Player Stats")
+                } footer: {
+                    // A follower is the *most* likely reader to need this:
+                    // they never see the scoring screen the numbers come from
+                    // (#205).
+                    Text("2s / 3s are baskets made. FT is made/attempted.")
                 }
             }
 
