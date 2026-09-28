@@ -259,8 +259,14 @@ struct PlayerStatsTable: View {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
                     Text("PTS")
-                    Text("2P")
-                    Text("3P")
+                    // "2s"/"3s", not "2P"/"3P": these are shots **made**, and
+                    // beside FT's "5/6" the bare integers were being read as
+                    // attempts — the wrong guess, which is worse than an
+                    // ambiguous one (#205). "2PM"/"3PM" is the conventional
+                    // fix, but it's a character wider on two columns and this
+                    // table has no width to give (UI_GUIDELINES §9).
+                    Text("2s")
+                    Text("3s")
                     Text("AST")
                     if showsRebounds { Text("REB") }
                     // Last on purpose — see the note above.

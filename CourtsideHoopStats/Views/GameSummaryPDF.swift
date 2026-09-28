@@ -167,6 +167,13 @@ struct GameSummaryPrintout: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// The column key, with the DNP note folded in only when a DNP row is
+    /// actually on the page.
+    private var legend: String {
+        let columns = "2s / 3s — baskets made · FT — made/attempted"
+        return didNotPlay.isEmpty ? columns : columns + " · DNP — did not play"
+    }
+
     // MARK: By-period linescore
 
     private var periodTable: some View {
@@ -232,8 +239,8 @@ struct GameSummaryPrintout: View {
                 HStack(spacing: 0) {
                     Text("Player").frame(width: Self.nameColumnWidth, alignment: .leading)
                     Text("PTS").frame(maxWidth: .infinity)
-                    Text("2P").frame(maxWidth: .infinity)
-                    Text("3P").frame(maxWidth: .infinity)
+                    Text("2s").frame(maxWidth: .infinity)
+                    Text("3s").frame(maxWidth: .infinity)
                     Text("AST").frame(maxWidth: .infinity)
                     if showsRebounds { Text("REB").frame(maxWidth: .infinity) }
                     // Last, matching the on-screen table.
@@ -303,13 +310,13 @@ struct GameSummaryPrintout: View {
             }
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.black.opacity(0.12)))
 
-            // Only worth explaining when the abbreviation actually appears.
-            if !didNotPlay.isEmpty {
-                Text("DNP — did not play")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
-            }
+            // What the columns mean. The PDF is the copy that gets forwarded
+            // to people who never opened the app, so it's the one place the
+            // key really has to be spelled out (#205).
+            Text(legend)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
         }
     }
 

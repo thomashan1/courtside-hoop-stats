@@ -126,7 +126,7 @@ struct GameSummaryView: View {
     // MARK: - Player stats table
 
     private var statsSection: some View {
-        Section("Player Stats") {
+        Section {
             // Shared table (#8) — the same component used in Live Scoring.
             // It's the horizontally-scrollable Grid version that also fixes #12.
             // Pass the whole roster: `stats(for:)` drops benched players itself,
@@ -134,6 +134,14 @@ struct GameSummaryView: View {
             // up to the final score (#59).
             PlayerStatsTable(stats: game.stats(for: store.team.players),
                              didNotPlay: game.didNotPlay(from: store.team.players))
+        } header: {
+            Text("Player Stats")
+        } footer: {
+            // The key, because three units sit side by side here: points,
+            // baskets made, and made/attempted. Without it the bare integers
+            // beside FT's "5/6" get read as attempts (#205). Deliberately not
+            // on the live Stats panel, which has no room to spare.
+            Text("2s / 3s are baskets made. FT is made/attempted.")
         }
     }
 
