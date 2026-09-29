@@ -24,6 +24,11 @@ struct EventLogView: View {
     var newestFirst: Bool = false
     /// Called after any edit/delete so the caller can persist the game.
     var persist: () -> Void
+    /// Tapping the header of an **ended** period, to correct that period's
+    /// opponent total. Nil where the log shouldn't offer it — a follower's
+    /// view, and the Game Summary, which routes every change through
+    /// "Edit Scores" (#207).
+    var onEditPeriod: ((Int) -> Void)? = nil
 
     @State private var editingEvent: GameEvent?
 
@@ -74,7 +79,30 @@ struct EventLogView: View {
     }
 
     /// Quarter / half separator — the sticky header when pinning is on.
+    ///
+    /// Tappable once that period has ended, to fix its opponent total. Before
+    /// #207 a mistyped total was stuck until the whole game finished, since the
+    /// editor was only reachable from the "Final" divider — and the wrong
+    /// opponent score then sat on the scoreboard for the rest of the game.
+    @ViewBuilder
     private func periodHeader(_ period: Int) -> some View {
+        if let onEditPeriod, isTappable(period) {
+            Button { onEditPeriod(period) } label: {
+                periodHeaderContent(period)
+            }
+            .buttonStyle(.plain)
+        } else {
+            periodHeaderContent(period)
+        }
+    }
+
+    /// Whether this period's header opens the opponent-total editor: someone
+    /// asked it to, and the period has actually ended.
+    private func isTappable(_ period: Int) -> Bool {
+        onEditPeriod != nil && game.periodEndScores[period] != nil
+    }
+
+    private func periodHeaderContent(_ period: Int) -> some View {
         HStack(spacing: 8) {
             Text(game.periodFormat.periodLabel(period))
                 .font(.subheadline).bold()
@@ -98,14 +126,18 @@ struct EventLogView: View {
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .fixedSize()
-            // An invisible chevron, so the total lands in the same column as a
-            // row's when rows carry one. Rows put the chevron *after* the
-            // total, so without this placeholder the header's number sits a
-            // chevron's width to the right of every row's.
+            // A chevron, so the total lands in the same column as a row's when
+            // rows carry one. Rows put the chevron *after* the total, so
+            // without this the header's number sits a chevron's width to the
+            // right of every row's.
+            //
+            // It was always invisible until #207 gave ended periods somewhere
+            // to go: now it *shows* on a header you can actually tap, which
+            // costs no layout change because the space was already reserved.
             if isEditable {
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .hidden()
+                    .opacity(isTappable(period) ? 1 : 0)
             }
         }
         .padding(.horizontal, 10)
