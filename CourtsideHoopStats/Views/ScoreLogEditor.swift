@@ -13,7 +13,11 @@ struct ScoreLogEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var game: Game
     let players: [Player]
-    var persist: () -> Void
+    /// Takes the game it should save. Handed the value rather than re-reading
+    /// the caller's state: a `{ store.updateGame(game) }` closure at the call
+    /// site reads whatever `game` is when it runs, which is how a reorder could
+    /// be applied on screen and never reach the store (#209).
+    var persist: (Game) -> Void
 
     /// Oldest-first display order of the log.
     @State private var items: [ScoreLogItem] = []
@@ -118,19 +122,19 @@ struct ScoreLogEditor: View {
         game = game.applyingReorderedLog(items)
         // Re-derive the display list so ids/periods stay in sync.
         items = game.orderedLog()
-        persist()
+        persist(game)
     }
 
     private func updateEvent(_ updated: GameEvent) {
         guard let i = game.events.firstIndex(where: { $0.id == updated.id }) else { return }
         game.events[i] = updated
-        persist()
+        persist(game)
         items = game.orderedLog()
     }
 
     private func deleteEvent(_ event: GameEvent) {
         game.events.removeAll { $0.id == event.id }
-        persist()
+        persist(game)
         items = game.orderedLog()
     }
 }

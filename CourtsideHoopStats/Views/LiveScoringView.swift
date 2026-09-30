@@ -212,11 +212,11 @@ struct LiveScoringView: View {
             )
         }
         .sheet(isPresented: $showOpponentTotals) {
-            OpponentTotalsSheet(game: $game) { store.updateGame(game) }
+            OpponentTotalsSheet(game: $game) { store.updateGame($0) }
         }
         .sheet(isPresented: $showLogEditor) {
-            ScoreLogEditor(game: $game, players: store.team.players) {
-                store.updateGame(game)
+            ScoreLogEditor(game: $game, players: store.team.players) { edited in
+                store.updateGame(edited)
             }
         }
         .sheet(item: $scoringPlayer) { player in
@@ -408,7 +408,7 @@ struct LiveScoringView: View {
         VStack(alignment: .leading, spacing: 10) {
             EventLogView(game: $game, players: store.team.players,
                          pinsPeriodHeaders: true,
-                         persist: { store.updateGame(game) },
+                         persist: { store.updateGame($0) },
                          // Tapping an ended period's header fixes that
                          // period's opponent total. The editor already handled
                          // every recorded period; until #207 it was only
@@ -558,7 +558,7 @@ struct LiveScoringView: View {
     /// itself is already recorded and persisted by the time this returns.
     @discardableResult
     private func recordScore(_ type: EventType, for playerID: UUID) -> UUID {
-        let event = GameEvent(playerID: playerID, type: type, period: game.currentPeriod)
+        let event = GameEvent(playerID: playerID, type: type, period: game.periodForNewEvent)
         game.events.append(event)
         store.updateGame(game)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -830,7 +830,8 @@ struct OpponentTotalsSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Binding var game: Game
-    var persist: () -> Void
+    /// Handed the game to save, not a closure that re-reads it (#209).
+    var persist: (Game) -> Void
 
     private var recordedPeriods: [Int] {
         game.periodEndScores.keys.sorted()
@@ -843,7 +844,7 @@ struct OpponentTotalsSheet: View {
                 if var score = game.periodEndScores[period] {
                     score.opponentRunningTotal = newValue
                     game.periodEndScores[period] = score
-                    persist()
+                    persist(game)
                 }
             }
         )

@@ -22,8 +22,9 @@ struct EventLogView: View {
     /// (newest nearest the thumb, next to the buttons); a follower is watching
     /// rather than tapping, so new plays should arrive where they're looking.
     var newestFirst: Bool = false
-    /// Called after any edit/delete so the caller can persist the game.
-    var persist: () -> Void
+    /// Called after any edit/delete with the game to save. Handed the value
+    /// rather than re-reading the caller's state — see `ScoreLogEditor` (#209).
+    var persist: (Game) -> Void
     /// Tapping the header of an **ended** period, to correct that period's
     /// opponent total. Nil where the log shouldn't offer it — a follower's
     /// view, and the Game Summary, which routes every change through
@@ -206,12 +207,12 @@ struct EventLogView: View {
     private func update(_ updated: GameEvent) {
         guard let i = game.events.firstIndex(where: { $0.id == updated.id }) else { return }
         game.events[i] = updated
-        persist()
+        persist(game)
     }
 
     private func delete(_ event: GameEvent) {
         game.events.removeAll { $0.id == event.id }
-        persist()
+        persist(game)
     }
 }
 

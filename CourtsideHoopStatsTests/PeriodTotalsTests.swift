@@ -254,3 +254,81 @@ struct DisplayPeriodTests {
         #expect(game.displayPeriod == 1, "never zero, which has no label")
     }
 }
+
+
+/// Editing a game after it's finished (#209).
+struct EditingAFinishedGameTests {
+
+    private func finishedQuarters() -> Game {
+        var game = Game(opponent: "Hawks")
+        let scorer = UUID()
+        for period in 1...4 {
+            game.events.append(GameEvent(playerID: scorer, type: .twoPoint, period: period))
+            game.periodEndScores[period] = PeriodEndScore(ourRunningTotal: period * 2,
+                                                          opponentRunningTotal: period * 2)
+        }
+        game.isComplete = true
+        return game
+    }
+
+    /// The reported bug: an event added while editing a finished game was
+    /// tagged with `currentPeriod` — one *past* the last period played — so it
+    /// landed in an overtime that never happened.
+    @Test func anEventAddedToAFinishedGameLandsInTheLastPeriodPlayed() {
+        var game = finishedQuarters()
+        #expect(game.currentPeriod == 5, "there is no period 5; this is why it needs its own accessor")
+        #expect(game.periodForNewEvent == 4)
+
+        game.events.append(GameEvent(playerID: UUID(), type: .ftMissed,
+                                     period: game.periodForNewEvent))
+
+        #expect(game.events.map(\.period).max() == 4)
+        #expect(game.periodBreakdownCumulative().count == 4,
+                "a phantom overtime row would mean the linescore invented a period")
+        #expect(game.periodFormat.periodLabel(game.periodForNewEvent) == "Q4",
+                "the entry used to file itself under OT")
+    }
+
+    /// A game still being played is unaffected: new events go into the period
+    /// being scored.
+    @Test func aRunningGameStillRecordsIntoTheCurrentPeriod() {
+        var game = finishedQuarters()
+        game.isComplete = false
+        game.periodEndScores[4] = nil
+        #expect(game.periodForNewEvent == game.currentPeriod)
+        #expect(game.periodForNewEvent == 4)
+    }
+
+    /// And a game genuinely in overtime records into overtime.
+    @Test func anOvertimeGameRecordsIntoOvertime() {
+        var game = finishedQuarters()
+        game.isComplete = false          // resumed into overtime (#201)
+        #expect(game.periodForNewEvent == 5)
+        #expect(game.periodFormat.periodLabel(game.periodForNewEvent) == "OT")
+    }
+
+    /// Reordering a finished game's log must not resurrect completion state or
+    /// lose the score — the drag in the report ended with an entry that
+    /// wouldn't stay put.
+    @Test func reorderingAFinishedGameKeepsItsScoreAndPeriods() {
+        var game = finishedQuarters()
+        game.events.append(GameEvent(playerID: UUID(), type: .ftMissed,
+                                     period: game.periodForNewEvent))
+        let before = game.ourScore
+
+        var items = game.orderedLog()
+        // Drag the FT miss to the front — "up to end of Q1". Found by id
+        // rather than by position: the log ends with the Q4 *marker*, not the
+        // last event, which is what makes `removeLast()` the wrong reach.
+        let missID = try! #require(game.events.last { $0.type == .ftMissed }).id
+        let index = try! #require(items.firstIndex { $0.id == "e-\(missID.uuidString)" })
+        let moved = items.remove(at: index)
+        items.insert(moved, at: 0)
+        let reordered = game.applyingReorderedLog(items)
+
+        #expect(reordered.ourScore == before, "an FT miss is worth nothing either way")
+        #expect(reordered.events.first.map { $0.period } == 1, "it should now be in Q1")
+        #expect(reordered.periodEndScores.keys.max() == 4, "and no period invented")
+        #expect(reordered.isComplete, "reordering doesn't reopen the game")
+    }
+}

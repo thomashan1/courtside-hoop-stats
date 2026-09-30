@@ -394,6 +394,17 @@ struct Game: Identifiable, Codable {
         currentPeriod >= periodFormat.periodCount
     }
 
+    /// The period a **newly recorded event** belongs to.
+    ///
+    /// While a game runs that's `currentPeriod`. Once it's finished there is no
+    /// next period to score into, and `currentPeriod` names one anyway — 5 on a
+    /// finished four-quarter game — so an event added while editing a finished
+    /// game landed in a phantom overtime, below the last marker, and grew an OT
+    /// row on the linescore of a game that never went to one (#209).
+    var periodForNewEvent: Int {
+        isComplete ? displayPeriod : currentPeriod
+    }
+
     /// The period to **show**, as opposed to the one to score into.
     ///
     /// `currentPeriod` names the period that would come *next*, which is right
