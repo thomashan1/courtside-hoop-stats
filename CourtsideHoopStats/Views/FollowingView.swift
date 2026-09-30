@@ -510,7 +510,7 @@ private struct FollowedGameView: View {
                                  players: roster,
                                  isEditable: false,
                                  newestFirst: true,
-                                 persist: {})
+                                 persist: { _ in })
                 } header: {
                     // Says which way the log runs. It's the opposite of the
                     // scoring screen, where the log is oldest-first and scrolls
