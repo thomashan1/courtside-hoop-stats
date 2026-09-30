@@ -407,9 +407,15 @@ struct LiveScoringView: View {
     private var eventLog: some View {
         VStack(alignment: .leading, spacing: 10) {
             EventLogView(game: $game, players: store.team.players,
-                         pinsPeriodHeaders: true) {
-                store.updateGame(game)
-            }
+                         pinsPeriodHeaders: true,
+                         persist: { store.updateGame(game) },
+                         // Tapping an ended period's header fixes that
+                         // period's opponent total. The editor already handled
+                         // every recorded period; until #207 it was only
+                         // reachable from the "Final" divider, so a mistyped
+                         // Q1 total stood — wrong on the scoreboard — for the
+                         // rest of the game.
+                         onEditPeriod: { _ in showOpponentTotals = true })
 
             // The "end this period" control sits at the bottom, after the current
             // period's (newest) events — the natural place to finish a period.

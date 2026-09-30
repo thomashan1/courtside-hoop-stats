@@ -208,6 +208,21 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(header.isHittable,
                       "The AST column should be on screen in the live Stats panel")
         snap(app, "19-live-stats-panel")
+
+        // 4a) A past quarter's opponent total can be corrected mid-game
+        // (#207). Until then the editor was only reachable from the "Final"
+        // divider, so a mistyped Q1 total stood — and showed on the
+        // scoreboard — for the rest of the game.
+        let q1Header = app.buttons.containing(
+            NSPredicate(format: "label BEGINSWITH %@", "Q1")
+        ).firstMatch
+        XCTAssertTrue(q1Header.waitForExistence(timeout: 10),
+                      "an ended period's header should be tappable mid-game")
+        q1Header.tap()
+        XCTAssertTrue(app.navigationBars["Opponent Totals"].waitForExistence(timeout: 5),
+                      "tapping it should open the opponent-total editor")
+        snap(app, "29-edit-opponent-totals-midgame")
+        app.buttons["Done"].firstMatch.tap()
         statsToggle.tap()   // collapse again; later steps expect the deck unobstructed
 
         // 3b) Details editor (Cancel/Save) — edit location/notes mid-game.
