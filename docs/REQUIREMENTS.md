@@ -131,6 +131,13 @@ toolbar — and, for a follower, from the same icon on the followed team's game
 list, since that side has no Roster tab. One shared read-only screen; nothing
 on it can change anything.
 
+Above the players sits the **team's own record** (#213): W–L–T, PCT, and points
+for/against per game. Not league standings — the app only knows the games this
+tracker kept, so the footer says so rather than letting it pass for the
+league's table. A tie counts **half a win** in PCT, the only weighting that
+puts 1-0-1 above 1-1-0. No streak: it says little about a youth team and the
+points pair uses the width better.
+
 Columns: **GP · PPG · 3s · AST · FT%**. Pure aggregation of what's already
 recorded — no new capture, no schema change, nothing extra on the wire, which
 is what separates it from #175.

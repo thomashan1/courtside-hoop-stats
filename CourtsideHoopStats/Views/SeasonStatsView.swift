@@ -30,6 +30,19 @@ struct SeasonStatsView: View {
             } else {
                 List {
                     Section {
+                        TeamRecordCard(record: TeamRecord.record(from: games))
+                            .listRowInsets(EdgeInsets(top: 12, leading: 16,
+                                                      bottom: 12, trailing: 16))
+                    } header: {
+                        Text("Record")
+                    } footer: {
+                        // Said out loud because it will sometimes disagree with
+                        // the league's table: this counts the games *we* kept,
+                        // and a missed one simply isn't here (#213).
+                        Text("From the games recorded in this app, which may not be every game in the league.")
+                    }
+
+                    Section {
                         SeasonStatsTable(season: season)
                     } header: {
                         Text("Per game, across \(completedGames) game\(completedGames == 1 ? "" : "s")")
@@ -124,5 +137,65 @@ struct SeasonStatsTable: View {
         Text(self.average(average))
             .monospacedDigit()
             .foregroundStyle(average == 0 ? .secondary : .primary)
+    }
+}
+
+
+/// The team's own record, above the player averages (#213).
+///
+/// Four numbers, no streak: a streak says little about a youth team and costs
+/// width that the points pair uses better.
+struct TeamRecordCard: View {
+    let record: TeamRecord
+
+    private var percent: String {
+        String(format: "%.3f", record.winPercent)
+            .replacingOccurrences(of: "0.", with: ".")
+    }
+
+    var body: some View {
+        // Wraps rather than scrolls: four short tiles fit a phone at default
+        // size, and at accessibility sizes they stack instead of clipping —
+        // unlike the stats table, which has to scroll because its columns
+        // can't be reflowed.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 20) { tiles }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 20) { recordTile; percentTile }
+                HStack(spacing: 20) { forTile; againstTile }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder private var tiles: some View {
+        recordTile
+        percentTile
+        forTile
+        againstTile
+    }
+
+    private var recordTile: some View {
+        tile(record.display, "W–L" + (record.ties > 0 ? "–T" : ""), emphasised: true)
+    }
+    private var percentTile: some View { tile(percent, "PCT") }
+    private var forTile: some View {
+        tile(String(format: "%.1f", record.pointsForPerGame), "PTS FOR")
+    }
+    private var againstTile: some View {
+        tile(String(format: "%.1f", record.pointsAgainstPerGame), "PTS AGAINST")
+    }
+
+    private func tile(_ value: String, _ label: String, emphasised: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(emphasised ? .title2.bold() : .title3.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(emphasised ? Color.teamAccent : .primary)
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .fixedSize()
     }
 }
