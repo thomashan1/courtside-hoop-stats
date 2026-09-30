@@ -77,6 +77,12 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   the same sheet that takes the opponent's total — never forces it, because a
   youth league lets ties stand. Overtime is the next period number, labelled
   **OT / 2OT / 3OT**; no schema change, since periods were already `Int`.
+- **Season averages.** The bar-chart icon on the Roster tab (and on a
+  follower's team list, which is that side's team view) opens every player's
+  per-game averages across finished games — GP, PPG, 3s, AST, FT%. Pure
+  aggregation: no new capture, no schema change. **GP counts games played, not
+  scheduled**, and a column vanishes when a season has none of it — REB is left
+  out entirely while rebounds aren't really being tracked.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
   editable opponent totals, editable log.

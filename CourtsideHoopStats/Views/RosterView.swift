@@ -66,6 +66,20 @@ struct RosterView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    // The season lives off the Roster because this is the team
+                    // view — the games tab is a list of occasions, this is the
+                    // list of people the averages are about (#211).
+                    NavigationLink {
+                        SeasonStatsView(teamName: store.team.name,
+                                        roster: store.team.players,
+                                        games: store.games)
+                    } label: {
+                        Image(systemName: "chart.bar.xaxis")
+                            .minimumTapTarget()
+                    }
+                    .accessibilityLabel("Season Averages")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingAdd = true
                     } label: {
