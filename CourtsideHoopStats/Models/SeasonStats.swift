@@ -88,3 +88,57 @@ extension SeasonStats {
         season.contains { value($0) > 0 }
     }
 }
+
+
+/// A team's record across the games it actually recorded (#213).
+///
+/// Deliberately **not** league standings: the app only knows the games this
+/// tracker kept, so a missed game — or one somebody else tracked — leaves this
+/// disagreeing with the league table. It says what it counted so the number
+/// can't quietly pass for an official standing.
+struct TeamRecord {
+    var wins: Int = 0
+    var losses: Int = 0
+    var ties: Int = 0
+    var pointsFor: Int = 0
+    var pointsAgainst: Int = 0
+
+    var gamesPlayed: Int { wins + losses + ties }
+
+    /// Wins over games played, with a tie counting half — the usual convention,
+    /// and the only one that puts a 1-0-1 team above a 1-1-0 one.
+    var winPercent: Double {
+        guard gamesPlayed > 0 else { return 0 }
+        return (Double(wins) + Double(ties) / 2) / Double(gamesPlayed)
+    }
+
+    /// "7–2" or "7–2–1": the tie is only shown when there is one, since most
+    /// records don't have any and a trailing "–0" reads as noise.
+    var display: String {
+        ties > 0 ? "\(wins)–\(losses)–\(ties)" : "\(wins)–\(losses)"
+    }
+
+    var pointsForPerGame: Double {
+        gamesPlayed > 0 ? Double(pointsFor) / Double(gamesPlayed) : 0
+    }
+
+    var pointsAgainstPerGame: Double {
+        gamesPlayed > 0 ? Double(pointsAgainst) / Double(gamesPlayed) : 0
+    }
+
+    /// The record across every **completed** game; one in progress has no
+    /// result yet, and a scheduled one has nothing at all.
+    static func record(from games: [Game]) -> TeamRecord {
+        var record = TeamRecord()
+        for game in games where game.lifecycle == .complete {
+            switch game.result {
+            case .win:  record.wins += 1
+            case .loss: record.losses += 1
+            case .tie:  record.ties += 1
+            }
+            record.pointsFor += game.ourScore
+            record.pointsAgainst += game.opponentScore
+        }
+        return record
+    }
+}

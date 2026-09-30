@@ -133,3 +133,63 @@ struct SeasonStatsTests {
         #expect(SeasonStats.season(for: roster(), in: [scheduled]).isEmpty)
     }
 }
+
+/// The team's own record (#213).
+struct TeamRecordTests {
+
+    private func game(_ ours: Int, _ theirs: Int, complete: Bool = true) -> Game {
+        var game = Game(opponent: "Someone")
+        let scorer = UUID()
+        for _ in 0..<(ours / 2) {
+            game.events.append(GameEvent(playerID: scorer, type: .twoPoint, period: 1))
+        }
+        game.periodEndScores = [1: PeriodEndScore(ourRunningTotal: ours,
+                                                  opponentRunningTotal: theirs)]
+        game.isComplete = complete
+        game.hasStarted = true
+        return game
+    }
+
+    @Test func countsWinsLossesAndTiesFromCompletedGamesOnly() {
+        let record = TeamRecord.record(from: [
+            game(20, 10),        // win
+            game(10, 20),        // loss
+            game(14, 14),        // tie
+            game(40, 0, complete: false),   // still being played
+        ])
+
+        #expect(record.wins == 1)
+        #expect(record.losses == 1)
+        #expect(record.ties == 1)
+        #expect(record.gamesPlayed == 3, "the live game has no result yet")
+    }
+
+    @Test func aTieCountsAsHalfAWin() {
+        // 1-0-1 has to rank above 1-1-0, which only a half-weighted tie does.
+        let withTie = TeamRecord.record(from: [game(20, 10), game(14, 14)])
+        let withLoss = TeamRecord.record(from: [game(20, 10), game(10, 20)])
+        #expect(withTie.winPercent == 0.75)
+        #expect(withLoss.winPercent == 0.5)
+        #expect(withTie.winPercent > withLoss.winPercent)
+    }
+
+    @Test func theTieIsOnlyShownWhenThereIsOne() {
+        #expect(TeamRecord.record(from: [game(20, 10), game(10, 20)]).display == "1–1")
+        #expect(TeamRecord.record(from: [game(20, 10), game(14, 14)]).display == "1–0–1")
+    }
+
+    @Test func pointsForAndAgainstArePerGame() {
+        let record = TeamRecord.record(from: [game(20, 10), game(10, 20)])
+        #expect(record.pointsFor == 30)
+        #expect(record.pointsAgainst == 30)
+        #expect(record.pointsForPerGame == 15)
+        #expect(record.pointsAgainstPerGame == 15)
+    }
+
+    @Test func aSeasonWithNoFinishedGamesDividesByNothing() {
+        let record = TeamRecord.record(from: [game(40, 0, complete: false)])
+        #expect(record.gamesPlayed == 0)
+        #expect(record.winPercent == 0)
+        #expect(record.pointsForPerGame == 0, "and doesn't divide by zero")
+    }
+}
