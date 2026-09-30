@@ -246,6 +246,16 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Nicholas H."].waitForExistence(timeout: 10))
         snap(app, "04-roster")
 
+        // 3a) Season averages (#211) — the first screen that makes the
+        // accumulated season worth something, and the one place a column
+        // disappears for lack of data rather than showing a misleading average.
+        app.buttons["Season Averages"].tap()
+        XCTAssertTrue(app.staticTexts["PPG"].waitForExistence(timeout: 10),
+                      "the season table should be up")
+        XCTAssertTrue(app.staticTexts["GP"].exists, "games played is the denominator people check")
+        snap(app, "30-season-averages")
+        app.navigationBars.buttons.firstMatch.tap()
+
         // 4b) Settings → team management (#20).
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Teams"].waitForExistence(timeout: 10))

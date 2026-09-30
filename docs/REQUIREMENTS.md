@@ -123,6 +123,37 @@ old follower sees what a tracker used to do by hand — overtime scored inside Q
 
 `CloudKitSchema.payload(for:)` keeps `events` to the types every shipped build knows and parks newer ones under a top-level `laterEvents` key an old `Game.init(from:)` never reads. An old follower sees the game with the correct score and no rebounds; a current one gets them merged back. This works only because a rebound is worth **0 points** — a new *scoring* type would leave an old follower computing a wrong total and needs a different answer. `EventType` additionally decodes unknown raw values to `.unknown` as a second line of defence.
 
+### 3.6a Season averages (#211)
+
+A team's season so far: every player's **per-game averages** across the games
+that have finished, reached from the **bar-chart icon** in the Roster tab's
+toolbar — and, for a follower, from the same icon on the followed team's game
+list, since that side has no Roster tab. One shared read-only screen; nothing
+on it can change anything.
+
+Columns: **GP · PPG · 3s · AST · FT%**. Pure aggregation of what's already
+recorded — no new capture, no schema change, nothing extra on the wire, which
+is what separates it from #175.
+
+- **GP counts games *played***, not scheduled: a game someone was benched for
+  isn't held against their average.
+- **No REB column** while rebounds aren't being tracked — an average drawn from
+  the few games where someone happened to tap REB says more about the tracking
+  than the player. The totals are still aggregated, so restoring it is one line.
+- **No 2s column** either: at eight columns FT% was clipped off the right edge
+  (§9 of `UI_GUIDELINES.md`), and PPG already carries the twos.
+- **AST and FT% disappear entirely** when a season has none — the same rule
+  #187 applies to REB within a single game.
+- **FT% is a dash, not 0%**, for a player who never went to the line.
+- Only **completed** games count; a game in progress would drag every average
+  down halfway through.
+- **Known limitation:** a player added mid-season counts the games before they
+  joined, because nothing records a join date and a past game's bench list
+  can't name someone who wasn't on the team yet. The alternative — counting
+  only games where they recorded something — inflates the average of anyone who
+  plays defence and doesn't score, which is the worse error to make about a
+  child.
+
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
 - Player stats table (sorted by points), first names: PTS, **2s**, **3s**, **AST**, **REB**, then **FT** as made/attempts (`5/6`). `2s`/`3s` rather than `2P`/`3P` because the columns count **baskets made**, and beside FT's `5/6` the bare integers were being read as attempts — the wrong guess, which is worse than an ambiguous one (#205). The conventional `2PM`/`3PM` says it too but costs a character on two columns, and this table has none to give. A one-line key sits under the table on the Game Summary, the follower's game and the PDF; the live Stats panel has no room and doesn't get one. **REB is hidden entirely when no player in that game has one** — rebounds are hard to catch while scoring live, so a column of zeroes is the common case and reads as "nobody got one" rather than "nobody recorded one". REB was the seventh column and the last of the slack at the default text size; anything further needs a column removed, not added. The whole-percent **FT%** (`5/6 (83%)`) is the **PDF's** — on a phone that column is roughly three times the width of any other, and the Player column is sized by the longest name on the roster, so a long name leaves too little for it. The fraction says the same thing in a third of the space. A stat the player didn't record is drawn in grey rather than full contrast, on screen and in the PDF alike — a youth roster puts several all-zero rows in the table and a wall of identical `0`s buries the two or three who carried the game. Grey, not a dash: `—` already means *no data* here, and the DNP row exists to keep "played, didn't score" distinct from "wasn't there". `0/1 (0%)` stays full contrast — a missed free throw is a real event; `0/0` is not. FT is deliberately **last**: it's three times the width of any other value, so anywhere else it pushes the columns to its right off the edge, and it's the least urgent number mid-game. The same table and order appear in the Game Summary, the live **Stats** panel and a follower's game view — the live panel is the narrowest of the three and the one a new column has to fit.

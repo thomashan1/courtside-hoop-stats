@@ -56,6 +56,23 @@ struct FollowingView: View {
             // bubbles belong to someone else's team.
             .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
             .toolbar {
+                // A follower has no Roster tab, so the season hangs off the
+                // followed team's list — which *is* their team view. Same
+                // screen as the owner's, which is safe because it can't change
+                // anything (#211).
+                if let followed = selected {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NavigationLink {
+                            SeasonStatsView(teamName: followed.team.name,
+                                            roster: followed.team.players,
+                                            games: followed.games)
+                        } label: {
+                            Image(systemName: "chart.bar.xaxis")
+                                .minimumTapTarget()
+                        }
+                        .accessibilityLabel("Season Averages")
+                    }
+                }
                 // Only a real choice when there's more than one team to pick.
                 // A plain toolbar `Menu` (#121) rather than `ToolbarTitleMenu`:
                 // the latter never actually opened when tapped — confirmed with
