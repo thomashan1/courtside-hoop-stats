@@ -112,6 +112,12 @@ struct TeamRecord {
         return (Double(wins) + Double(ties) / 2) / Double(gamesPlayed)
     }
 
+    /// "63%", not the standings-page ".625" — a family reading this didn't
+    /// know what ".625" under "PCT" meant.
+    var winPercentDisplay: String {
+        "\(Int((winPercent * 100).rounded()))%"
+    }
+
     /// "7–2" or "7–2–1": the tie is only shown when there is one, since most
     /// records don't have any and a trailing "–0" reads as noise.
     var display: String {
