@@ -173,6 +173,14 @@ struct TeamRecordTests {
         #expect(withTie.winPercent > withLoss.winPercent)
     }
 
+    @Test func winPercentReadsAsAPercentage() {
+        // 2-1-1 is 2.5 of 4: 62.5% rounds to 63%, not the standings ".625".
+        let record = TeamRecord.record(from: [game(20, 10), game(20, 10), game(10, 20), game(14, 14)])
+        #expect(record.winPercentDisplay == "63%")
+        #expect(TeamRecord.record(from: [game(20, 10)]).winPercentDisplay == "100%")
+        #expect(TeamRecord.record(from: []).winPercentDisplay == "0%")
+    }
+
     @Test func theTieIsOnlyShownWhenThereIsOne() {
         #expect(TeamRecord.record(from: [game(20, 10), game(10, 20)]).display == "1–1")
         #expect(TeamRecord.record(from: [game(20, 10), game(14, 14)]).display == "1–0–1")

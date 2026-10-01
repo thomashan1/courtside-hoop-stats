@@ -67,10 +67,9 @@ struct SeasonPrintout: View {
     private var recordRow: some View {
         HStack(spacing: 0) {
             recordTile(record.display, record.ties > 0 ? "W–L–T" : "W–L", wide: true)
-            recordTile(String(format: "%.3f", record.winPercent)
-                .replacingOccurrences(of: "0.", with: "."), "PCT")
-            recordTile(String(format: "%.1f", record.pointsForPerGame), "PTS FOR")
-            recordTile(String(format: "%.1f", record.pointsAgainstPerGame), "PTS AGAINST")
+            recordTile(record.winPercentDisplay, "WIN %")
+            recordTile(String(format: "%.1f", record.pointsForPerGame), "POINTS SCORED PER GAME")
+            recordTile(String(format: "%.1f", record.pointsAgainstPerGame), "POINTS ALLOWED PER GAME")
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)

@@ -83,7 +83,7 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   aggregation: no new capture, no schema change. **GP counts games played, not
   scheduled**, and a column vanishes when a season has none of it — REB is left
   out entirely while rebounds aren't really being tracked. The team's own
-  record (W–L–T, PCT, points for/against per game) sits above it — **not**
+  record (W–L–T, Win %, points scored/allowed per game) sits above it — **not**
   league standings, since the app only knows the games this tracker kept.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),

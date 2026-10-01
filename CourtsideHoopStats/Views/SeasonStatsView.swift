@@ -45,7 +45,7 @@ struct SeasonStatsView: View {
                         // Said out loud because it will sometimes disagree with
                         // the league's table: this counts the games *we* kept,
                         // and a missed one simply isn't here (#213).
-                        Text("From the games recorded in this app, which may not be every game in the league.")
+                        Text("Win % counts a tie as half a win. From the games recorded in this app, which may not be every game in the league.")
                     }
 
                     Section {
@@ -245,11 +245,6 @@ struct SeasonStatsTable: View {
 struct TeamRecordCard: View {
     let record: TeamRecord
 
-    private var percent: String {
-        String(format: "%.3f", record.winPercent)
-            .replacingOccurrences(of: "0.", with: ".")
-    }
-
     var body: some View {
         // Wraps rather than scrolls: four short tiles fit a phone at default
         // size, and at accessibility sizes they stack instead of clipping —
@@ -279,12 +274,14 @@ struct TeamRecordCard: View {
     private var recordTile: some View {
         tile(record.display, "W–L" + (record.ties > 0 ? "–T" : ""), emphasised: true)
     }
-    private var percentTile: some View { tile(percent, "PCT") }
+    // Words, not standings abbreviations: "PCT" and "PTS FOR / AGAINST"
+    // meant nothing to the family reading it.
+    private var percentTile: some View { tile(record.winPercentDisplay, "WIN %") }
     private var forTile: some View {
-        tile(String(format: "%.1f", record.pointsForPerGame), "PTS FOR")
+        tile(String(format: "%.1f", record.pointsForPerGame), "POINTS SCORED\nPER GAME")
     }
     private var againstTile: some View {
-        tile(String(format: "%.1f", record.pointsAgainstPerGame), "PTS AGAINST")
+        tile(String(format: "%.1f", record.pointsAgainstPerGame), "POINTS ALLOWED\nPER GAME")
     }
 
     private func tile(_ value: String, _ label: String, emphasised: Bool = false) -> some View {
@@ -293,8 +290,11 @@ struct TeamRecordCard: View {
                 .font(emphasised ? .title2.bold() : .title3.weight(.semibold))
                 .monospacedDigit()
                 .foregroundStyle(emphasised ? Color.teamAccent : .primary)
+            // Two lines rather than a shorthand: "POINTS ALLOWED / PER GAME"
+            // keeps four tiles in a row on a phone.
             Text(label)
                 .font(.caption2.weight(.semibold))
+                .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
         }
         // Each tile takes an equal share of the row, so they distribute
