@@ -264,6 +264,16 @@ final class ScreenshotUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         XCTAssertTrue(app.staticTexts["PPG"].waitForExistence(timeout: 10))
 
+        // The season PDF. The share button renders and presents in one tap, so
+        // a sheet that reads the URL from separate state can come up empty —
+        // asserting Done proves the preview built at all, not just that a
+        // sheet appeared.
+        app.buttons["Share Season Summary"].tap()
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 10),
+                      "the season PDF preview should build, not present empty")
+        snap(app, "31-season-pdf")
+        app.buttons["Done"].tap()
+
         app.navigationBars.buttons.firstMatch.tap()
 
         // 4b) Settings → team management (#20).
