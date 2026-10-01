@@ -367,38 +367,8 @@ struct ScoreLogPrintoutPage: View {
             .joined(separator: "  ·  ")
     }
 
-    /// Same furniture as page 1's footer — wordmark, tappable App Store line,
-    /// version — plus the page number.
-    ///
-    /// A log page gets forwarded, printed or screenshotted on its own, so a
-    /// page that can't say what made it or where to get it is a dead end. The
-    /// link annotation is attached to **every** page after rendering, for the
-    /// same reason (`GameSummaryPDF.addAppStoreLink`).
     private var footer: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Courtside Hoop Stats")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                Text("Get the app on the App Store ↗")
-                    .font(.system(size: 8.5))
-                    .foregroundStyle(Color.teamAccent)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text("Page \(pageNumber) of \(pageCount)")
-                    .font(.system(size: 9))
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                Text("v\(BuildInfo.version) (\(BuildInfo.build))")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.top, 4)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.black.opacity(0.1)).frame(height: 0.5)
-        }
+        PrintFooter(trailing: .page(number: pageNumber, of: pageCount))
     }
 
     // MARK: Rows

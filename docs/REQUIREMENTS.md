@@ -138,7 +138,18 @@ league's table. A tie counts **half a win** in PCT, the only weighting that
 puts 1-0-1 above 1-1-0. No streak: it says little about a youth team and the
 points pair uses the width better.
 
-Columns: **GP · PPG · 3s · AST · FT%**. Pure aggregation of what's already
+Columns: **GP · PPG · 3s · AST · FT**, with FT as made/attempted and the
+percentage — on one line where the screen is wide enough, stacked beneath it
+where it isn't. **Share → a one-page season PDF** (#215) carries the record,
+the averages with 2s restored, and a **game-by-game results list** — the honest
+version of a league table, since it only lists games this app recorded.
+
+**The tables fill the width they're given** (#216). A `Grid` inside a
+horizontal `ScrollView` is sized to its *ideal* width, so every stats table
+used to keep its portrait width and leave the rest of a landscape screen empty;
+`WidthFillingTable` gives the grid a `minWidth` of whatever the scroll view was
+offered, and the cells are flexible so the columns share it. It's a *minimum*,
+so a table that genuinely needs more room still scrolls. Pure aggregation of what's already
 recorded — no new capture, no schema change, nothing extra on the wire, which
 is what separates it from #175.
 

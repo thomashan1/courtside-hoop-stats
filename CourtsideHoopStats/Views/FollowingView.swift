@@ -65,7 +65,8 @@ struct FollowingView: View {
                         NavigationLink {
                             SeasonStatsView(teamName: followed.team.name,
                                             roster: followed.team.players,
-                                            games: followed.games)
+                                            games: followed.games,
+                                            kit: followed.team.kitColor)
                         } label: {
                             Image(systemName: "chart.bar.xaxis")
                                 .minimumTapTarget()

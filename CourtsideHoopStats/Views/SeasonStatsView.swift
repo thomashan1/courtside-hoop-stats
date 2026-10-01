@@ -11,6 +11,13 @@ struct SeasonStatsView: View {
     let teamName: String
     let roster: [Player]
     let games: [Game]
+    /// The team's colour, for the sheet's jersey bubbles and accents.
+    /// `ImageRenderer` draws outside the view hierarchy, so nothing from the
+    /// environment reaches the printout — it has to be handed over (#215).
+    var kit: JerseyColor = .blue
+
+    @State private var pdfURL: URL?
+    @State private var showingPDF = false
 
     private var season: [SeasonStats] { SeasonStats.season(for: roster, in: games) }
 
@@ -47,13 +54,35 @@ struct SeasonStatsView: View {
                     } header: {
                         Text("Per game, across \(completedGames) game\(completedGames == 1 ? "" : "s")")
                     } footer: {
-                        Text("GP is games played — a game someone sat out isn't counted against their average. 3s are three-pointers made per game. FT% is the season's free throws.")
+                        Text("GP is games played — a game someone sat out isn't counted against their average. 3s are three-pointers made per game. FT is the season's free throws — made out of attempted, with the percentage under it.")
                     }
                 }
             }
         }
         .navigationTitle("\(teamName) · Season")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Only worth offering once there's a season to send.
+            if !season.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        pdfURL = SeasonPDF.render(teamName: teamName, roster: roster,
+                                                  games: games, kit: kit)
+                        showingPDF = pdfURL != nil
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .minimumTapTarget()
+                    }
+                    .accessibilityLabel("Share Season Summary")
+                }
+            }
+        }
+        .sheet(isPresented: $showingPDF) {
+            if let pdfURL {
+                GameSummaryPDFPreview(url: pdfURL,
+                                      shareTitle: SeasonPDF.title(teamName: teamName))
+            }
+        }
     }
 }
 
@@ -61,6 +90,21 @@ struct SeasonStatsView: View {
 /// `Grid` — so the two read as the same object with different numbers in them.
 struct SeasonStatsTable: View {
     let season: [SeasonStats]
+
+    /// The table's own width, measured.
+    ///
+    /// `ViewThatFits` can't decide this: inside a horizontally scrolling grid
+    /// the proposal it measures against is unbounded, so it always picked the
+    /// wide candidate and pushed the header row out of the card. A measured
+    /// width is deterministic, and it keys off the actual space rather than a
+    /// size class — which on iPhone says "compact" in landscape for every
+    /// model except the biggest (#216).
+    @State private var width: CGFloat = 0
+
+    /// Enough room to put the free-throw fraction and its percentage on one
+    /// line. Below this they stack, which is still better than scrolling the
+    /// column off the edge where nobody finds it (§9).
+    private var isWide: Bool { width >= 560 }
 
     /// A column is only drawn when the season has any of it.
     ///
@@ -87,20 +131,31 @@ struct SeasonStatsTable: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        WidthFillingTable {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("GP")
-                    Text("PPG")
+                    Text("GP").frame(maxWidth: .infinity)
+                    Text("PPG").frame(maxWidth: .infinity)
                     // No 2s column. Eight columns clipped FT% off the right
                     // edge — the failure §9 of the UI guidelines warns about,
                     // where a scrollable table hides a column nobody knows to
                     // scroll for. PPG already carries the twos; threes are the
                     // number people actually look for.
-                    Text("3s")
-                    if showsAssists { Text("AST") }
-                    if showsFreeThrows { Text("FT%") }
+                    Text("3s").frame(maxWidth: .infinity)
+                    if showsAssists { Text("AST").frame(maxWidth: .infinity) }
+                    // "FT" as made/attempted, not "FT%". A season percentage
+                    // with no denominator can't tell 1-for-1 from 12-for-12,
+                    // and it's the same rule the game table follows: the
+                    // fraction on screen, the percentage in the PDF where
+                    // there's room for both (#213).
+                    // Wider than an equal share: "12/15" is nearly twice the
+                    // width of "0.2", and on a phone an equal split truncated
+                    // it to "12/…" — the widest value has to claim its room
+                    // before the rest divide what's left (#216).
+                    if showsFreeThrows {
+                        Text("FT").frame(minWidth: 46, maxWidth: .infinity)
+                    }
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -114,21 +169,59 @@ struct SeasonStatsTable: View {
                         .frame(minWidth: 100, alignment: .leading)
 
                         Text("\(line.gamesPlayed)").monospacedDigit()
+                            .frame(maxWidth: .infinity)
                         Text(average(line.pointsPerGame)).bold().monospacedDigit()
+                            .frame(maxWidth: .infinity)
                         value(line.threesPerGame)
                         if showsAssists { value(line.assistsPerGame) }
-                        if showsFreeThrows {
-                            // A player with no attempts all season gets a dash,
-                            // not 0% — they never stepped to the line.
-                            Text(line.freeThrowPercent.map { "\($0)%" } ?? "—")
-                                .monospacedDigit()
-                                .foregroundStyle(line.freeThrowPercent == nil ? .secondary : .primary)
-                        }
+                        if showsFreeThrows { freeThrows(line) }
                     }
                     .font(.subheadline)
                 }
             }
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width = $0 }
+    }
+
+    /// Made/attempted with the percentage **under** it, not beside it:
+    /// "12/15 (80%)" is wider than the whole column on a phone, and the two
+    /// numbers answer different questions — the fraction says how often they
+    /// were at the line, the percentage how they did there. Stacking costs a
+    /// little row height, which a reading screen can spend; width it can't.
+    ///
+    /// A dash, not 0/0 or 0%: someone who never went to the line hasn't missed
+    /// anything.
+    @ViewBuilder
+    private func freeThrows(_ line: SeasonStats) -> some View {
+        Group {
+            if line.ftAttempts == 0 {
+                Text("—").foregroundStyle(.secondary)
+            } else {
+                // One line where there's room, stacked where there isn't.
+                if isWide {
+                    HStack(spacing: 4) {
+                        Text("\(line.ftMade)/\(line.ftAttempts)")
+                        Text("(\(line.freeThrowPercent ?? 0)%)")
+                            .foregroundStyle(.secondary)
+                    }
+                    .monospacedDigit()
+                    .fixedSize()
+                } else {
+                    VStack(spacing: 0) {
+                        Text("\(line.ftMade)/\(line.ftAttempts)")
+                            .monospacedDigit()
+                        Text("\(line.freeThrowPercent ?? 0)%")
+                            .font(.caption2)
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    .fixedSize()
+                }
+            }
+        }
+        .frame(minWidth: 46, maxWidth: .infinity)
     }
 
     /// Zero fades back, exactly as a game's table does, so the players who
@@ -137,6 +230,8 @@ struct SeasonStatsTable: View {
         Text(self.average(average))
             .monospacedDigit()
             .foregroundStyle(average == 0 ? .secondary : .primary)
+            // Flexible, so the columns spread across the table's width (#216).
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -158,14 +253,18 @@ struct TeamRecordCard: View {
         // size, and at accessibility sizes they stack instead of clipping —
         // unlike the stats table, which has to scroll because its columns
         // can't be reflowed.
+        // Spread across the row rather than packed against the left edge:
+        // four `fixedSize` tiles in a leading-aligned stack left the rest of
+        // the width empty, which reads as crowding on a wide phone and is
+        // glaring in landscape (#216).
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 20) { tiles }
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 20) { recordTile; percentTile }
-                HStack(spacing: 20) { forTile; againstTile }
+            HStack(spacing: 12) { tiles }
+            VStack(spacing: 14) {
+                HStack(spacing: 12) { recordTile; percentTile }
+                HStack(spacing: 12) { forTile; againstTile }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder private var tiles: some View {
@@ -187,7 +286,7 @@ struct TeamRecordCard: View {
     }
 
     private func tile(_ value: String, _ label: String, emphasised: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 2) {
             Text(value)
                 .font(emphasised ? .title2.bold() : .title3.weight(.semibold))
                 .monospacedDigit()
@@ -196,6 +295,10 @@ struct TeamRecordCard: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
-        .fixedSize()
+        // Each tile takes an equal share of the row, so they distribute
+        // instead of huddling. `fixedSize` on the *text* keeps a label from
+        // wrapping inside its share.
+        .fixedSize(horizontal: true, vertical: false)
+        .frame(maxWidth: .infinity)
     }
 }

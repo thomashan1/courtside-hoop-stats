@@ -233,6 +233,10 @@ struct PlayerStatsTable: View {
         Text(text)
             .bold(bold)
             .foregroundStyle(isNothing ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
+            // Flexible so the columns share whatever width the table is given.
+            // Without it the grid keeps its ideal width and the whole table
+            // huddles at the left of a wide screen (#216).
+            .frame(maxWidth: .infinity)
     }
 
     /// Whether anyone in this game has a rebound.
@@ -254,23 +258,23 @@ struct PlayerStatsTable: View {
     }
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        WidthFillingTable {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("PTS")
+                    Text("PTS").frame(maxWidth: .infinity)
                     // "2s"/"3s", not "2P"/"3P": these are shots **made**, and
                     // beside FT's "5/6" the bare integers were being read as
                     // attempts — the wrong guess, which is worse than an
                     // ambiguous one (#205). "2PM"/"3PM" is the conventional
                     // fix, but it's a character wider on two columns and this
                     // table has no width to give (UI_GUIDELINES §9).
-                    Text("2s")
-                    Text("3s")
-                    Text("AST")
-                    if showsRebounds { Text("REB") }
+                    Text("2s").frame(maxWidth: .infinity)
+                    Text("3s").frame(maxWidth: .infinity)
+                    Text("AST").frame(maxWidth: .infinity)
+                    if showsRebounds { Text("REB").frame(maxWidth: .infinity) }
                     // Last on purpose — see the note above.
-                    Text("FT")
+                    Text("FT").frame(maxWidth: .infinity)
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -360,5 +364,29 @@ struct PeriodBreakdownGrid: View {
                 }
             }
         }
+    }
+}
+
+/// Lets a table fill the width it's given while still scrolling when it can't.
+///
+/// A `Grid` inside a horizontal `ScrollView` is sized to its **ideal** width,
+/// so it never grows into the space beside it — the columns bunch at the left
+/// with the rest of the screen empty, which is most obvious in landscape and
+/// on a wide phone. Giving the grid a `minWidth` of whatever the scroll view
+/// was offered spreads it across the full width, and because it's a *minimum*,
+/// content that genuinely needs more room still scrolls (#216).
+struct WidthFillingTable<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    @State private var available: CGFloat = 0
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            content
+                .frame(minWidth: available, alignment: .leading)
+        }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { available = $0 }
     }
 }
