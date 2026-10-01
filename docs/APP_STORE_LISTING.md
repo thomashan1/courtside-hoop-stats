@@ -417,10 +417,15 @@ taps through to the listing.
 | 4 | `04-following-game` | Family watching a live score from their own phone. |
 | 5 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
 | 6 | `06-game-summary-share-pdf` | The box score people actually send around. |
-| 7 | `07-games` | Season shape: past, live and scheduled together. |
-| 8 | `08-roster` | Answers "how much setup is this?" |
-| 9 | `09-new-game` | Every field optional; Start Game gets straight to scoring. |
+| 7 | `07-season` | Season averages and the team's record — the payoff of keeping every game, after the single-game payoff in #5–6. |
+| 8 | `08-games` | Season shape: past, live and scheduled together. |
+| 9 | `09-roster` | Answers "how much setup is this?" |
 | 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
+
+**Cut in v1.12 to make room for the season screen:** `09-new-game`. A form
+whose selling point — every field is optional — doesn't show in a picture;
+every other slot shows the app doing something. The README keeps the sentence
+about it.
 
 **Cut in v1.6 to make room for the assist step:** `06-following`, the
 follower's team *list*. Following was already carried by

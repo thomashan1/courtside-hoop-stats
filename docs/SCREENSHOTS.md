@@ -137,15 +137,15 @@ image in the page is worse than no number at all.
 | 4 | `04-following-game.png` | `21-following-game` — a follower watching a game |
 | 5 | `05-game-summary.png` | `02-game-summary` |
 | 6 | `06-game-summary-share-pdf.png` | `14-box-score-pdf` |
-| 7 | `07-games.png` | `01-games-list` |
-| 8 | `08-roster.png` | `04-roster` |
-| 9 | `09-new-game.png` | `13-new-game` |
+| 7 | `07-season.png` | `30-season-averages` — season averages with the team's record |
+| 8 | `08-games.png` | `01-games-list` |
+| 9 | `09-roster.png` | `04-roster` |
 | 10 | `10-team-jerseys.png` | `09-team-detail` — the team editor, where the colour and home kit are picked |
 | — | `app-icon.png` | not a screenshot; unnumbered |
 
 **Ten, because App Store Connect takes ten.** That's a hard cap, not a taste
 call — so a new screen has to displace one, and the reasoning for the current
-ten (and for the two that were cut) lives in
+ten (and for the screens that were cut) lives in
 [`APP_STORE_LISTING.md`](APP_STORE_LISTING.md) §9, next to the upload it serves.
 
 **Promote all ten and upload all ten** at each submission, rather than working

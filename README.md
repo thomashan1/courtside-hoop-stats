@@ -31,21 +31,26 @@ visible. Absent players are benched so the grid stays uncluttered.
 Every field is optional — **Start Game** to score right now, or **Save** to
 schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
-| New game |
-|---|
-| <img src="docs/img/09-new-game.png" width="240"> |
-
 ### After the game
 
 | Game summary | Box score PDF — preview, then send to the group chat |
 |---|---|
 | <img src="docs/img/05-game-summary.png" width="240"> | <img src="docs/img/06-game-summary-share-pdf.png" width="240"> |
 
+### The season
+
+Every player's per-game averages across the finished games, with the team's
+own record above them — and the whole thing shares as a one-page PDF.
+
+| Season averages and record |
+|---|
+| <img src="docs/img/07-season.png" width="240"> |
+
 ### Your team
 
 | Games | Roster | Jerseys |
 |---|---|---|
-| <img src="docs/img/07-games.png" width="240"> | <img src="docs/img/08-roster.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
+| <img src="docs/img/08-games.png" width="240"> | <img src="docs/img/09-roster.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
 
 ### Following a shared team
 
