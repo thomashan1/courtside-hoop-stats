@@ -16,8 +16,7 @@ struct SeasonStatsView: View {
     /// environment reaches the printout — it has to be handed over (#215).
     var kit: JerseyColor = .blue
 
-    @State private var pdfURL: URL?
-    @State private var showingPDF = false
+    @State private var pdf: SeasonPDFFile?
 
     private var season: [SeasonStats] { SeasonStats.season(for: roster, in: games) }
 
@@ -66,9 +65,9 @@ struct SeasonStatsView: View {
             if !season.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        pdfURL = SeasonPDF.render(teamName: teamName, roster: roster,
-                                                  games: games, kit: kit)
-                        showingPDF = pdfURL != nil
+                        pdf = SeasonPDF.render(teamName: teamName, roster: roster,
+                                               games: games, kit: kit)
+                            .map(SeasonPDFFile.init)
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                             .minimumTapTarget()
@@ -77,13 +76,16 @@ struct SeasonStatsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingPDF) {
-            if let pdfURL {
-                GameSummaryPDFPreview(url: pdfURL,
-                                      shareTitle: SeasonPDF.title(teamName: teamName))
-            }
+        .sheet(item: $pdf) { file in
+            GameSummaryPDFPreview(url: file.url,
+                                  shareTitle: SeasonPDF.title(teamName: teamName))
         }
     }
+}
+
+struct SeasonPDFFile: Identifiable {
+    let url: URL
+    var id: URL { url }
 }
 
 /// The season table. Built like `PlayerStatsTable` — a horizontally scrollable
@@ -135,8 +137,7 @@ struct SeasonStatsTable: View {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("GP").frame(maxWidth: .infinity)
-                    Text("PPG").frame(maxWidth: .infinity)
+                    Text("PPG").frame(minWidth: 40, maxWidth: .infinity)
                     // No 2s column. Eight columns clipped FT% off the right
                     // edge — the failure §9 of the UI guidelines warns about,
                     // where a scrollable table hides a column nobody knows to
@@ -156,6 +157,7 @@ struct SeasonStatsTable: View {
                     if showsFreeThrows {
                         Text("FT").frame(minWidth: 46, maxWidth: .infinity)
                     }
+                    Text("GP").frame(maxWidth: .infinity)
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -168,13 +170,13 @@ struct SeasonStatsTable: View {
                         }
                         .frame(minWidth: 100, alignment: .leading)
 
-                        Text("\(line.gamesPlayed)").monospacedDigit()
-                            .frame(maxWidth: .infinity)
                         Text(average(line.pointsPerGame)).bold().monospacedDigit()
-                            .frame(maxWidth: .infinity)
+                            .frame(minWidth: 40, maxWidth: .infinity)
                         value(line.threesPerGame)
                         if showsAssists { value(line.assistsPerGame) }
                         if showsFreeThrows { freeThrows(line) }
+                        Text("\(line.gamesPlayed)").monospacedDigit()
+                            .frame(maxWidth: .infinity)
                     }
                     .font(.subheadline)
                 }

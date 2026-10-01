@@ -101,7 +101,6 @@ struct SeasonPrintout: View {
             VStack(spacing: 0) {
                 HStack(spacing: 0) {
                     Text("Player").frame(width: Self.nameColumn, alignment: .leading)
-                    Text("GP").frame(maxWidth: .infinity)
                     Text("PPG").frame(maxWidth: .infinity)
                     Text("2s").frame(maxWidth: .infinity)
                     Text("3s").frame(maxWidth: .infinity)
@@ -110,6 +109,7 @@ struct SeasonPrintout: View {
                     // width the phone doesn't, and the fraction is what makes
                     // a percentage from four attempts readable as such.
                     Text("FT").frame(maxWidth: .infinity)
+                    Text("GP").frame(maxWidth: .infinity)
                 }
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(.secondary)
@@ -123,7 +123,6 @@ struct SeasonPrintout: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                             .frame(width: Self.nameColumn, alignment: .leading)
-                        cell("\(line.gamesPlayed)")
                         cell(average(line.pointsPerGame), bold: true)
                         cell(average(line.twosPerGame))
                         cell(average(line.threesPerGame))
@@ -131,6 +130,7 @@ struct SeasonPrintout: View {
                         cell(line.ftAttempts == 0
                              ? "—"
                              : "\(line.ftMade)/\(line.ftAttempts) (\(line.freeThrowPercent ?? 0)%)")
+                        cell("\(line.gamesPlayed)")
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
