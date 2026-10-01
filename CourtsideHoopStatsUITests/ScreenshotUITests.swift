@@ -254,6 +254,16 @@ final class ScreenshotUITests: XCTestCase {
                       "the season table should be up")
         XCTAssertTrue(app.staticTexts["GP"].exists, "games played is the denominator people check")
         snap(app, "30-season-averages")
+
+        // Landscape too: the tables are grids inside a horizontal scroll view,
+        // which sizes content to its *ideal* width — so before #216 they kept
+        // their portrait width and left the rest of a landscape screen empty.
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.staticTexts["PPG"].waitForExistence(timeout: 10))
+        snap(app, "30a-season-averages-landscape")
+        XCUIDevice.shared.orientation = .portrait
+        XCTAssertTrue(app.staticTexts["PPG"].waitForExistence(timeout: 10))
+
         app.navigationBars.buttons.firstMatch.tap()
 
         // 4b) Settings → team management (#20).

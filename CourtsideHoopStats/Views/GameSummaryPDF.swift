@@ -418,36 +418,7 @@ struct GameSummaryPrintout: View {
     }
 
     private var footer: some View {
-        HStack(alignment: .bottom) {
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Courtside Hoop Stats")
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                // Drawn as ordinary text — `ImageRenderer` emits glyphs, not
-                // annotations, so the tappable hyperlink is attached over this
-                // area after rendering. See `GameSummaryPDF.addAppStoreLink`.
-                Text("Get the app on the App Store ↗")
-                    .font(.system(size: 8.5))
-                    .foregroundStyle(Color.teamAccent)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(Date.now.formatted(date: .abbreviated, time: .shortened))
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-                // Which build produced this sheet. A PDF outlives the app that
-                // made it — it gets forwarded, saved and quoted back weeks
-                // later — so when someone reports a number looking wrong, this
-                // is the only way to know what was actually running.
-                Text("v\(BuildInfo.version) (\(BuildInfo.build))")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .padding(.top, 4)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.black.opacity(0.1)).frame(height: 0.5)
-        }
+        PrintFooter(trailing: .madeOn(.now))
     }
 }
 
@@ -652,7 +623,9 @@ enum GameSummaryPDF {
     /// produces is only a picture of a link. PDF hyperlinks are *annotations*,
     /// a separate layer, so they have to be added afterwards — here via PDFKit
     /// (a system framework, so no new dependency).
-    private static func addAppStoreLink(to url: URL) {
+    /// Internal rather than private: the season sheet needs the same treatment
+    /// (#215), and a second copy of it would be a second thing to forget.
+    static func addAppStoreLink(to url: URL) {
         guard let document = PDFDocument(url: url) else { return }
 
         // PDF coordinates put the origin at the *bottom* left, so the footer is
