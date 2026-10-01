@@ -88,11 +88,18 @@ final class AppStore: ObservableObject {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
             let demoTeam = DemoData.makeTeam()
-            teams = [demoTeam, DemoData.makeSecondTeam()]
+            let secondTeam = DemoData.makeSecondTeam()
+            teams = [demoTeam, secondTeam]
             activeTeamID = demoTeam.id
+            // A finished game on the *other* team, so screens that should
+            // only count the active team's games are tested against one
+            // that mustn't leak in.
+            let otherTeamGames = DemoData.makeSecondFollowedTeam().games.map {
+                var g = $0; g.teamID = secondTeam.id; return g
+            }
             games = DemoData.makeGames(team: demoTeam).map {
                 var g = $0; g.teamID = demoTeam.id; return g
-            }
+            } + otherTeamGames
             // `-uiTestTextSizeIndex N` seeds the in-app Text Size so a UI test
             // can exercise accessibility sizes. The OS-level
             // `-UIPreferredContentSizeCategoryName` argument does not reach a
