@@ -253,6 +253,10 @@ final class ScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["PPG"].waitForExistence(timeout: 10),
                       "the season table should be up")
         XCTAssertTrue(app.staticTexts["GP"].exists, "games played is the denominator people check")
+        // The demo's second team has a finished game of its own; counting it
+        // here would make this 5 and put its result in this team's record.
+        XCTAssertTrue(app.staticTexts["Per game, across 4 games"].exists,
+                      "only the active team's games belong in its season")
         snap(app, "30-season-averages")
 
         // Landscape too: the tables are grids inside a horizontal scroll view,

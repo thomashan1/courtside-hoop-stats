@@ -72,7 +72,7 @@ struct RosterView: View {
                     NavigationLink {
                         SeasonStatsView(teamName: store.team.name,
                                         roster: store.team.players,
-                                        games: store.games,
+                                        games: store.activeTeamGames,
                                         kit: store.team.kitColor)
                     } label: {
                         Image(systemName: "chart.bar.xaxis")
