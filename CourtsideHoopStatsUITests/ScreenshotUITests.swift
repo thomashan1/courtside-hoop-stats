@@ -374,6 +374,42 @@ final class ScreenshotUITests: XCTestCase {
                       "The reverted game should be scheduled again, not live")
     }
 
+    /// Overtime scored on into Q4 and the game finished, split back out
+    /// afterwards. Its own test because it changes the seed: Lakeside gains an
+    /// overtime, which every other capture would otherwise inherit.
+    func testAddOvertimeAfterTheFact() {
+        let app = launchSeeded()
+        app.tabBars.buttons["Games"].tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+        app.staticTexts["vs Lakeside Lightning"].tap()
+        app.buttons["Edit Scores"].tap()
+
+        let divider = app.buttons["Final · Edit or add overtime"]
+        XCTAssertTrue(divider.waitForExistence(timeout: 10),
+                      "a finished game that wasn't level should still offer overtime")
+        divider.tap()
+        XCTAssertTrue(app.buttons["Add Overtime"].waitForExistence(timeout: 10))
+        app.buttons["Add Overtime"].tap()
+
+        // Swish went 35 → 38 → 39 in Q4 and Lakeside had 30 going in, so 39
+        // is a tie the log can actually split at: OT is Swish +9, Lakeside +2.
+        let field = app.textFields["Tied at"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.typeText("39")
+        // LabeledContent reads as one element: "<label>, <value>".
+        XCTAssertTrue(app.staticTexts["Swish Warriors, +9"].waitForExistence(timeout: 5),
+                      "the sheet should preview what lands in overtime")
+        snap(app, "32-add-overtime")
+
+        XCTAssertTrue(app.staticTexts["Lakeside Lightning, +2"].exists)
+        app.buttons["Add"].tap()
+        // The Score Log's period header, not the sheet's "OT" section title.
+        let overtimeHeader = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'OT, 9 pts'")).firstMatch
+        XCTAssertTrue(overtimeHeader.waitForExistence(timeout: 10),
+                      "the log should now carry an OT period with Swish's 9")
+        snap(app, "32a-overtime-added")
+    }
+
     /// The scheduled-game detail screen's inline title used to look
     /// off-center — the automatic back button mirrored the Games list's
     /// title text, much wider than the trailing "Edit" button (#135).
