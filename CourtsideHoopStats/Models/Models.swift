@@ -486,6 +486,14 @@ struct Game: Identifiable, Codable {
     /// scoring events and period-end boundary markers. Events keep their array
     /// order; a marker for period `p` is placed right after that period's events
     /// once the period has been ended (has a `periodEndScores` entry).
+    /// A period's events in log order — **array order**, never timestamp.
+    /// Array order is what Edit Score Log rearranges; an event entered after
+    /// the game carries a late timestamp, so sorting by it pinned a missed
+    /// free throw dragged into Q2 to the end of Q2 on screen and in the PDF.
+    func events(inPeriod period: Int) -> [GameEvent] {
+        events.filter { $0.period == period }
+    }
+
     func orderedLog() -> [ScoreLogItem] {
         let maxPeriod = max(periodEndScores.keys.max() ?? 0,
                             events.map(\.period).max() ?? 0)

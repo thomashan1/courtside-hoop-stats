@@ -126,8 +126,7 @@ enum ScoreLogPaginator {
                                       our: ours,
                                       opponent: line?.opponent,
                                       continued: false))
-            for event in game.events.filter({ $0.period == period })
-                                    .sorted(by: { $0.timestamp < $1.timestamp }) {
+            for event in game.events(inPeriod: period) {
                 rows.append(.event(event, runningTotal: totals[event.id] ?? 0))
             }
             // The score belongs where the period ends. On the header it read as
