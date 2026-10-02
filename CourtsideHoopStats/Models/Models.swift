@@ -538,6 +538,67 @@ struct Game: Identifiable, Codable {
         return copy
     }
 
+    enum OvertimeSplitError: Error, Equatable {
+        /// Only a finished game with periods can gain an overtime afterwards.
+        case notApplicable
+        /// Higher than one side's final score.
+        case aboveFinal
+        /// Lower than the opponent's total at the previous break.
+        case belowPreviousBreak(opponentHad: Int)
+        /// Our running total never landed on this number in the last period.
+        case neverReached
+    }
+
+    /// Splits a finished game's last period at the tie, for overtime that was
+    /// scored on into regulation instead of started as its own period.
+    ///
+    /// Overtime only follows a tie, so the score at the end of regulation is
+    /// one number for both teams — which is what makes this answerable: the
+    /// boundary goes right after the event that took our running total to it,
+    /// and everything later in that period moves into overtime. The opponent's
+    /// regulation total is that same number, and overtime ends on the old final.
+    /// Nothing is re-scored, so the final score can't change. The game stays
+    /// finished; the divider can still be dragged if the guess is off.
+    func addingOvertime(tiedAt tie: Int) -> Swift.Result<Game, OvertimeSplitError> {
+        guard isComplete, periodFormat != .pickup,
+              let last = periodEndScores.keys.max(),
+              let final = periodEndScores[last]
+        else { return .failure(.notApplicable) }
+
+        guard tie <= ourScore, tie <= final.opponentRunningTotal else {
+            return .failure(.aboveFinal)
+        }
+        let opponentBefore = periodEndScores[last - 1]?.opponentRunningTotal ?? 0
+        guard tie >= opponentBefore else {
+            return .failure(.belowPreviousBreak(opponentHad: opponentBefore))
+        }
+
+        var running = events.filter { $0.period < last }.reduce(0) { $0 + $1.type.points }
+        let lastPeriod = events.indices.filter { events[$0].period == last }
+        // The earliest point the total sits at the tie: before any of the
+        // period's events, or right after one of them.
+        var splitAfter: Int? = nil       // position in `lastPeriod`; -1 = before all
+        if running == tie { splitAfter = -1 }
+        if splitAfter == nil {
+            for (position, index) in lastPeriod.enumerated() {
+                running += events[index].type.points
+                if running == tie { splitAfter = position; break }
+                if running > tie { break }
+            }
+        }
+        guard let splitAfter else { return .failure(.neverReached) }
+
+        var copy = self
+        for index in lastPeriod.dropFirst(splitAfter + 1) {
+            copy.events[index].period = last + 1
+        }
+        copy.periodEndScores[last] = PeriodEndScore(ourRunningTotal: tie,
+                                                    opponentRunningTotal: tie)
+        copy.periodEndScores[last + 1] = PeriodEndScore(ourRunningTotal: ourScore,
+                                                        opponentRunningTotal: final.opponentRunningTotal)
+        return .success(copy)
+    }
+
     /// Aggregated stats per player, sorted by points descending.
     ///
     /// Pass the **full team roster** — this method applies the bench filter

@@ -23,6 +23,10 @@ struct LiveScoringView: View {
     /// Choosing between fixing the totals and playing overtime, on a game that
     /// finished level (#201).
     @State private var choosingAfterTie = false
+    /// The same choice on a game that *didn't* finish level: overtime may
+    /// have been scored on into the last quarter instead of started.
+    @State private var choosingAfterFinal = false
+    @State private var showAddOvertime = false
     /// Presents the List-based score-log editor (reorder + delete, #9).
     @State private var showLogEditor = false
     /// Presents the game-details editor (location, notes, matchup) so details
@@ -185,6 +189,21 @@ struct LiveScoringView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Play overtime, or correct the opponent's totals if the scores shouldn't be level.")
+        }
+        .confirmationDialog("Edit this finished game",
+                            isPresented: $choosingAfterFinal,
+                            titleVisibility: .visible) {
+            Button("Edit Opponent Totals") { showOpponentTotals = true }
+            Button("Add Overtime") { showAddOvertime = true }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Add Overtime if overtime was scored into \(game.periodFormat.periodLabel(game.periodEndScores.keys.max() ?? game.periodFormat.periodCount)) instead of started as its own period.")
+        }
+        .sheet(isPresented: $showAddOvertime) {
+            AddOvertimeSheet(game: game, ourName: store.team.name) { split in
+                game = split
+                store.updateGame(game)
+            }
         }
         .sheet(isPresented: $showFollowers) {
             FollowersView(team: store.team)
@@ -446,8 +465,15 @@ struct LiveScoringView: View {
     /// can't type-check a conditional of two literals here, and the compiler
     /// gives up with "failed to produce diagnostic" rather than saying so.
     private var finishedDividerLabel: String {
-        isFinishedAndTied ? "Tied · Edit or play overtime"
-                          : "Final · Edit opponent totals"
+        if isFinishedAndTied { return "Tied · Edit or play overtime" }
+        return offersOvertimeAfterTheFact ? "Final · Edit or add overtime"
+                                          : "Final · Edit opponent totals"
+    }
+
+    /// A finished game whose overtime may be hiding in its last period —
+    /// scored on into Q4 rather than started as its own period.
+    private var offersOvertimeAfterTheFact: Bool {
+        game.isComplete && game.periodFormat != .pickup
     }
 
     private var isFinishedAndTied: Bool {
@@ -466,6 +492,8 @@ struct LiveScoringView: View {
             Button {
                 if isFinishedAndTied {
                     choosingAfterTie = true
+                } else if offersOvertimeAfterTheFact {
+                    choosingAfterFinal = true
                 } else {
                     showOpponentTotals = true
                 }
@@ -822,6 +850,99 @@ struct ScorePadSheet: View {
 /// Edits the opponent's cumulative running total per recorded period. Reached
 /// from the "Final" divider when re-editing a finished game — the single place
 /// opponent scores are corrected now that the Summary is read-only.
+/// Splits overtime back out of a finished game's last period. One number —
+/// the tied score at the end of regulation — places the divider, since
+/// overtime only follows a tie (`Game.addingOvertime(tiedAt:)`).
+struct AddOvertimeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let game: Game
+    let ourName: String
+    let onAdd: (Game) -> Void
+
+    @State private var tieText = ""
+    @FocusState private var fieldFocused: Bool
+
+    private var lastPeriod: Int {
+        game.periodEndScores.keys.max() ?? game.periodFormat.periodCount
+    }
+    private var lastLabel: String { game.periodFormat.periodLabel(lastPeriod) }
+    private var overtimeLabel: String { game.periodFormat.periodLabel(lastPeriod + 1) }
+    private var us: String { ourName.isEmpty ? "Us" : ourName }
+    private var them: String { game.opponent.isEmpty ? "Opponent" : game.opponent }
+
+    private var result: Swift.Result<Game, Game.OvertimeSplitError>? {
+        Int(tieText).map { game.addingOvertime(tiedAt: $0) }
+    }
+    private var split: Game? {
+        if case .success(let game) = result { return game }
+        return nil
+    }
+
+    private var problem: String? {
+        guard case .failure(let error) = result else { return nil }
+        switch error {
+        case .notApplicable:
+            return "Overtime can only be added to a finished game with periods."
+        case .aboveFinal:
+            return "That's more than the final score, \(game.ourScore)–\(game.opponentScore)."
+        case .belowPreviousBreak(let had):
+            return "\(them) already had \(had) before \(lastLabel)."
+        case .neverReached:
+            return "\(us) never had exactly \(tieText) in \(lastLabel). Check the score log."
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Tied at", text: $tieText)
+                        .keyboardType(.numberPad)
+                        .focused($fieldFocused)
+                } header: {
+                    Text("Score at the end of \(lastLabel)")
+                } footer: {
+                    Text("Overtime only follows a tie, so enter the score both teams had when \(lastLabel) ended. Everything \(us) scored after reaching it moves into \(overtimeLabel). You can drag the divider in Edit Score Log if it lands in the wrong place.")
+                }
+
+                if let problem {
+                    Section {
+                        Label(problem, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                    }
+                } else if let split, let tie = Int(tieText) {
+                    Section("\(overtimeLabel)") {
+                        LabeledContent(us) {
+                            Text("+\(split.ourScore - tie)").monospacedDigit()
+                        }
+                        LabeledContent(them) {
+                            Text("+\(split.opponentScore - tie)").monospacedDigit()
+                        }
+                        LabeledContent("Final") {
+                            Text("\(split.ourScore)–\(split.opponentScore)").bold().monospacedDigit()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Add Overtime")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        if let split { onAdd(split) }
+                        dismiss()
+                    }
+                    .disabled(split == nil)
+                }
+            }
+            .onAppear { fieldFocused = true }
+        }
+    }
+}
+
 struct OpponentTotalsSheet: View {
     /// Both scale: the period column has to fit "Game" for a pickup game, and
     /// the field has to fit a three-digit total, at any text size.

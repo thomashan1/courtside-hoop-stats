@@ -332,3 +332,144 @@ struct EditingAFinishedGameTests {
         #expect(reordered.isComplete, "reordering doesn't reopen the game")
     }
 }
+
+/// Overtime that was scored on into Q4 and the game finished, split back out
+/// after the fact.
+struct AddingOvertimeAfterTheFactTests {
+
+    /// Q1–Q3 empty-ish, then Q4 holds regulation *and* overtime: we reach 10
+    /// (the tie), then score 4 more in what was really overtime. The opponent
+    /// finished on 12.
+    private func scoredOnIntoQ4() -> Game {
+        var game = Game(opponent: "Central")
+        let a = UUID(), b = UUID()
+        game.events = [
+            GameEvent(playerID: a, type: .twoPoint, period: 1),     // 2
+            GameEvent(playerID: a, type: .twoPoint, period: 3),     // 4
+            GameEvent(playerID: b, type: .threePoint, period: 4),   // 7
+            GameEvent(playerID: b, type: .threePoint, period: 4),   // 10  ← tie
+            GameEvent(playerID: a, type: .ftMissed, period: 4),     // 10
+            GameEvent(playerID: a, type: .twoPoint, period: 4),     // 12
+            GameEvent(playerID: b, type: .twoPoint, period: 4),     // 14
+        ]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 3),
+            2: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 5),
+            3: PeriodEndScore(ourRunningTotal: 4, opponentRunningTotal: 6),
+            4: PeriodEndScore(ourRunningTotal: 14, opponentRunningTotal: 12),
+        ]
+        game.isComplete = true
+        return game
+    }
+
+    private func error(_ result: Swift.Result<Game, Game.OvertimeSplitError>) -> Game.OvertimeSplitError? {
+        if case .failure(let error) = result { return error }
+        return nil
+    }
+
+    @Test func splitsAfterTheBasketThatReachedTheTie() throws {
+        let original = scoredOnIntoQ4()
+        let game = try original.addingOvertime(tiedAt: 10).get()
+
+        #expect(game.events.map(\.period) == [1, 3, 4, 4, 5, 5, 5],
+                "everything after the tying basket is overtime")
+        #expect(game.periodEndScores[4]?.ourRunningTotal == 10)
+        #expect(game.periodEndScores[4]?.opponentRunningTotal == 10, "a tie is one number")
+        #expect(game.periodEndScores[5]?.ourRunningTotal == 14)
+        #expect(game.periodEndScores[5]?.opponentRunningTotal == 12)
+    }
+
+    @Test func theFinalScoreAndResultDoNotChange() throws {
+        let original = scoredOnIntoQ4()
+        let game = try original.addingOvertime(tiedAt: 10).get()
+        #expect(game.ourScore == original.ourScore)
+        #expect(game.opponentScore == original.opponentScore)
+        #expect(game.result == original.result)
+        #expect(game.isComplete, "still finished — this corrects it, it doesn't reopen it")
+        #expect(game.displayPeriod == 5)
+        #expect(game.periodFormat.periodLabel(game.displayPeriod) == "OT")
+    }
+
+    @Test func theLinescoreGainsAnOvertimeColumn() throws {
+        let game = try scoredOnIntoQ4().addingOvertime(tiedAt: 10).get()
+        let breakdown = game.periodBreakdown()
+        #expect(breakdown.count == 5)
+        #expect(breakdown.last?.our == 4)
+        #expect(breakdown.last?.opponent == 2)
+    }
+
+    @Test func rejectsAScoreWeNeverHad() {
+        // We went 7 → 10 on a three; we were never on 9.
+        #expect(error(scoredOnIntoQ4().addingOvertime(tiedAt: 9)) == (.neverReached))
+    }
+
+    @Test func rejectsAScoreAboveEitherFinal() {
+        #expect(error(scoredOnIntoQ4().addingOvertime(tiedAt: 13)) == (.aboveFinal),
+                "the opponent only finished on 12")
+    }
+
+    @Test func rejectsAScoreBelowTheOpponentsLastBreak() {
+        // They had 6 after Q3, so regulation can't have ended level on 4.
+        #expect(error(scoredOnIntoQ4().addingOvertime(tiedAt: 4))
+                == (.belowPreviousBreak(opponentHad: 6)))
+    }
+
+    @Test func onlyAFinishedGameWithPeriods() {
+        var live = scoredOnIntoQ4()
+        live.isComplete = false
+        #expect(error(live.addingOvertime(tiedAt: 10)) == (.notApplicable))
+
+        var pickup = scoredOnIntoQ4()
+        pickup.periodFormat = .pickup
+        #expect(error(pickup.addingOvertime(tiedAt: 10)) == (.notApplicable))
+    }
+
+    /// We didn't score in overtime at all — they did. Regulation ended on our
+    /// final total, and overtime is all theirs.
+    @Test func overtimeWhereWeDidNotScore() throws {
+        var game = scoredOnIntoQ4()
+        game.events.removeLast(2)                       // we finish on 10
+        game.periodEndScores[4] = PeriodEndScore(ourRunningTotal: 10, opponentRunningTotal: 14)
+        let split = try game.addingOvertime(tiedAt: 10).get()
+        // Only the missed free throw after the tie lands in overtime — the
+        // split is at the basket that reached it, not past later zero-point
+        // events, which the divider can be dragged across if that's wrong.
+        #expect(split.events.filter { $0.period == 5 }.map(\.type) == [.ftMissed])
+        #expect(split.periodEndScores[5]?.ourRunningTotal == 10)
+        #expect(split.periodEndScores[5]?.opponentRunningTotal == 14)
+        #expect(split.result == .loss)
+    }
+
+    /// A game that already went to one overtime can gain a second.
+    @Test func aSecondOvertime() throws {
+        let once = try scoredOnIntoQ4().addingOvertime(tiedAt: 10).get()
+        // OT went 10 → 14 for us, 10 → 12 for them; say 2OT really began at 12.
+        let twice = try once.addingOvertime(tiedAt: 12).get()
+        #expect(twice.periodEndScores.keys.max() == 6)
+        #expect(twice.periodFormat.periodLabel(6) == "2OT")
+        #expect(twice.ourScore == 14)
+    }
+
+    @Test func halvesWork() throws {
+        var game = scoredOnIntoQ4()
+        game.periodFormat = .halves
+        for i in game.events.indices { game.events[i].period = game.events[i].period <= 2 ? 1 : 2 }
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 2, opponentRunningTotal: 5),
+            2: PeriodEndScore(ourRunningTotal: 14, opponentRunningTotal: 12),
+        ]
+        let split = try game.addingOvertime(tiedAt: 10).get()
+        #expect(split.periodEndScores.keys.max() == 3)
+        #expect(split.periodFormat.periodLabel(3) == "OT")
+    }
+
+    /// Followers on an older build see overtime folded into Q4 — the same
+    /// wire answer any overtime game gets — and a current build sees OT.
+    @Test func crossesTheWireLikeAnyOvertimeGame() throws {
+        let game = try scoredOnIntoQ4().addingOvertime(tiedAt: 10).get()
+        let payload = try #require(CloudKitSchema.payload(for: game))
+        let back = try #require(CloudKitSchema.game(fromPayload: payload))
+        #expect(back.periodEndScores.keys.max() == 5)
+        #expect(back.events.map(\.period) == game.events.map(\.period))
+    }
+}
