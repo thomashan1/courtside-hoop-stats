@@ -233,6 +233,10 @@ struct PlayerStatsTable: View {
         Text(text)
             .bold(bold)
             .foregroundStyle(isNothing ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
+            // Never narrower than the number: an equal share truncated FT's
+            // "5/8" to "5/…" on a phone. Too wide for the screen and the
+            // table scrolls instead, which beats a number nobody can read.
+            .fixedSize()
             // Flexible so the columns share whatever width the table is given.
             // Without it the grid keeps its ideal width and the whole table
             // huddles at the left of a wide screen (#216).

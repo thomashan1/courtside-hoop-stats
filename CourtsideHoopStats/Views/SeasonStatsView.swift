@@ -137,7 +137,7 @@ struct SeasonStatsTable: View {
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("PPG").frame(minWidth: 40, maxWidth: .infinity)
+                    Text("PPG").frame(maxWidth: .infinity)
                     // No 2s column. Eight columns clipped FT% off the right
                     // edge — the failure §9 of the UI guidelines warns about,
                     // where a scrollable table hides a column nobody knows to
@@ -171,11 +171,13 @@ struct SeasonStatsTable: View {
                         .frame(minWidth: 100, alignment: .leading)
 
                         Text(average(line.pointsPerGame)).bold().monospacedDigit()
-                            .frame(minWidth: 40, maxWidth: .infinity)
+                            .fixedSize()
+                            .frame(maxWidth: .infinity)
                         value(line.threesPerGame)
                         if showsAssists { value(line.assistsPerGame) }
                         if showsFreeThrows { freeThrows(line) }
                         Text("\(line.gamesPlayed)").monospacedDigit()
+                            .fixedSize()
                             .frame(maxWidth: .infinity)
                     }
                     .font(.subheadline)
@@ -232,6 +234,8 @@ struct SeasonStatsTable: View {
         Text(self.average(average))
             .monospacedDigit()
             .foregroundStyle(average == 0 ? .secondary : .primary)
+            // Never narrower than the number — see PlayerStatsTable.
+            .fixedSize()
             // Flexible, so the columns spread across the table's width (#216).
             .frame(maxWidth: .infinity)
     }
