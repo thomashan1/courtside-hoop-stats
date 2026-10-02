@@ -473,3 +473,54 @@ struct AddingOvertimeAfterTheFactTests {
         #expect(back.events.map(\.period) == game.events.map(\.period))
     }
 }
+
+/// An event added after the game and dragged into place keeps that place.
+struct ReorderedLogOrderTests {
+
+    /// Q2 has two baskets; a missed free throw entered later (so its timestamp
+    /// is the newest in the game) has been dragged between them.
+    private func gameWithLateEntryMovedIntoQ2() -> (Game, missed: UUID) {
+        let a = UUID(), b = UUID()
+        let start = Date(timeIntervalSince1970: 1_000)
+        let first = GameEvent(playerID: a, type: .twoPoint, period: 2, timestamp: start)
+        let second = GameEvent(playerID: b, type: .threePoint, period: 2,
+                               timestamp: start.addingTimeInterval(60))
+        let lateMiss = GameEvent(playerID: a, type: .ftMissed, period: 2,
+                                 timestamp: start.addingTimeInterval(9_000))
+        var game = Game(opponent: "Hawks")
+        game.events = [first, lateMiss, second]
+        game.periodEndScores = [
+            1: PeriodEndScore(ourRunningTotal: 0, opponentRunningTotal: 0),
+            2: PeriodEndScore(ourRunningTotal: 5, opponentRunningTotal: 4),
+        ]
+        return (game, lateMiss.id)
+    }
+
+    @Test func thePeriodKeepsTheDraggedOrderNotTheTimestampOrder() {
+        let (game, missed) = gameWithLateEntryMovedIntoQ2()
+        #expect(game.events(inPeriod: 2).map(\.id)[1] == missed)
+    }
+
+    @Test func thePrintedLogKeepsItToo() {
+        let (game, missed) = gameWithLateEntryMovedIntoQ2()
+        let printed = ScoreLogPaginator.rows(for: game).compactMap { row -> UUID? in
+            if case .event(let event, _) = row { return event.id }
+            return nil
+        }
+        #expect(printed[1] == missed, "the PDF follows the log, not the clock")
+    }
+
+    @Test func aReorderInTheEditorSurvivesTheRoundTrip() {
+        // The path the bug took: entered at the end, dragged up in the editor.
+        var (game, missed) = gameWithLateEntryMovedIntoQ2()
+        game.events = [game.events[0], game.events[2], game.events[1]]   // miss last
+        var items = game.orderedLog()
+        let from = items.firstIndex { $0.id == "e-\(missed.uuidString)" }!
+        let moved = items.remove(at: from)
+        let firstBasket = items.firstIndex { if case .event(let e) = $0 { return e.period == 2 } else { return false } }!
+        items.insert(moved, at: firstBasket + 1)
+
+        let reordered = game.applyingReorderedLog(items)
+        #expect(reordered.events(inPeriod: 2).map(\.id)[1] == missed)
+    }
+}
