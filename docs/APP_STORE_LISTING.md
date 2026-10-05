@@ -115,7 +115,31 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.11 — submitted 2026-09-27
+### v1.12 — submitted 2026-10-05
+
+Season averages lead: it's the first thing in a while that gives a reader a
+reason to open the app between games. The season fixes made during this train
+(blank share sheet, other teams' games counted, unclear record labels) get no
+line — nobody outside TestFlight saw the season screen broken. Free-throw
+truncation and the reorder bug did ship, so they're covered by FIXES 1 and 4.
+
+**Paste-ready — one line per item, no hard wraps.** App Store Connect's
+*What's New* field preserves newlines literally, so a wrapped paragraph arrives
+broken mid-sentence on the product page. Everything else in these docs wraps at
+76 characters; these blocks deliberately don't.
+
+> NEW
+> 1. Season averages: tap the chart icon on the Roster to see every player's points, threes, assists and free throws per game across the season, with your team's record and points scored and allowed above it. Followers can see it too.
+> 2. Share the whole season as a PDF, just like a game's box score.
+> 3. Forgot to start overtime? Tap the "Final" line at the end of a finished game's score log and choose Add Overtime.
+>
+> FIXES
+> 1. Plays you move in the score log now stay where you put them, in the game summary and the PDF.
+> 2. Changes to a finished game now save properly.
+> 3. A quarter's opponent score can be corrected later in the game.
+> 4. Stats tables are easier to read: the columns are explained, numbers are never cut off, and they use the full width when the phone is sideways.
+
+### v1.11 — submitted 2026-09-27, approved 2026-10-05
 
 No NEW section: nothing user-facing was added, and inventing a headline for a
 fix release is how release notes stop being read. Item 2 is a regression that
