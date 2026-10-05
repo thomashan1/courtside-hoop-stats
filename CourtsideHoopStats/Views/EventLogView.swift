@@ -169,9 +169,7 @@ struct EventLogView: View {
     // MARK: - Derived
 
     private func eventsInOrder(in period: Int) -> [GameEvent] {
-        let events = game.events
-            .filter { $0.period == period }
-            .sorted { $0.timestamp < $1.timestamp }
+        let events = game.events(inPeriod: period)
         // Running totals are keyed by event id and computed over the whole
         // game, so reversing the display can't affect the numbers shown.
         return newestFirst ? events.reversed() : events
