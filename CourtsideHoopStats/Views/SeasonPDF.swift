@@ -15,6 +15,11 @@ struct SeasonPrintout: View {
     let games: [Game]
 
     private var season: [SeasonStats] { SeasonStats.season(for: roster, in: games) }
+
+    /// First names, widened to "Jake M." only where two players would collide
+    /// — the same names as the box score. A sheet that gets passed around
+    /// doesn't need the kids' surnames on it.
+    private var displayNames: [UUID: String] { PlayerDisplayName.map(for: roster) }
     private var record: TeamRecord { TeamRecord.record(from: games) }
     private var results: [Game] {
         games.filter { $0.lifecycle == .complete }.sorted { $0.date < $1.date }
@@ -117,7 +122,7 @@ struct SeasonPrintout: View {
 
                 ForEach(Array(season.enumerated()), id: \.element.id) { index, line in
                     HStack(spacing: 0) {
-                        Text(line.player.name)
+                        Text(displayNames[line.player.id] ?? line.player.firstName)
                             .font(.system(size: 10))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)

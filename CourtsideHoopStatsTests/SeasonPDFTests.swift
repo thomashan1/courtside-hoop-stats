@@ -56,6 +56,20 @@ final class SeasonPDFTests: XCTestCase {
         }
     }
 
+    /// First names only, like the box score: no surnames or last initials on a
+    /// sheet that gets forwarded around.
+    @MainActor
+    func testShowsFirstNamesNotSurnames() throws {
+        let team = DemoData.makeTeam()
+        let (_, text) = try render()
+        let names = PlayerDisplayName.map(for: team.players)
+        for player in team.players where names[player.id] == player.firstName && !player.lastName.isEmpty {
+            XCTAssertFalse(text.contains(player.name),
+                           "\(player.name) printed in full; expected just \(player.firstName)")
+        }
+        XCTAssertTrue(text.contains("Nicholas"))
+    }
+
     /// The sheet must say what it counted, or the record reads as the league's
     /// standing rather than as the games this app happens to hold (#213).
     @MainActor
