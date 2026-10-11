@@ -528,6 +528,7 @@ private struct FollowedGameView: View {
                     EventLogView(game: .constant(game),
                                  players: roster,
                                  isEditable: false,
+                                 teamName: teamName,
                                  persist: { _ in })
                 } header: {
                     Text("Score Log")
