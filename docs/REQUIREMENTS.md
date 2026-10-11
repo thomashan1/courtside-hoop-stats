@@ -107,7 +107,7 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
 
 **Events:** 2-pt (+2), 3-pt (+3), FT made (+1), FT missed (0, counts as attempt), **rebound (0)**. *(Fouls are no longer tracked in the UI; the `foul` case is retained only so older saved games still decode.)*
 
-Period headers in the Score Log show the points scored in that period **and the running total at the end of it** — `4 pts (11)`. Computed *through* the period rather than "everything above this row", so it still reads correctly in a follower's log, which runs newest-period-first. Every running total in the log is bracketed, rows included, so they form one column.
+Period headers in the Score Log show the points scored in that period **and the running total at the end of it** — `4 pts (11)`. Computed *through* the period rather than "everything above this row". The log runs oldest-first everywhere: scoring, Game Summary, a follower's view and the PDF. Every running total in the log is bracketed, rows included, so they form one column.
 
 A rebound is a full event, not a counter — it lands in the Score Log and can be edited, reordered or deleted there like anything else, because error recovery matters more than tidiness. It renders as a **subordinate row**: no card, indented, one grey line. At a real game's rebound volume, full cards buried the baskets and the log stopped answering the question it exists for — what just happened to the score. An **FT miss is not** subordinate: it's an attempt, it moves FT%, and it's half of a stat the table shows.
 

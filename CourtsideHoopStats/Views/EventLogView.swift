@@ -17,11 +17,6 @@ struct EventLogView: View {
     /// When true, the per-period (Q1/Q2/…) headers stick to the top of the
     /// enclosing scroll view as you scroll, so you always see the current period.
     var pinsPeriodHeaders: Bool = false
-    /// Reverses the log so the newest play is at the top — periods count down
-    /// and events run newest-first within each. Live Scoring wants the opposite
-    /// (newest nearest the thumb, next to the buttons); a follower is watching
-    /// rather than tapping, so new plays should arrive where they're looking.
-    var newestFirst: Bool = false
     /// Called after any edit/delete with the game to save. Handed the value
     /// rather than re-reading the caller's state — see `ScoreLogEditor` (#209).
     var persist: (Game) -> Void
@@ -35,8 +30,7 @@ struct EventLogView: View {
 
     /// Periods that have at least one event, in display order.
     private var periodsInOrder: [Int] {
-        let periods = Set(game.events.map(\.period)).sorted()
-        return newestFirst ? periods.reversed() : periods
+        Set(game.events.map(\.period)).sorted()
     }
 
     var body: some View {
@@ -169,10 +163,7 @@ struct EventLogView: View {
     // MARK: - Derived
 
     private func eventsInOrder(in period: Int) -> [GameEvent] {
-        let events = game.events(inPeriod: period)
-        // Running totals are keyed by event id and computed over the whole
-        // game, so reversing the display can't affect the numbers shown.
-        return newestFirst ? events.reversed() : events
+        game.events(inPeriod: period)
     }
 
     private func ourPoints(in period: Int) -> Int {
