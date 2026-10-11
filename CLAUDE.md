@@ -122,7 +122,7 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - **Tabs.** Games / Roster / Settings, plus **Following first** when a team is
   shared with you (#189) — the tab only exists if you follow someone, so a
   tracker's bar is unchanged. Leftmost is not the same as default-selected: an
-  owner still lands on Games.
+  owner lands on Games, and after that the app reopens on the last tab used.
 - **Also live:** each Score Log period closing with its score (`End Q1  Swish 10 – Harbor 8`, as on the PDF), the
   REB column hidden when a game has no rebounds, edit-a-finished-game,
   score-log reorder + movable dividers,
