@@ -17,6 +17,8 @@ struct EventLogView: View {
     /// When true, the per-period (Q1/Q2/…) headers stick to the top of the
     /// enclosing scroll view as you scroll, so you always see the current period.
     var pinsPeriodHeaders: Bool = false
+    /// Our team's name, for the score line closing each period.
+    var teamName: String = ""
     /// Called after any edit/delete with the game to save. Handed the value
     /// rather than re-reading the caller's state — see `ScoreLogEditor` (#209).
     var persist: (Game) -> Void
@@ -55,6 +57,8 @@ struct EventLogView: View {
                                         .padding(.vertical,
                                                  event.type.isMinorLogEntry ? 0 : 4)
                                 }
+                                periodFooter(period)
+                                    .padding(.top, 6)
                             }
                         } header: {
                             periodHeader(period)
@@ -73,72 +77,97 @@ struct EventLogView: View {
         }
     }
 
-    /// Quarter / half separator — the sticky header when pinning is on.
+    /// Quarter / half separator — the sticky header when pinning is on. Just
+    /// the label and a rule, like the PDF: the score closes the period in
+    /// `periodFooter`, since on the header it read as the score going *into*
+    /// the quarter.
+    private func periodHeader(_ period: Int) -> some View {
+        HStack(spacing: 8) {
+            Text(game.periodFormat.periodLabel(period))
+                .font(.subheadline).bold()
+                .foregroundStyle(Color.teamAccent)
+            Rectangle()
+                .fill(Color(.separator))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        // Opaque behind the sticky header so scrolling rows don't show through.
+        .background(pinsPeriodHeaders ? Color(.systemGroupedBackground) : Color.clear)
+    }
+
+    /// The closing line of an ended period — a rule, then `End Q1  Swish 10 –
+    /// Harbor 8` — the same line the PDF prints. Nothing for the period still
+    /// being played; Live Scoring has its own "End Q3" control there.
     ///
     /// Tappable once that period has ended, to fix its opponent total. Before
     /// #207 a mistyped total was stuck until the whole game finished, since the
     /// editor was only reachable from the "Final" divider — and the wrong
     /// opponent score then sat on the scoreboard for the rest of the game.
     @ViewBuilder
-    private func periodHeader(_ period: Int) -> some View {
-        if let onEditPeriod, isTappable(period) {
-            Button { onEditPeriod(period) } label: {
-                periodHeaderContent(period)
+    private func periodFooter(_ period: Int) -> some View {
+        if hasEnded(period) {
+            if let onEditPeriod, isTappable(period) {
+                Button { onEditPeriod(period) } label: {
+                    periodFooterContent(period)
+                }
+                .buttonStyle(.plain)
+            } else {
+                periodFooterContent(period)
             }
-            .buttonStyle(.plain)
-        } else {
-            periodHeaderContent(period)
         }
     }
 
-    /// Whether this period's header opens the opponent-total editor: someone
-    /// asked it to, and the period has actually ended.
-    private func isTappable(_ period: Int) -> Bool {
-        onEditPeriod != nil && game.periodEndScores[period] != nil
-    }
-
-    private func periodHeaderContent(_ period: Int) -> some View {
-        HStack(spacing: 8) {
-            Text(game.periodFormat.periodLabel(period))
-                .font(.subheadline).bold()
-                .foregroundStyle(.secondary)
+    private func periodFooterContent(_ period: Int) -> some View {
+        let line = game.periodBreakdownCumulative().first { $0.period == period }
+        let ours = line?.our ?? cumulativePoints(through: period)
+        return VStack(spacing: 4) {
             Rectangle()
                 .fill(Color(.separator))
                 .frame(height: 1)
-            // `fixedSize` on both: without it they compete with the rule for
-            // width and get squeezed to nothing — the first attempt at this
-            // compiled fine and rendered invisibly.
-            Text("\(ourPoints(in: period)) pts")
-                .font(.caption).bold()
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .fixedSize()
-            // The running total, bracketed — and the rows bracket theirs the
-            // same way, so the parentheses read as one consistent column
-            // rather than a quirk of the header (#183).
-            Text("(\(cumulativePoints(through: period)))")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-                .fixedSize()
-            // A chevron, so the total lands in the same column as a row's when
-            // rows carry one. Rows put the chevron *after* the total, so
-            // without this the header's number sits a chevron's width to the
-            // right of every row's.
-            //
-            // It was always invisible until #207 gave ended periods somewhere
-            // to go: now it *shows* on a header you can actually tap, which
-            // costs no layout change because the space was already reserved.
-            if isEditable {
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .opacity(isTappable(period) ? 1 : 0)
+            HStack(spacing: 6) {
+                Spacer()
+                Text("End \(game.periodFormat.periodLabel(period))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(scoreLine(our: ours, opponent: line?.opponent))
+                    .font(.caption).bold()
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if isTappable(period) {
+                    Image(systemName: "chevron.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        // Opaque behind the sticky header so scrolling rows don't show through.
-        .background(pinsPeriodHeaders ? Color(.systemGroupedBackground) : Color.clear)
+        .contentShape(Rectangle())
+    }
+
+    /// `Swish 10 – Harbor 8`, or just our score when the opponent's wasn't
+    /// recorded for that period. First words only, as on the PDF.
+    private func scoreLine(our: Int, opponent: Int?) -> String {
+        let us = teamName.split(separator: " ").first.map(String.init) ?? "Us"
+        guard let opponent else { return "\(us) \(our)" }
+        let them = game.opponent.split(separator: " ").first.map(String.init) ?? "Opp"
+        return "\(us) \(our) – \(them) \(opponent)"
+    }
+
+    /// Over once its opponent total is in, play has moved on to a later
+    /// period, or the game is finished.
+    private func hasEnded(_ period: Int) -> Bool {
+        game.periodEndScores[period] != nil
+            || game.isComplete
+            || game.events.contains { $0.period > period }
+    }
+
+    /// Whether this period's footer opens the opponent-total editor: someone
+    /// asked it to, and the period's total has been entered.
+    private func isTappable(_ period: Int) -> Bool {
+        onEditPeriod != nil && game.periodEndScores[period] != nil
     }
 
     @ViewBuilder
@@ -164,10 +193,6 @@ struct EventLogView: View {
 
     private func eventsInOrder(in period: Int) -> [GameEvent] {
         game.events(inPeriod: period)
-    }
-
-    private func ourPoints(in period: Int) -> Int {
-        game.events.filter { $0.period == period }.reduce(0) { $0 + $1.type.points }
     }
 
     /// Our score at the end of `period` — every event up to and including it.

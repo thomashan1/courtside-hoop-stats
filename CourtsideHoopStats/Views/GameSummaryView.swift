@@ -149,7 +149,8 @@ struct GameSummaryView: View {
 
     private var eventLogSection: some View {
         Section("Score Log") {
-            EventLogView(game: $game, players: store.team.players, isEditable: false) { edited in
+            EventLogView(game: $game, players: store.team.players, isEditable: false,
+                         teamName: store.team.name) { edited in
                 store.updateGame(edited)
             }
         }

@@ -427,6 +427,7 @@ struct LiveScoringView: View {
         VStack(alignment: .leading, spacing: 10) {
             EventLogView(game: $game, players: store.team.players,
                          pinsPeriodHeaders: true,
+                         teamName: store.team.name,
                          persist: { store.updateGame($0) },
                          // Tapping an ended period's header fixes that
                          // period's opponent total. The editor already handled
