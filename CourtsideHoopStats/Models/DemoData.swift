@@ -180,8 +180,7 @@ enum DemoData {
         // Some baskets carry an assist. A follower's log is where the family
         // sees them, and this game is the one the store screenshot comes from
         // — without any, the headline feature of v1.6 was absent from the
-        // picture meant to show the app off. They sit in **Q3**, which is what
-        // a follower sees first: this log is newest-first.
+        // picture meant to show the app off.
         var liveEvents: [GameEvent] = []
         for (index, type, period, assistIndex): (Int, EventType, Int, Int?) in [
             // Q1 = 10 — Nicholas opens with back-to-back threes.
