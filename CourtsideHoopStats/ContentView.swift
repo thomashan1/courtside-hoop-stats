@@ -2,9 +2,13 @@ import SwiftUI
 
 /// Root tab container: games, roster, and app settings.
 struct ContentView: View {
-    private enum Tab: Hashable {
+    private enum Tab: String, Hashable {
         case games, roster, following, settings
     }
+
+    /// The tab the app was last on, so a relaunch (after iOS has closed the
+    /// app) reopens where you left off rather than always on Games.
+    private static let lastTabKey = "lastSelectedTab"
 
     @EnvironmentObject var store: AppStore
     @Environment(\.teamSharingService) private var sharing
@@ -52,15 +56,19 @@ struct ContentView: View {
         // active team. A follower's screens override this with the team they're
         // watching, which is someone else's.
         .environment(\.teamKitColor, store.team.kitColor)
-        // A pure follower reopening the app has no Games/Roster tabs, so start
-        // them on Following rather than a tab that no longer exists (#115).
+        // Reopen on the last tab. Failing that: a pure follower has no
+        // Games/Roster tabs, so start them on Following rather than a tab
+        // that no longer exists (#115).
         //
         // Note this is deliberately *not* "start on the first tab". Following
         // is leftmost for anyone who has it (#189), but a tracker who also
         // follows should still land on their own games — leftmost and
         // default-selected are different questions.
         .onAppear {
-            if store.isPureFollower { selectedTab = .following }
+            selectedTab = initialTab
+        }
+        .onChange(of: selectedTab) { _, tab in
+            UserDefaults.standard.set(tab.rawValue, forKey: Self.lastTabKey)
         }
         .task { await discoverFollowedTeams() }
         // CloudKit woke us: re-fetch, which posts any alerts worth posting.
@@ -92,6 +100,23 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(store.shareAcceptanceError ?? "")
+        }
+    }
+
+    /// The remembered tab if it still exists; otherwise the old defaults. The
+    /// screenshot harness always starts on the default so its runs don't
+    /// depend on where the previous one ended.
+    private var initialTab: Tab {
+        let fallback: Tab = store.isPureFollower ? .following : .games
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") { return fallback }
+        #endif
+        guard let raw = UserDefaults.standard.string(forKey: Self.lastTabKey),
+              let tab = Tab(rawValue: raw) else { return fallback }
+        switch tab {
+        case .following: return store.followedTeams.isEmpty ? fallback : tab
+        case .games, .roster: return store.isPureFollower ? fallback : tab
+        case .settings: return tab
         }
     }
 
