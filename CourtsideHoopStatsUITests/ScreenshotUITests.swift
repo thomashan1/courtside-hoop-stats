@@ -379,6 +379,33 @@ final class ScreenshotUITests: XCTestCase {
     /// Overtime scored on into Q4 and the game finished, split back out
     /// afterwards. Its own test because it changes the seed: Lakeside gains an
     /// overtime, which every other capture would otherwise inherit.
+    /// A deleted game waits in Settings → Recently Deleted and comes back.
+    func testRecentlyDeleted() {
+        let app = launchSeeded()
+        app.tabBars.buttons["Games"].tap()
+        let row = app.staticTexts["vs Lakeside Lightning"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.swipeLeft()
+        app.buttons["Delete"].firstMatch.tap()
+        let confirm = app.buttons["Delete Game & Scores"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertFalse(row.waitForExistence(timeout: 2))
+
+        app.tabBars.buttons["Settings"].tap()
+        let entry = app.buttons.containing(NSPredicate(format: "label BEGINSWITH 'Recently Deleted'")).firstMatch
+        for _ in 0..<6 where !entry.isHittable { app.swipeUp() }
+        XCTAssertTrue(entry.waitForExistence(timeout: 5), "Settings should offer Recently Deleted")
+        entry.tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 5))
+        snap(app, "33-recently-deleted")
+
+        app.buttons["Recover"].firstMatch.tap()
+        app.tabBars.buttons["Games"].tap()
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 5),
+                      "a recovered game is back in the list")
+    }
+
     func testAddOvertimeAfterTheFact() {
         let app = launchSeeded()
         app.tabBars.buttons["Games"].tap()

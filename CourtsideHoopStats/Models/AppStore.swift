@@ -23,7 +23,13 @@ struct TeamsState: Codable {
 final class AppStore: ObservableObject {
     @Published var teams: [Team] { didSet { noteLocalChanges(from: oldValue, to: teams); save() } }
     @Published var activeTeamID: UUID { didSet { save() } }
-    @Published var games: [Game] { didSet { noteLocalChanges(from: oldValue, to: games); save() } }
+    @Published var games: [Game] {
+        didSet {
+            noteLocalChanges(from: oldValue, to: games)
+            keepRemovedGames(from: oldValue)
+            save()
+        }
+    }
     /// In-app text-size step (index into `AppTextSize.steps`); applied app-wide
     /// as a Dynamic Type floor. 0 = default.
     @Published var textSizeIndex: Int { didSet { save() } }
@@ -198,6 +204,7 @@ final class AppStore: ObservableObject {
             games = []
         }
         loadSyncState()
+        loadRecentlyDeleted()
     }
 
     // MARK: - Lenient loading (#180)
@@ -432,6 +439,74 @@ final class AppStore: ObservableObject {
             guard !ephemeral else { return }
             UserDefaults.standard.set(newValue.map(\.uuidString), forKey: backupUploadedKey)
         }
+    }
+
+    // MARK: - Recently Deleted
+    //
+    // Every game that leaves this device, however it goes (deleted here, its
+    // team deleted, or deleted on another of the owner's devices and synced),
+    // is kept here for 30 days and can be put back, like Photos' Recently
+    // Deleted. Sync deletes from iCloud too, so without this one mistake on
+    // any device could erase a real game everywhere.
+
+    struct DeletedGame: Codable, Identifiable {
+        var game: Game
+        /// Its team as it was, so a game whose team is gone too comes back
+        /// with it rather than orphaned.
+        var team: Team?
+        var deletedAt: Date
+        var id: UUID { game.id }
+    }
+
+    @Published private(set) var recentlyDeleted: [DeletedGame] = [] {
+        didSet {
+            guard !ephemeral, let data = try? encoder.encode(recentlyDeleted) else { return }
+            UserDefaults.standard.set(data, forKey: recentlyDeletedKey)
+        }
+    }
+    private let recentlyDeletedKey = "chs.recentlyDeleted.v1"
+    static let recentlyDeletedDays = 30
+
+    private func keepRemovedGames(from old: [Game]) {
+        let remaining = Set(games.map(\.id))
+        let removed = old.filter { !remaining.contains($0.id) }
+        guard !removed.isEmpty else { return }
+        let now = Date()
+        let cutoff = now.addingTimeInterval(-Double(Self.recentlyDeletedDays) * 86_400)
+        var kept = recentlyDeleted.filter { $0.deletedAt > cutoff }
+        for game in removed {
+            kept.removeAll { $0.id == game.id }
+            // `teams` may already have lost the team (deleteTeam removes the
+            // games first, then the team), so look it up as it stands now.
+            let team = teams.first { $0.id == game.teamID }
+            kept.insert(DeletedGame(game: game, team: team, deletedAt: now), at: 0)
+        }
+        recentlyDeleted = kept
+    }
+
+    /// Put a deleted game back, with its team if that's gone too. It syncs
+    /// back to the owner's other devices like any new game.
+    func recoverDeletedGame(_ id: UUID) {
+        guard let deleted = recentlyDeleted.first(where: { $0.id == id }) else { return }
+        if let team = deleted.team, !teams.contains(where: { $0.id == team.id }) {
+            teams.append(team)
+        }
+        if !games.contains(where: { $0.id == id }) {
+            games.insert(deleted.game, at: 0)
+        }
+        recentlyDeleted.removeAll { $0.id == id }
+    }
+
+    /// Remove for good, on the user's say-so.
+    func purgeDeletedGame(_ id: UUID) {
+        recentlyDeleted.removeAll { $0.id == id }
+    }
+
+    private func loadRecentlyDeleted() {
+        guard let data = UserDefaults.standard.data(forKey: recentlyDeletedKey),
+              let saved = try? decoder.decode([DeletedGame].self, from: data) else { return }
+        let cutoff = Date().addingTimeInterval(-Double(Self.recentlyDeletedDays) * 86_400)
+        recentlyDeleted = saved.filter { $0.deletedAt > cutoff }
     }
 
     // MARK: - Sync across the owner's own devices (#229 stage 2)

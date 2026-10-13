@@ -191,6 +191,17 @@ struct SettingsView: View {
             }
             .disabled(store.isBackingUp)
 
+            // Only once there's something in it.
+            if !store.recentlyDeleted.isEmpty {
+                NavigationLink {
+                    RecentlyDeletedView()
+                } label: {
+                    LabeledContent("Recently Deleted") {
+                        Text("\(store.recentlyDeleted.count)")
+                    }
+                }
+            }
+
             if let error = store.backupError ?? store.syncError {
                 Text(error)
                     .font(.footnote)
