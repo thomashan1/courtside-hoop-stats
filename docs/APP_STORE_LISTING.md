@@ -115,7 +115,7 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.13 — submitted 2026-10-13 (build 219)
+### v1.13 — submitted 2026-10-13, 11:39 AM (build 219)
 
 **Paste-ready — one line per item, no hard wraps.**
 

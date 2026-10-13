@@ -34,10 +34,14 @@ with the team's record (#211, #213), the season as a **PDF** in first names
 that stick (#223), stats tables that never truncate (#222), reopening on the
 last tab (#227), and a Score Log that reads like the PDF (#226, #228).
 
-**v1.13 is the open train**, carrying **your teams on all your devices**
-(#229): always-on sync of the owner's teams and games across their iPhone,
-iPad and Mac, with games merged so two devices can score at once. See the
-trap below and `docs/REQUIREMENTS.md` §3.9a.
+**v1.13 is in review** (submitted 2026-10-13, 11:39 AM, build 219):
+**your teams on all your devices** (#229) — always-on sync of the owner's
+teams and games across their iPhone, iPad and Mac, games merged so two devices
+can score at once — plus Recently Deleted, and fixes for followers' deleted
+games (#230) and the backup (#231). See the trap below and
+`docs/REQUIREMENTS.md` §3.9a.
+
+**v1.14 is the open train**, for the iPad layout (#232).
 
 **v1.11 was approved 2026-10-05** after eight days in the queue and 15 minutes
 in review: overtime on a game that already finished level (#201), the fix for
