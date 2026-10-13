@@ -99,11 +99,11 @@ final class CloudKitSharingService: TeamSharingService {
             // Zone *changes* rather than a query: a query would need the record
             // type indexed as queryable in the CloudKit schema, while change
             // fetching works on any zone as-is.
-            let changes = try await database.recordZoneChanges(inZoneWith: zone.zoneID, since: nil)
+            let changes = try await database.allRecordZoneChanges(in: zone.zoneID)
 
             var team: Team?
             var games: [Game] = []
-            for (_, result) in changes.modificationResultsByID {
+            for (_, result) in changes {
                 guard let record = try? result.get().record else { continue }
                 if let decoded = CloudKitSchema.team(from: record) {
                     team = decoded
@@ -334,9 +334,9 @@ final class CloudKitSharingService: TeamSharingService {
     private func deleteGamesNoLongerPresent(_ games: [Game],
                                             in zoneID: CKRecordZone.ID) async throws {
         let keep = Set(games.map { CloudKitSchema.gameRecordID($0.id, in: zoneID) })
-        let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: nil)
+        let changes = try await database.allRecordZoneChanges(in: zoneID)
 
-        let stale = changes.modificationResultsByID.compactMap { id, result -> CKRecord.ID? in
+        let stale = changes.compactMap { id, result -> CKRecord.ID? in
             guard let record = try? result.get().record,
                   record.recordType == CloudKitSchema.gameRecordType,
                   !keep.contains(id) else { return nil }
@@ -344,7 +344,7 @@ final class CloudKitSharingService: TeamSharingService {
         }
 
         guard !stale.isEmpty else { return }
-        _ = try await database.modifyRecords(saving: [], deleting: stale)
+        try await database.deleteRecords(stale)
     }
 
     private func existingRecord(_ id: CKRecord.ID) async throws -> CKRecord? {
