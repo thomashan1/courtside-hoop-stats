@@ -448,6 +448,14 @@ taps through to the listing.
 | 9 | `09-roster` | Answers "how much setup is this?" |
 | 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
 
+**Header and Search Results banners** (Product Page Information → Header and
+Search Results): `docs/img/store-header-3840x1646.png` and
+`docs/img/store-search-results-3840x2560.png`. Supported sizes are 3840 × 1646
+or 5244 × 2950 for the header, and 5244 × 2950, 3840 × 2560 or 1920 × 1280 for
+search results. They're built from the promoted screenshots by
+`swift scripts/store-banners.swift` (run from the repo root), so re-run it
+after re-promoting screenshots and upload both again.
+
 **Cut in v1.12 to make room for the season screen:** `09-new-game`. A form
 whose selling point — every field is optional — doesn't show in a picture;
 every other slot shows the app doing something. The README keeps the sentence
