@@ -120,7 +120,7 @@ the code.
 **Paste-ready — one line per item, no hard wraps.**
 
 > NEW
-> - Made for iPad: your games beside the list, the Score Log beside your players, and box scores in two columns, in portrait or landscape.
+> - Made for iPad: games beside the list, box scores in two columns.
 
 First iPad release: upload the ten `docs/img/ipad/` screenshots to the 13"
 iPad slot as well as the iPhone set.
