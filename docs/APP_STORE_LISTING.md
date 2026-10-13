@@ -121,6 +121,7 @@ the code.
 
 > NEW
 > - Made for iPad: games beside the list, box scores in two columns.
+> - Guest players: a borrowed jersey only shows in games they played.
 
 First iPad release: upload the ten `docs/img/ipad/` screenshots to the 13"
 iPad slot as well as the iPhone set.

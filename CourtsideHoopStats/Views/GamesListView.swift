@@ -421,7 +421,7 @@ struct NewGameSheet: View {
             isHome: isHome,
             periodFormat: periodFormat
         )
-        game.hasStarted = started
+        if started { game.start(roster: store.team.players) } else { game.hasStarted = false }
         return game
     }
 

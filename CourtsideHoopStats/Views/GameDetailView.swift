@@ -135,7 +135,7 @@ struct GameDetailView: View {
     }
 
     private func start() {
-        game.hasStarted = true
+        game.start(roster: store.team.players)
         store.updateGame(game)
         onStart(gameID)
     }

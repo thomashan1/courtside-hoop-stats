@@ -672,7 +672,7 @@ struct LiveScoringView: View {
         // choosing overtime is simply *not* finishing: the next period is
         // period 5, which labels itself OT (#199).
         if period >= game.periodFormat.periodCount && !startOvertime {
-            game.isComplete = true
+            game.finish(roster: store.team.players)
         }
         store.updateGame(game)
 

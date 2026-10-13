@@ -22,6 +22,8 @@ struct GameMigrationTests {
         "locationAddress",
         "notes",
         "teamID",
+        "removedEventIDs",    // v1.13 — own-device sync
+        "rosterPlayerIDs",    // v1.14 — who was on the team
     ]
 
     private func strip(_ keys: [String], from game: Game) throws -> Data {

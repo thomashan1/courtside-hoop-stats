@@ -1078,8 +1078,8 @@ final class AppStore: ObservableObject {
 
     // MARK: - Roster (operates on the active team)
 
-    func addPlayer(name: String, number: String) {
-        team.players.append(Player(name: name, number: number))
+    func addPlayer(name: String, number: String, isGuest: Bool = false) {
+        team.players.append(Player(name: name, number: number, isGuest: isGuest ? true : nil))
     }
 
     func updatePlayer(_ player: Player) {
