@@ -27,8 +27,8 @@ Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` fo
 what's in a release, and `docs/RELEASE_HISTORY.md` for build numbers and review
 turnaround.
 
-**v1.12 is in review** (resubmitted 2026-10-12, 6:44 PM, after build 193 was
-withdrawn so the season PDF wouldn't ship with surnames): **season averages**
+**v1.12 was approved 2026-10-13** (16h 39m after its resubmission; build 193
+was withdrawn so the season PDF wouldn't ship with surnames): **season averages**
 with the team's record (#211, #213), the season as a **PDF** in first names
 (#215, #225), **Add Overtime** to a finished game (#221), score-log reorders
 that stick (#223), stats tables that never truncate (#222), reopening on the

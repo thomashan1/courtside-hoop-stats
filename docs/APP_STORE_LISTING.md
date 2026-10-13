@@ -115,17 +115,17 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.13 — not yet submitted
+### v1.13 — submitted 2026-10-13 (build 219)
 
 **Paste-ready — one line per item, no hard wraps.**
 
 > NEW
-> 1. Your teams and games on all your devices: sign in to the same Apple Account on your iPhone, iPad or Mac and everything stays in step, even scoring the same game on two at once.
-> 2. Recently Deleted in Settings: a deleted game can be recovered for 30 days.
+> - Your teams and games now sync across your iPhone, iPad and Mac.
+> - Recently Deleted: recover a deleted game for 30 days.
 >
 > FIXES
-> 1. Deleted games now disappear for followers too.
-> 2. A new device can no longer overwrite your iCloud backup.
+> - Deleted games now disappear for followers.
+> - A new device can't overwrite your iCloud backup.
 
 ### v1.12 — submitted 2026-10-12 (resubmitted after withdrawing build 193)
 
