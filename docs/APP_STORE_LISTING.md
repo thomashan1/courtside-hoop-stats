@@ -129,17 +129,17 @@ broken mid-sentence on the product page. Everything else in these docs wraps at
 76 characters; these blocks deliberately don't.
 
 > NEW
-> 1. Season averages: tap the chart icon on the Roster to see every player's points, threes, assists and free throws per game across the season, with your team's record and points scored and allowed above it. Followers can see it too.
-> 2. Share the whole season as a PDF, just like a game's box score.
-> 3. Forgot to start overtime? Tap the "Final" line at the end of a finished game's score log and choose Add Overtime.
-> 4. The app reopens on the tab you were last using.
+> 1. Season averages and team record (chart icon on the Roster). Followers see it too.
+> 2. Share the season as a PDF.
+> 3. Add overtime to a finished game.
+> 4. The app reopens on the tab you last used.
 >
 > FIXES
-> 1. Plays you move in the score log now stay where you put them, in the game summary and the PDF.
-> 2. Changes to a finished game now save properly.
-> 3. A quarter's opponent score can be corrected later in the game.
-> 4. Stats tables are easier to read: the columns are explained, numbers are never cut off, and they use the full width when the phone is sideways.
-> 5. The score log reads like the PDF: oldest play first for followers too, and each quarter ends with its score.
+> 1. Reordered plays stay where you put them.
+> 2. Edits to finished games save properly.
+> 3. Fix a quarter's opponent score later in the game.
+> 4. Stats tables never cut off numbers.
+> 5. The score log reads like the PDF, oldest play first.
 
 ### v1.11 — submitted 2026-09-27, approved 2026-10-05
 
