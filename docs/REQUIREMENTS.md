@@ -233,6 +233,22 @@ orphaned. Deleting a game locally deletes it from the backup too: keeping
 everything forever sounds safer but makes the backup diverge from what the user
 believes they have.
 
+**A device only deletes what it uploaded itself.** A device with no data of its
+own (one blank team, no games) never backs up, and a backup only removes
+records this device uploaded last time. Before that, a fresh install (a new
+phone before its restore, or an iPad on the same Apple Account) wiped the whole
+backup 30 seconds after launch (#231).
+
+**Your own teams on another device (#229, stage 1).** A device with no data of
+its own reads the backup and shows the owner's teams **read-only**, in the same
+screen a follower uses. The tab is called **My Teams** (iCloud icon) when
+nothing is followed; with followed teams too, it stays **Following** and lists
+both, own teams first. Games and Roster hide, as for a pure follower. The
+subtitle says "From your iCloud · Updated …", and there's no Unfollow. It lags
+the scoring phone by the backup debounce (about 30 seconds), fine for viewing.
+Adding a player or a game on that device turns the view off, since the device
+then has data of its own. Editing from a second device is stage 2.
+
 `BackupTeam`/`BackupGame` were deployed to the Production CloudKit schema on
 2026-09-17. **A new record type must be deployed before it can be used at all**
 — Development auto-creates types, Production does not, and TestFlight runs

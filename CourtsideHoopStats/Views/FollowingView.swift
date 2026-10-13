@@ -31,7 +31,7 @@ struct FollowingView: View {
 
     /// The team being viewed — the chosen one, or the first followed team.
     private var selected: FollowedTeam? {
-        store.followedTeams.first { $0.id == selectedTeamID } ?? store.followedTeams.first
+        store.viewedTeams.first { $0.id == selectedTeamID } ?? store.viewedTeams.first
     }
 
     var body: some View {
@@ -80,7 +80,7 @@ struct FollowingView: View {
                 // hardcoded content, no subtitle, no sibling toolbar item, and
                 // unconditionally rendered, so the fix is a menu we control and
                 // can verify opens, not a further attempt at the built-in one.
-                if store.followedTeams.count > 1 {
+                if store.viewedTeams.count > 1 {
                     ToolbarItem(placement: .topBarLeading) {
                         Menu {
                             // A `Picker`, not a hand-built `ForEach` of
@@ -96,7 +96,7 @@ struct FollowingView: View {
                                 get: { selected?.id ?? "" },
                                 set: { selectedTeamID = $0 }
                             )) {
-                                ForEach(store.followedTeams) { followed in
+                                ForEach(store.viewedTeams) { followed in
                                     Text(followed.team.name).tag(followed.id)
                                 }
                             }
@@ -137,7 +137,9 @@ struct FollowingView: View {
                 }
                 // Only once there's a team to act on — matches every other
                 // toolbar item here in reading `selected`, not `store` directly.
-                if let selected {
+                // Your own team from iCloud isn't a share, so there's nothing
+                // to unfollow (#229).
+                if let selected, !selected.isOwnFromICloud {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button(role: .destructive) {
@@ -269,14 +271,17 @@ struct FollowingView: View {
         ].filter { !$0.games.isEmpty }
     }
     private func refresh() async {
-        guard sharing.isAvailable, !isRefreshing else { return }
+        guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
         do {
-            await store.applyFollowedTeams(try await sharing.fetchFollowedTeams())
+            try await store.refreshICloudTeams()
+            if sharing.isAvailable {
+                await store.applyFollowedTeams(try await sharing.fetchFollowedTeams())
+            }
         } catch {
             // Keep showing the cached snapshot; only report if we have nothing.
-            if store.followedTeams.isEmpty {
+            if store.viewedTeams.isEmpty {
                 refreshError = error.localizedDescription
             }
         }
@@ -332,7 +337,7 @@ private struct FollowedGameView: View {
     @State private var seenEventIDs: Set<UUID>?
 
     private var followed: FollowedTeam? {
-        store.followedTeams.first { $0.id == followedID }
+        store.viewedTeams.first { $0.id == followedID }
     }
     private var game: Game? {
         followed?.games.first { $0.id == gameID }
@@ -441,6 +446,10 @@ private struct FollowedGameView: View {
     }
 
     private func refresh() async {
+        if followed?.isOwnFromICloud == true {
+            try? await store.refreshICloudTeams()
+            return
+        }
         guard sharing.isAvailable else { return }
         guard let teams = try? await sharing.fetchFollowedTeams() else { return }
         // Don't wipe a good cache on a transient failure returning nothing.

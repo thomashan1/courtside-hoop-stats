@@ -29,9 +29,9 @@ struct SettingsView: View {
                 // entries for a team they never created — but Add/Import
                 // must stay reachable (#118), or there'd be no way back to
                 // tracking a team of their own. Adding or importing one
-                // flips `isPureFollower` false immediately, which is what
+                // flips `isViewOnly` false immediately, which is what
                 // brings the full section (and Roster) back.
-                if store.isPureFollower {
+                if store.isViewOnly {
                     pureFollowerTeamsSection
                 } else {
                     teamsSection

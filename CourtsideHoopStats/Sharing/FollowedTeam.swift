@@ -27,11 +27,21 @@ struct FollowedTeam: Identifiable, Codable {
 
     var id: String { "\(ownerName)|\(zoneName)" }
 
+    /// `ownerName` for this person's **own** team, read from their iCloud
+    /// backup on another device (#229) rather than shared by someone else.
+    /// Not a CloudKit owner name, so it can't collide with one.
+    static let ownICloudOwner = "chs.own-icloud"
+
+    /// One of this person's own teams, viewed from another device — not a
+    /// share, so there's nothing to unfollow.
+    var isOwnFromICloud: Bool { ownerName == Self.ownICloudOwner }
+
     /// "Shared by Jean · Updated 5 minutes ago" — first name only, and only
     /// when the owner actually set one (`Team.ownerDisplayName`, #128);
     /// otherwise just the freshness line, so there's no half-blank
     /// "Shared by · Updated…".
     var subtitle: String {
+        if isOwnFromICloud { return "From your iCloud · \(updatedAt.updatedLabel)" }
         guard let name = team.ownerDisplayName, !name.isEmpty else { return updatedAt.updatedLabel }
         return "Shared by \(name) · \(updatedAt.updatedLabel)"
     }

@@ -27,16 +27,26 @@ struct ContentView: View {
             // their leftmost tab. Worth it because the reason to open the app
             // as a follower is time-sensitive (a game happening now), while
             // the reason to open it as a tracker is deliberate.
-            if !store.followedTeams.isEmpty {
+            //
+            // It also carries this person's own teams from iCloud on a device
+            // with no data of its own (#229) — named for that when there's
+            // nothing followed, since "Following" your own team reads wrong.
+            if !store.viewedTeams.isEmpty {
                 FollowingView()
-                    .tabItem { Label("Following", systemImage: "binoculars") }
+                    .tabItem {
+                        if store.followedTeams.isEmpty {
+                            Label("My Teams", systemImage: "icloud")
+                        } else {
+                            Label("Following", systemImage: "binoculars")
+                        }
+                    }
                     .tag(Tab.following)
             }
 
             // Hidden for a pure follower (#115) — someone who only watches
             // others' teams and has never touched their own local, blank
             // default team. Reappears the moment they add a player or a game.
-            if !store.isPureFollower {
+            if !store.isViewOnly {
                 GamesListView()
                     .tabItem { Label("Games", systemImage: "list.clipboard") }
                     .tag(Tab.games)
@@ -70,7 +80,13 @@ struct ContentView: View {
         .onChange(of: selectedTab) { _, tab in
             UserDefaults.standard.set(tab.rawValue, forKey: Self.lastTabKey)
         }
-        .task { await discoverFollowedTeams() }
+        .task {
+            await discoverFollowedTeams()
+            // Silent at launch, like discovery: the cached copy still shows.
+            try? await store.refreshICloudTeams()
+            // A view-only device opened on Games before its teams loaded.
+            if store.isViewOnly, selectedTab == .games { selectedTab = .following }
+        }
         // CloudKit woke us: re-fetch, which posts any alerts worth posting.
         .onReceive(NotificationCenter.default.publisher(for: .sharedDataChanged)) { note in
             let completion = note.object as? (UIBackgroundFetchResult) -> Void
@@ -107,15 +123,15 @@ struct ContentView: View {
     /// screenshot harness always starts on the default so its runs don't
     /// depend on where the previous one ended.
     private var initialTab: Tab {
-        let fallback: Tab = store.isPureFollower ? .following : .games
+        let fallback: Tab = store.isViewOnly ? .following : .games
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") { return fallback }
         #endif
         guard let raw = UserDefaults.standard.string(forKey: Self.lastTabKey),
               let tab = Tab(rawValue: raw) else { return fallback }
         switch tab {
-        case .following: return store.followedTeams.isEmpty ? fallback : tab
-        case .games, .roster: return store.isPureFollower ? fallback : tab
+        case .following: return store.viewedTeams.isEmpty ? fallback : tab
+        case .games, .roster: return store.isViewOnly ? fallback : tab
         case .settings: return tab
         }
     }
