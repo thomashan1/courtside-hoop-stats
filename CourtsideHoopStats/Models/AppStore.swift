@@ -456,11 +456,14 @@ final class AppStore: ObservableObject {
     /// Ids deleted here and not yet deleted in iCloud.
     private var pendingSyncDeletes: Set<UUID> = [] { didSet { persistSyncState() } }
     private var syncToken: Data? { didSet { persistSyncState() } }
+    /// Whether this launch has asked iCloud to push this account's changes.
+    private var subscribedToSync = false
     /// Set while applying a pull, so arriving changes aren't mistaken for
     /// local edits and sent straight back.
     private var applyingRemote = false
 
-    private let syncOnKey = "chs.syncAcrossDevices.v1"
+    /// Set once this device has offered everything it had up to sync.
+    private let syncStartedKey = "chs.syncStarted.v1"
     private let syncPendingKey = "chs.syncPending.v1"
     private let syncDeletesKey = "chs.syncPendingDeletes.v1"
     private let syncTokenKey = "chs.syncToken.v1"
@@ -494,7 +497,6 @@ final class AppStore: ObservableObject {
     func setSyncAcrossDevices(_ on: Bool) async {
         guard on != syncAcrossDevices else { return }
         syncAcrossDevices = on
-        if !ephemeral { UserDefaults.standard.set(on, forKey: syncOnKey) }
         syncToken = nil
         syncError = nil
         if on {
@@ -518,7 +520,11 @@ final class AppStore: ObservableObject {
         defer { isSyncing = false }
         do {
             let pull = try await service.pullChanges(since: syncToken)
-            applyRemote(pull)
+            applyRemote(pull, isFirstPull: syncToken == nil)
+            if !subscribedToSync {
+                try? await service.subscribeToChanges()
+                subscribedToSync = true
+            }
             syncToken = pull.token
 
             let sentTeams = teams.filter { pendingSyncIDs.contains($0.id) }
@@ -552,25 +558,44 @@ final class AppStore: ObservableObject {
         }
     }
 
-    /// Merge a pull into local state. Local edits not yet pushed win.
+    /// Merge a pull into local state. A game changed on both devices is
+    /// merged (`Game.merged(with:)`); for a team, the local edit not yet
+    /// pushed wins.
     @MainActor
-    private func applyRemote(_ pull: SyncPull) {
+    private func applyRemote(_ pull: SyncPull, isFirstPull: Bool) {
         let mine = pendingSyncIDs.union(pendingSyncDeletes)
         let wasBlank = hasNoDataOfItsOwn
+        // Older builds backed up a fresh install's blank default team. On a
+        // first pull there's no telling it from a real one, so an empty team
+        // nobody's games belong to stays out.
+        let blankFromBefore: (Team) -> Bool = { team in
+            isFirstPull && team.players.isEmpty
+                && !pull.games.contains { $0.teamID == team.id }
+                && !self.games.contains { $0.teamID == team.id }
+        }
         var newTeams = teams
         var newGames = games
 
-        for team in pull.teams where !mine.contains(team.id) {
+        for team in pull.teams where !mine.contains(team.id) && !blankFromBefore(team) {
             if let i = newTeams.firstIndex(where: { $0.id == team.id }) {
                 newTeams[i] = team
             } else {
                 newTeams.append(team)
             }
         }
-        for game in pull.games where !mine.contains(game.id) {
+        for game in pull.games {
             if let i = newGames.firstIndex(where: { $0.id == game.id }) {
-                newGames[i] = game
-            } else {
+                // Changed here too: merge, so both devices' taps survive. The
+                // merged copy stays pending and goes back up.
+                // On the very first pull, though, the cloud copy is just this
+                // device's old backup: a tap deleted here before deletions
+                // were remembered would come back, so this copy wins outright.
+                if !mine.contains(game.id) {
+                    newGames[i] = game
+                } else if !isFirstPull {
+                    newGames[i] = newGames[i].merged(with: game)
+                }
+            } else if !pendingSyncDeletes.contains(game.id) {
                 newGames.insert(game, at: 0)
             }
         }
@@ -598,13 +623,24 @@ final class AppStore: ObservableObject {
 
     private func loadSyncState() {
         let defaults = UserDefaults.standard
-        syncAcrossDevices = defaults.bool(forKey: syncOnKey)
+        // Always on, like any iCloud app: nothing to switch on (#229).
+        syncAcrossDevices = true
         let ids: (String) -> Set<UUID> = { key in
             Set((defaults.stringArray(forKey: key) ?? []).compactMap(UUID.init(uuidString:)))
         }
-        pendingSyncIDs = ids(syncPendingKey)
-        pendingSyncDeletes = ids(syncDeletesKey)
-        syncToken = defaults.data(forKey: syncTokenKey)
+        if defaults.bool(forKey: syncStartedKey) {
+            pendingSyncIDs = ids(syncPendingKey)
+            pendingSyncDeletes = ids(syncDeletesKey)
+            syncToken = defaults.data(forKey: syncTokenKey)
+        } else {
+            // First launch with sync: offer up everything here once, and pull
+            // everything from iCloud. What's only here is added there, what's
+            // only there is added here, and this device's copy wins a tie.
+            pendingSyncIDs = hasNoDataOfItsOwn ? [] : Set(teams.map(\.id)).union(games.map(\.id))
+            pendingSyncDeletes = []
+            syncToken = nil
+            defaults.set(true, forKey: syncStartedKey)
+        }
     }
 
     private func persistSyncState() {
@@ -747,6 +783,9 @@ final class AppStore: ObservableObject {
             defer { endBackgroundTaskOnce() }
             try? await Task.sleep(for: self?.publishDebounce ?? .seconds(3))
             guard !Task.isCancelled, let self else { return }
+            // Merge the owner's other devices first (#229), so followers get
+            // the combined copy rather than this device's alone.
+            await self.syncNow()
             await self.publishSharedTeams(using: service)
         }
         publishTask = task
@@ -963,7 +1002,9 @@ final class AppStore: ObservableObject {
 
     func updateGame(_ game: Game) {
         guard let index = games.firstIndex(where: { $0.id == game.id }) else { return }
-        games[index] = game
+        // A screen's copy may predate events another device added since it
+        // opened (#229); merging keeps them rather than quietly dropping them.
+        games[index] = game.mergingEvents(from: games[index])
     }
 
     func deleteGame(id: UUID) {

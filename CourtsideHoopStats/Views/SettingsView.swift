@@ -181,7 +181,7 @@ struct SettingsView: View {
                 }
             }
 
-            Button(store.syncAcrossDevices ? "Sync Now" : "Back Up Now") {
+            Button("Back Up Now") {
                 Task { await store.backUpNow() }
             }
             .disabled(store.isBackingUp || store.isSyncing)
@@ -196,22 +196,10 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
-
-            // Off by default on every device (#229 stage 2): each device that
-            // should take part turns it on here.
-            Toggle("Sync Across My Devices", isOn: Binding(
-                get: { store.syncAcrossDevices },
-                set: { on in Task { await store.setSyncAcrossDevices(on) } }
-            ))
-            .disabled(store.isSyncing)
         } header: {
             Text("iCloud Backup")
         } footer: {
-            if store.syncAcrossDevices {
-                Text("Your teams and games stay the same on every device signed in to your Apple Account that has this switched on. Turn it on first on the device with your latest games.")
-            } else {
-                Text("Every team and game is copied to your own iCloud automatically, so a lost or wiped phone doesn't take the season with it. Restoring only adds what's missing — it never overwrites or deletes anything on this phone. Sync Across My Devices keeps your iPhone and iPad in step.")
-            }
+            Text("Every team and game is kept in your own iCloud automatically, and stays the same on your iPhone and iPad when they're signed in to the same Apple Account. A lost or wiped phone doesn't take the season with it.")
         }
         .sheet(isPresented: $browsingBackup) {
             BackupBrowserView()

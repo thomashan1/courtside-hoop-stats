@@ -107,6 +107,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .sharedDataChanged)) { note in
             let completion = note.object as? (UIBackgroundFetchResult) -> Void
             Task {
+                // Either the owner's other device changed something (#229) or
+                // a followed team did; both checks are one request each.
+                await store.syncNow()
                 let refreshed = await refreshFollowedTeams()
                 completion?(refreshed ? .newData : .noData)
             }

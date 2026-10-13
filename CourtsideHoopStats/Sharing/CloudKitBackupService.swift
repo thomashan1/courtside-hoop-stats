@@ -37,6 +37,9 @@ protocol BackupService: AnyObject {
     /// What changed in the backup since `token` (all of it when nil),
     /// including deletions, plus the token to pass next time.
     func pullChanges(since token: Data?) async throws -> SyncPull
+    /// Ask iCloud for a silent push whenever this account's own data changes,
+    /// so the other device updates within seconds rather than at its next poll.
+    func subscribeToChanges() async throws
 }
 
 /// One pull's worth of changes from the owner's other devices.
@@ -52,6 +55,7 @@ extension BackupService {
     // about sync.
     func pushChanges(teams: [Team], games: [Game], deleting: Set<UUID>) async throws {}
     func pullChanges(since token: Data?) async throws -> SyncPull { SyncPull(token: token) }
+    func subscribeToChanges() async throws {}
 }
 
 /// Automatic backup of **all** teams and games to the owner's own private
@@ -145,6 +149,20 @@ final class CloudKitBackupService: BackupService {
         let doomed = deleting.flatMap { [CloudKitSchema.backupTeamRecordID($0, in: zoneID),
                                          CloudKitSchema.backupGameRecordID($0, in: zoneID)] }
         if !doomed.isEmpty { try await database.deleteRecords(doomed) }
+    }
+
+    func subscribeToChanges() async throws {
+        try await requireAccount()
+        // Fixed id: re-saving overwrites rather than piling up one per launch.
+        let subscription = CKDatabaseSubscription(subscriptionID: "own-devices-changed")
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+        do {
+            _ = try await database.modifySubscriptions(saving: [subscription], deleting: [])
+        } catch let error as CKError where error.code == .serverRejectedRequest {
+            return   // already registered
+        }
     }
 
     func pullChanges(since tokenData: Data?) async throws -> SyncPull {

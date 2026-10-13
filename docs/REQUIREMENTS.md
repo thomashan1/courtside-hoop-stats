@@ -249,19 +249,32 @@ the scoring phone by the backup debounce (about 30 seconds), fine for viewing.
 Adding a player or a game on that device turns the view off, since the device
 then has data of its own.
 
-**Sync Across My Devices (#229, stage 2).** A switch in Settings → iCloud
-Backup, **off by default and per device**. With it on, the backup zone becomes a
-two-way channel: each device uploads only the teams and games it changed or
-deleted (debounced about 5 seconds), and pulls only what changed since its last
-pull, deletions included, at launch, on returning to the foreground, and every
-20 seconds while open. A full backup never runs on a syncing device, since
-uploading every record would overwrite newer edits from another device.
-**Conflict rule:** an edit not yet uploaded beats an incoming copy of the same
-game or team, and wins everywhere once it's pushed. Turning sync on offers
-everything on that device up once, so turn it on first on the device with the
-latest data. A device that had nothing of its own drops its blank default team
-when real ones arrive. Still to come: a game in progress locked to the device
-scoring it, and push-triggered pulls instead of polling.
+**Your teams on all your devices (#229, stage 2).** Always on, with nothing
+to switch or manage, like any iCloud app: the same teams and games on every
+iPhone, iPad or Mac signed in to the owner's Apple Account. The backup zone is
+the channel. Each device uploads only the teams and games it changed or
+deleted (about 5 seconds after the change) and pulls only what changed since its
+last pull, deletions included: at launch, on returning to the app, every 20
+seconds while open, and on a silent push when the other device changes
+something. A syncing device never runs the full backup, which would overwrite
+the other device's newer edits.
+
+**Merging, not locking.** Two devices can score the same game at once: a game
+changed on both is merged (`Game.merged(with:)`). Every event from either copy
+is kept, minus anything either deleted, because deletions are remembered
+(`Game.removedEventIDs`, via `Game.removeEvent(id:)`; never a bare
+`events.removeAll`). Period scores come from both, and finished on either
+device means finished. Other fields, and teams, take the local unsent edit.
+Every save merges too (`updateGame` → `mergingEvents`), so a screen holding
+an older copy can't drop taps that arrived since it opened, and Live Scoring
+and the Game Summary adopt the store's copy as the other device's taps arrive.
+
+**First launch with sync** offers everything on the device up once and pulls
+everything back. On that first pull the device's own copy wins outright (the
+cloud copy is its own possibly stale backup), and an empty team nobody's games
+belong to is ignored (older builds backed up a fresh install's blank team).
+Publishing to followers syncs first, so followers get the merged copy from
+whichever device publishes.
 
 `BackupTeam`/`BackupGame` were deployed to the Production CloudKit schema on
 2026-09-17. **A new record type must be deployed before it can be used at all**

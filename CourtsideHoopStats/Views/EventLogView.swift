@@ -225,7 +225,7 @@ struct EventLogView: View {
     }
 
     private func delete(_ event: GameEvent) {
-        game.events.removeAll { $0.id == event.id }
+        game.removeEvent(id: event.id)
         persist(game)
     }
 }
