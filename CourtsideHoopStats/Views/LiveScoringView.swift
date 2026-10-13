@@ -181,6 +181,14 @@ struct LiveScoringView: View {
         // navigation away from a live game.
         .toolbar(.hidden, for: .tabBar)
         .onAppear(perform: loadGameIfNeeded)
+        // Taps from the owner's other device arrive in the store (#229); show
+        // them. Safe to adopt the store's copy wholesale: every change here
+        // is saved to the store the moment it's made.
+        .onReceive(store.$games) { games in
+            guard game.id == gameID,
+                  let latest = games.first(where: { $0.id == gameID }), latest != game else { return }
+            game = latest
+        }
         .confirmationDialog("This game finished level",
                             isPresented: $choosingAfterTie,
                             titleVisibility: .visible) {

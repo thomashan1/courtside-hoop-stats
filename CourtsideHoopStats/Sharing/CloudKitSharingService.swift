@@ -73,6 +73,15 @@ final class CloudKitSharingService: TeamSharingService {
                                 teamID: team.id, in: zoneID)
     }
 
+    func publishWithoutDeleting(team: Team, games: [Game]) async throws {
+        try await requireAccount()
+        let zoneID = zoneID(for: team)
+        guard try await zoneExists(zoneID) else { throw SharingError.notShared }
+        let teamRecord = try await upsertTeamRecord(team, in: zoneID)
+        try await save([teamRecord])
+        try await save(gameRecords(for: games, teamID: team.id, in: zoneID))
+    }
+
     func stopSharing(_ team: Team) async throws {
         try await requireAccount()
         // Deleting the zone removes the share, the team, and its games in one

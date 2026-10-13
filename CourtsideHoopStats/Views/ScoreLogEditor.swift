@@ -133,7 +133,7 @@ struct ScoreLogEditor: View {
     }
 
     private func deleteEvent(_ event: GameEvent) {
-        game.events.removeAll { $0.id == event.id }
+        game.removeEvent(id: event.id)
         persist(game)
         items = game.orderedLog()
     }

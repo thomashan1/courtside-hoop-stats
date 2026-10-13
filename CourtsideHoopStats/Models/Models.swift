@@ -349,6 +349,10 @@ struct Game: Identifiable, Codable, Equatable {
     /// started (see `isStarted`). New games set this explicitly (Save = false,
     /// Start = true).
     var hasStarted: Bool? = false
+    /// Events deleted from this game, so a copy from another of the owner's
+    /// devices that still has them can't bring them back (#229). Without it a
+    /// deletion and "the other device hasn't seen this event yet" look alike.
+    var removedEventIDs: [UUID] = []
 
     // MARK: Derived (never stored)
 
@@ -684,6 +688,52 @@ struct Game: Identifiable, Codable, Equatable {
 // MARK: - Migration-safe decoding
 
 extension Game {
+    /// Delete an event and remember that it was deleted (#229). Every
+    /// deletion goes through here, never a bare `events.removeAll`, or another
+    /// device's copy would put the event back.
+    mutating func removeEvent(id: UUID) {
+        events.removeAll { $0.id == id }
+        if !removedEventIDs.contains(id) { removedEventIDs.append(id) }
+    }
+
+    /// This copy's events plus any the other copy has that this one doesn't,
+    /// minus anything either copy deleted (#229). `self`'s order stands; the
+    /// other copy's new events are placed by period and time. Nothing else
+    /// changes.
+    ///
+    /// Used for every save, not just sync: a screen's copy of a game can
+    /// predate events another device added since it opened, and saving it
+    /// as-is would quietly drop them.
+    func mergingEvents(from other: Game) -> Game {
+        var result = self
+        let removed = Set(removedEventIDs).union(other.removedEventIDs)
+        result.removedEventIDs = removedEventIDs
+            + other.removedEventIDs.filter { !removedEventIDs.contains($0) }
+
+        var events = self.events.filter { !removed.contains($0.id) }
+        let known = Set(events.map(\.id))
+        for event in other.events where !known.contains(event.id) && !removed.contains(event.id) {
+            let at = events.firstIndex {
+                ($0.period, $0.timestamp) > (event.period, event.timestamp)
+            } ?? events.endIndex
+            events.insert(event, at: at)
+        }
+        result.events = events
+        return result
+    }
+
+    /// Two devices' copies of the same game, merged so nothing either
+    /// recorded is lost (#229): the owner's iPhone and iPad can both score at
+    /// once. Events as `mergingEvents`; period scores from both, `self`
+    /// winning a period both recorded; finished on either means finished.
+    /// Everything else (opponent, notes, bench…) is `self`'s.
+    func merged(with other: Game) -> Game {
+        var result = mergingEvents(from: other)
+        result.periodEndScores = other.periodEndScores.merging(periodEndScores) { _, mine in mine }
+        result.isComplete = isComplete || other.isComplete
+        return result
+    }
+
     /// Decoded leniently: any field absent from the saved blob falls back to
     /// its default instead of throwing.
     ///
@@ -705,7 +755,7 @@ extension Game {
     enum CodingKeys: String, CodingKey {
         case id, teamID, date, opponent, league, location, locationAddress
         case isHome, periodFormat, events, periodEndScores
-        case notes, benchedPlayerIDs, isComplete, hasStarted
+        case notes, benchedPlayerIDs, isComplete, hasStarted, removedEventIDs
     }
 
     init(from decoder: any Decoder) throws {
@@ -726,6 +776,7 @@ extension Game {
         benchedPlayerIDs = try container.decodeIfPresent([UUID].self, forKey: .benchedPlayerIDs) ?? []
         isComplete = try container.decodeIfPresent(Bool.self, forKey: .isComplete) ?? false
         hasStarted = try container.decodeIfPresent(Bool.self, forKey: .hasStarted)
+        removedEventIDs = try container.decodeIfPresent([UUID].self, forKey: .removedEventIDs) ?? []
     }
 }
 

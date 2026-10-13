@@ -63,6 +63,13 @@ struct GameSummaryView: View {
             }
         }
         .onAppear(perform: loadGameIfNeeded)
+        // An edit from the owner's other device (#229) shows up here too.
+        .onReceive(store.$games) { games in
+            guard game.id == gameID,
+                  let latest = games.first(where: { $0.id == gameID }), latest != game else { return }
+            game = latest
+            regeneratePDF()
+        }
         .sheet(isPresented: $showingPDF) {
             if let pdfURL {
                 GameSummaryPDFPreview(url: pdfURL, shareTitle: shareTitle)

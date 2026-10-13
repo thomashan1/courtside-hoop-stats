@@ -34,7 +34,10 @@ with the team's record (#211, #213), the season as a **PDF** in first names
 that stick (#223), stats tables that never truncate (#222), reopening on the
 last tab (#227), and a Score Log that reads like the PDF (#226, #228).
 
-**v1.13 is the open train.**
+**v1.13 is the open train**, carrying **your teams on all your devices**
+(#229): always-on sync of the owner's teams and games across their iPhone,
+iPad and Mac, with games merged so two devices can score at once. See the
+trap below and `docs/REQUIREMENTS.md` §3.9a.
 
 **v1.11 was approved 2026-10-05** after eight days in the queue and 15 minutes
 in review: overtime on a game that already finished level (#201), the fix for
@@ -189,6 +192,11 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   for the wire and parks the truth under `laterPeriods`
   (`OvertimeWireCompatibilityTests`). Same shape of answer as `laterEvents`,
   and the two compose — a rebound in overtime is both problems at once.
+- **Delete an event with `Game.removeEvent(id:)`, never `events.removeAll`.**
+  The owner's devices merge games event by event (#229), so a deletion that
+  isn't remembered in `removedEventIDs` comes straight back from the other
+  device's copy. Adding a stored property to `Game` still needs its line in
+  the lenient `init(from:)`.
 - **`recordZoneChanges(inZoneWith:since:)` returns one batch, not the zone.**
   Read a zone through `CKDatabase.allRecordZoneChanges(in:)`, which follows
   `moreComing`, and delete through `deleteRecords(_:)`, which surfaces
