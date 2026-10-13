@@ -94,6 +94,7 @@ struct GameDetailView: View {
                 .listRowInsets(EdgeInsets())
             }
         }
+        .readableWidth()
         .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

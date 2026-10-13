@@ -68,8 +68,11 @@ teams end to end, see `docs/SHARING.md`) and backup (`BackupTeam`/`BackupGame`
 deployed 2026-09-17, write path confirmed against a real account).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
-(`scripts/screenshots.sh`). **iPhone-only** — `TARGETED_DEVICE_FAMILY = 1`, and
-#32 (iPad layout) is **closed**: iPhone-only is the answer, not a backlog item.
+(`scripts/screenshots.sh`). **iPhone and iPad** (`TARGETED_DEVICE_FAMILY =
+"1,2"`, #232): on iPad, Games and Following are a list beside the open game,
+summaries run in two columns, Live Scoring puts the Score Log beside the
+players, and lists keep a readable width; an iPhone lays out exactly as
+before. See `docs/REQUIREMENTS.md` §3.13.
 
 ## What's built
 
@@ -207,6 +210,9 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   per-record failures. Reading one batch left a game Jean deleted on her
   followers' phones for days: the owner's publish only deletes stale games it
   can *see* (#230).
+- **A new list or form needs `.readableWidth()` (#232).** Without it, it
+  stretches across a 13" iPad. Check any layout change in both orientations
+  on the iPad simulator (`IPadScreenshotUITests`), not only on an iPhone.
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a
@@ -232,9 +238,11 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 - Test device: **iPhone 17 Pro**. Signing via free **Personal Team** (works).
 - **End user (Thomas's wife):** on **iOS 26 now**, will move to iOS 27 at GM in
   **September 2026**. → Do not require iOS 27 before then.
-- **Simulators installed (iOS 27.2):** iPhone 17e, iPhone Air, iPhone 14 Plus.
-  **Store screenshots come from iPhone 14 Plus** (1284 × 2778):
-  `scripts/screenshots.sh "iPhone 14 Plus"`. There is no
+- **Simulators installed (iOS 27.2):** iPhone 17e, iPhone Air, iPhone 14 Plus,
+  iPad Pro 13-inch (M5). **Store screenshots come from iPhone 14 Plus**
+  (1284 × 2778): `scripts/screenshots.sh "iPhone 14 Plus"`, and **iPad ones from
+  iPad Pro 13-inch (M5)** (2064 × 2752): `scripts/screenshots.sh "iPad Pro
+  13-inch (M5)"`. There is no
   "iPhone 17 Pro" or plain "iPhone 17". Drive `xcodebuild` **by UDID**
   (`xcrun simctl list devices available`) — a `name=` destination that doesn't
   resolve makes `xcodebuild` dump the destination list and exit, which reads as
@@ -289,15 +297,7 @@ are no open PRs; new work starts with a decision, not a pick-up.
 **Closed doors**, with the reasoning already written down — these are settled,
 not waiting:
 
-1. **iPad is declined, twice** — #32 ("iPhone-only is the answer") and #192.
-   The strongest iPad use case, reading a box score on a bigger screen, is
-   already served by the PDF: a real document that opens full-size anywhere
-   and carries the play-by-play since #182. What's left is the Following
-   screen looking scaled-up, against a permanent cost of a second App Store
-   screenshot set and two form factors to not break on every UI change.
-   Reopen only for something the PDF genuinely can't deliver — "it looks big"
-   isn't that.
-2. **Read-write sharing is declined, three times over** — #57 (co-trackers),
+1. **Read-write sharing is declined, three times over** — #57 (co-trackers),
    #169 (co-admin), and a public share link. Don't re-propose it without new
    information: participant management is the *owner's* privilege in CloudKit,
    so a second writer would not have solved the need that prompted #169
@@ -314,7 +314,7 @@ comparison that chose two) and `archive/182-row-style-prototype` (eight ways to
 set a printed log row, before zebra striping won) are there for that reason.
 The one live exception is `proposal/175-shooting-options`, kept because #175 is
 still open.
-3. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
+2. **Tracking minutes played / on-court five (#144)** was **abandoned**, not
    deferred — mid-game lineup tracking is too much work for the tracker. The
    salvaged part (the `Codable` guard) shipped separately.
 

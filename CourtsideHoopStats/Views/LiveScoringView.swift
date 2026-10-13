@@ -74,7 +74,9 @@ struct LiveScoringView: View {
     }
 
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: cardMinWidth), spacing: 12)]
+        // iPad (#232): bigger cards, so a deck with a whole side of the
+        // screen to itself is easy to hit rather than a few small chips.
+        [GridItem(.adaptive(minimum: isWide ? cardMinWidth * 1.5 : cardMinWidth), spacing: 12)]
     }
 
     /// Players at the game — shown in the grid. Benched players are hidden.
@@ -111,67 +113,35 @@ struct LiveScoringView: View {
                 periodLabel: game.periodFormat.periodLabel(game.displayPeriod)
             )
 
-            // Pinned Score Log header — stays put while the entries scroll.
-            scoreLogHeader
-                .padding(.horizontal)
-                .padding(.top, 12)
-                .padding(.bottom, 6)
-
-            // …the log entries scroll…
-            ScrollViewReader { proxy in
-                ScrollView {
-                    eventLog
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
-                        .id("scoreLogEnd")
-                    statsPanel
-                        .padding(.horizontal)
-                        .padding(.bottom, 8)
+            if isWide {
+                // iPad (#232): the Score Log and the players side by side, so
+                // neither has to give up height to the other. The deck takes
+                // the right-hand side, under a right thumb.
+                HStack(spacing: 0) {
+                    VStack(spacing: 0) { scoreLog }
+                        .frame(maxWidth: .infinity)
+                    playerDeck
+                        .frame(width: deckWidth)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .background(deckSurface)
                 }
-                // Keep the newest event (bottom of the log) in view as you score.
-                .onChange(of: game.events.count) { _, _ in
-                    withAnimation(.snappy(duration: 0.2)) {
-                        proxy.scrollTo("scoreLogEnd", anchor: .bottom)
-                    }
-                }
-                .onAppear { proxy.scrollTo("scoreLogEnd", anchor: .bottom) }
+            } else {
+                scoreLog
+                playerDeck
+                    .background(deckSurface)
             }
-
-            // …and the player cards sit at the bottom, in the thumb zone right
-            // above the action bar. The deck has its own elevated surface so it
-            // reads as a distinct control area, separate from the Score Log.
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    benchStrip
-                    // Cue the tap-to-score flow until the first point is scored.
-                    if game.events.isEmpty && !store.team.players.isEmpty {
-                        Text("Tap a player to score")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                    }
-                    playerGrid
-                }
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear.preference(key: DeckHeightKey.self,
-                                               value: proxy.size.height)
-                    }
-                )
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .frame(height: deckHeight)
-            .onPreferenceChange(DeckHeightKey.self) { deckContentHeight = $0 }
-            .padding(.horizontal)
-            .padding(.top, 12)
-            .padding(.bottom, 2)
-            .background(deckSurface)
         }
         .background(
             GeometryReader { proxy in
                 Color(.systemGroupedBackground)
-                    .onAppear { availableHeight = proxy.size.height }
-                    .onChange(of: proxy.size.height) { _, new in availableHeight = new }
+                    .onAppear {
+                        availableHeight = proxy.size.height
+                        availableWidth = proxy.size.width
+                    }
+                    .onChange(of: proxy.size) { _, new in
+                        availableHeight = new.height
+                        availableWidth = new.width
+                    }
             }
         )
         // Hidden system nav bar — the scoreboard's own top row carries the
@@ -257,6 +227,81 @@ struct LiveScoringView: View {
         }
     }
 
+    // MARK: - Layout (#232)
+
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var availableWidth: CGFloat = 0
+
+    /// Side by side once there's room for a Score Log and a deck of real
+    /// width — an iPad, not an iPad app squeezed into a narrow Split View.
+    private var isWide: Bool { sizeClass == .regular && availableWidth >= 700 }
+
+    /// The deck's share of a wide screen: enough for three or four cards
+    /// across, never so much that the Score Log turns into a strip.
+    private var deckWidth: CGFloat { min(max(availableWidth * 0.42, 340), 520) }
+
+    /// The Score Log, its pinned header, and the stats panel under it.
+    @ViewBuilder
+    private var scoreLog: some View {
+        // Pinned Score Log header — stays put while the entries scroll.
+        scoreLogHeader
+            .padding(.horizontal)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+
+        // …the log entries scroll…
+        ScrollViewReader { proxy in
+            ScrollView {
+                eventLog
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                    .id("scoreLogEnd")
+                statsPanel
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+            }
+            // Keep the newest event (bottom of the log) in view as you score.
+            .onChange(of: game.events.count) { _, _ in
+                withAnimation(.snappy(duration: 0.2)) {
+                    proxy.scrollTo("scoreLogEnd", anchor: .bottom)
+                }
+            }
+            .onAppear { proxy.scrollTo("scoreLogEnd", anchor: .bottom) }
+        }
+    }
+
+    /// The player cards and the bench strip.
+    private var playerDeck: some View {
+        // The player cards sit at the bottom, in the thumb zone right
+        // above the action bar. The deck has its own elevated surface so it
+        // reads as a distinct control area, separate from the Score Log.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                benchStrip
+                // Cue the tap-to-score flow until the first point is scored.
+                if game.events.isEmpty && !store.team.players.isEmpty {
+                    Text("Tap a player to score")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                }
+                playerGrid
+            }
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: DeckHeightKey.self,
+                                           value: proxy.size.height)
+                }
+            )
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(height: isWide ? nil : deckHeight)
+        .onPreferenceChange(DeckHeightKey.self) { deckContentHeight = $0 }
+        .padding(.horizontal)
+        .padding(.top, 12)
+        .padding(.bottom, 2)
+    }
+
     /// The raised surface the player deck sits on.
     ///
     /// `secondarySystemGroupedBackground`, not `systemBackground`: in **dark
@@ -336,9 +381,9 @@ struct LiveScoringView: View {
                 )
                 .padding(.top, 40)
             } else {
-                LazyVGrid(columns: columns, spacing: 10) {
+                LazyVGrid(columns: columns, spacing: isWide ? 14 : 10) {
                     ForEach(activePlayers) { player in
-                        PlayerCard(player: player) { scoringPlayer = player }
+                        PlayerCard(player: player, large: isWide) { scoringPlayer = player }
                     }
                 }
             }
@@ -643,12 +688,15 @@ struct LiveScoringView: View {
 
 private struct PlayerCard: View {
     let player: Player
+    /// The iPad's size (#232): a bigger badge, name and card.
+    var large = false
     /// Single tap opens the big point pad for this player (#33, Jean's feedback).
     let onTap: () -> Void
 
     /// Grows with Dynamic Type alongside the name — a fixed badge next to
     /// scaling text leaves the card looking lopsided at large sizes.
     @ScaledMetric private var badgeSize: CGFloat = 36
+    @ScaledMetric private var largeBadgeSize: CGFloat = 50
 
     /// The team's colour, for the card's wash — a blue-tinted card behind a
     /// maroon bubble reads as two different teams on one card.
@@ -663,10 +711,10 @@ private struct PlayerCard: View {
     var body: some View {
         // Single row: bigger jersey bubble (easy to see/tap) + first name.
         Button(action: onTap) {
-            HStack(spacing: 8) {
-                JerseyBadge(number: player.number, size: badgeSize)
+            HStack(spacing: large ? 12 : 8) {
+                JerseyBadge(number: player.number, size: large ? largeBadgeSize : badgeSize)
                 Text(player.firstName)
-                    .font(.headline)
+                    .font(large ? .title3.weight(.semibold) : .headline)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
                     .foregroundStyle(.primary)
@@ -675,8 +723,8 @@ private struct PlayerCard: View {
             // different x depending on name length, so badges never line up
             // down the column. Large text makes the raggedness obvious.
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 9)
-            .padding(.horizontal, 8)
+            .padding(.vertical, large ? 16 : 9)
+            .padding(.horizontal, large ? 12 : 8)
             .background(
                 RoundedRectangle(cornerRadius: 12).fill(kit.swatch.opacity(0.10))
             )

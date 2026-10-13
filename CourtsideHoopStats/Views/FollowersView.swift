@@ -58,6 +58,7 @@ struct FollowersView: View {
                 inviteSection
                 if store.isShared(team.id) { stopSharingSection }
             }
+            .readableWidth()
             .overlay {
                 if isLoading && participants.isEmpty {
                     ProgressView("Checking…")

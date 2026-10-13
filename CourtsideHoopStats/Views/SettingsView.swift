@@ -115,6 +115,7 @@ struct SettingsView: View {
                         .accessibilityLabel(BuildInfo.accessibilitySummary)
                 }
             }
+            .readableWidth()
             .navigationTitle("Settings")
             .alert("New Team", isPresented: $showAddTeam) {
                 TextField("Team Name", text: $newTeamName)
@@ -571,6 +572,7 @@ struct TeamDetailView: View {
                 }
             }
         }
+        .readableWidth()
         .navigationTitle(team?.name ?? "Team")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
