@@ -31,6 +31,17 @@ final class AppStore: ObservableObject {
     /// a gym with no signal still sees the last known score. Kept out of
     /// `teams` so they can never be edited — see `FollowedTeam`.
     @Published var followedTeams: [FollowedTeam] { didSet { save() } }
+    /// This person's **own** teams, read from their iCloud backup on a device
+    /// that has no data of its own — an iPad on the same Apple Account (#229
+    /// stage 1). Read-only, shown alongside followed teams. Cached on its own
+    /// key rather than through `save()`, which would schedule a publish and a
+    /// backup for data this device doesn't own.
+    @Published private(set) var iCloudTeams: [FollowedTeam] = [] {
+        didSet {
+            guard !ephemeral, let data = try? encoder.encode(iCloudTeams) else { return }
+            UserDefaults.standard.set(data, forKey: iCloudTeamsKey)
+        }
+    }
     /// How often a follower wants to be notified about games (#57).
     @Published var alertCadence: FollowerAlertCadence { didSet { save() } }
     /// Teams this user has shared *out* (#57). Tracked locally so an edit knows
@@ -50,6 +61,7 @@ final class AppStore: ObservableObject {
     /// which reads as "nothing yet", so the first backup after upgrading adds
     /// and never deletes.
     private let backupUploadedKey = "chs.backupUploadedIDs.v1"
+    private let iCloudTeamsKey = "chs.iCloudTeams.v1"
     /// Where the raw bytes go when a game or team can't be decoded, so the
     /// unreadable record survives the load that skipped it (#180).
     private static let gamesQuarantineKey = "chs.games.unreadable.v1"
@@ -145,6 +157,10 @@ final class AppStore: ObservableObject {
             sharedTeamIDs = saved
         } else {
             sharedTeamIDs = []
+        }
+        if let data = UserDefaults.standard.data(forKey: iCloudTeamsKey),
+           let saved = try? decoder.decode([FollowedTeam].self, from: data) {
+            iCloudTeams = saved
         }
 
         // Period ends by default: frequent enough to follow a game, rare enough
@@ -592,18 +608,47 @@ final class AppStore: ObservableObject {
     /// alert, then cleared. `nil` means nothing to show.
     @Published var shareAcceptanceError: String?
 
-    /// True for someone who only follows other people's teams (#115): the
-    /// only local team is still the untouched default (no players, no
-    /// games), and at least one team is actually followed. `teams` itself is
-    /// never empty — a fresh install auto-creates one blank team — so
-    /// emptiness has to be read off its contents rather than the array.
+    /// True for a device that only *views* (#115): the only local team is
+    /// still the untouched default (no players, no games), and there's
+    /// something to look at — a followed team, or this person's own teams from
+    /// their iCloud backup (#229). `teams` itself is never empty — a fresh
+    /// install auto-creates one blank team — so emptiness has to be read off
+    /// its contents rather than the array.
     ///
     /// Gated on `teams.count == 1`, not "every team is empty", so there's
     /// always a way out: adding or importing a second team (#118) flips this
     /// false immediately, before that team has any players, which is what
     /// un-hides Roster so they can actually add players to it.
-    var isPureFollower: Bool {
-        !followedTeams.isEmpty && games.isEmpty && teams.count == 1 && (teams.first?.players.isEmpty ?? true)
+    var isViewOnly: Bool {
+        hasNoDataOfItsOwn && !viewedTeams.isEmpty
+    }
+
+    /// Everything shown read-only: this person's own teams from iCloud first,
+    /// then teams other people shared with them.
+    var viewedTeams: [FollowedTeam] { iCloudTeams + followedTeams }
+
+    /// Reload `iCloudTeams` from the backup — only on a device with no data
+    /// of its own. A device with data *is* the source of that backup, and
+    /// showing its own teams back to it read-only would be a duplicate.
+    @MainActor
+    func refreshICloudTeams() async throws {
+        guard hasNoDataOfItsOwn, let service = backupService, service.isAvailable else {
+            if !iCloudTeams.isEmpty { iCloudTeams = [] }
+            return
+        }
+        let backup = try await service.fetchBackup()
+        let updatedAt = backup.snapshot.backedUpAt ?? Date()
+        iCloudTeams = backup.teams.compactMap { team in
+            let games = backup.games.filter { $0.teamID == team.id }
+            // Older builds backed up the blank default team too; there's
+            // nothing in one to look at.
+            guard !games.isEmpty || !team.players.isEmpty else { return nil }
+            return FollowedTeam(team: team, games: games,
+                                zoneName: team.id.uuidString,
+                                ownerName: FollowedTeam.ownICloudOwner,
+                                updatedAt: updatedAt)
+        }
+        .sorted { $0.team.name < $1.team.name }
     }
 
     /// The active team — what Roster shows and new games default to. Existing
