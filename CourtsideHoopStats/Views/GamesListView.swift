@@ -93,6 +93,7 @@ struct GamesListView: View {
                     }
                 }
             }
+            .readableWidth()
             // Show the active team name (multi-team) — the tab bar labels it "Games".
             // Sections here hold one or two rows each — Playing Now and
             // Coming Up are usually a single game — so the default

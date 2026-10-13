@@ -252,6 +252,7 @@ struct FollowingView: View {
                 }
             }
         }
+        .readableWidth()
         .refreshable { await refresh() }
     }
 
@@ -594,5 +595,6 @@ private struct FollowedGameView: View {
                 }
             }
         }
+        .readableWidth(ReadableWidth.boxScore)
     }
 }

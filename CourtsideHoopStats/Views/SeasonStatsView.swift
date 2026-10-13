@@ -56,6 +56,7 @@ struct SeasonStatsView: View {
                         Text("GP is games played — a game someone sat out isn't counted against their average. 3s are three-pointers made per game. FT is the season's free throws — made out of attempted, with the percentage under it.")
                     }
                 }
+                .readableWidth(ReadableWidth.boxScore)
             }
         }
         .navigationTitle("\(teamName) · Season")

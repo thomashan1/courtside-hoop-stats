@@ -24,6 +24,7 @@ struct RecentlyDeletedView: View {
                 Text("Games deleted on any of your devices stay here for \(AppStore.recentlyDeletedDays) days. Recovering one puts it back everywhere.")
             }
         }
+        .readableWidth()
         .navigationTitle("Recently Deleted")
         .confirmationDialog("Delete this game for good?",
                             isPresented: Binding(get: { pendingPurge != nil },

@@ -85,9 +85,38 @@ set** — it exists so the halves linescore and the TIE badge get looked at.
    screen first (tap by visible label / nav-bar title).
 2. If it needs specific state, extend `DemoData.swift`.
 
+## iPad (#232)
+
+`IPadScreenshotUITests` captures every main screen in **portrait and
+landscape** (`40-ipad-portrait-*`, `40-ipad-landscape-*`); it skips itself on
+an iPhone. Run it on the iPad Pro 13-inch (M5) simulator:
+
+```bash
+scripts/screenshots.sh "iPad Pro 13-inch (M5)"   # 2064 x 2752, the 13" iPad slot
+```
+
+Look at both orientations before merging an iPad-affecting change. The store
+set is ten **portrait** captures in `docs/img/ipad/`, in the same order as the
+iPhone ten:
+
+| # | File | Captured from |
+|---|---|---|
+| 1 | `01-game-live-scoring.png` | `40-ipad-portrait-05-live-bench` |
+| 2 | `02-game-score-pad.png` | `40-ipad-portrait-03-score-pad` |
+| 3 | `03-game-assist.png` | `40-ipad-portrait-04-assist` |
+| 4 | `04-following-game.png` | `40-ipad-portrait-16-following-game` |
+| 5 | `05-game-summary.png` | `40-ipad-portrait-07-game-summary` |
+| 6 | `06-game-summary-share-pdf.png` | `40-ipad-portrait-08-box-score-pdf` |
+| 7 | `07-season.png` | `40-ipad-portrait-12-season` |
+| 8 | `08-games.png` | `40-ipad-portrait-01-games` |
+| 9 | `09-roster.png` | `40-ipad-portrait-11-roster` |
+| 10 | `10-team-jerseys.png` | `40-ipad-portrait-14-team-detail` |
+
+Promote and upload all ten at each submission, like the iPhone set.
+
 ## App Store sizes
 
-**iPhone-only, and this listing uses the 6.5" bucket: `1284 × 2778`.**
+**iPhone: this listing uses the 6.5" bucket, `1284 × 2778`.** (iPad: above.)
 
 That is what App Store Connect asks for on this app ("Screenshots dimensions
 should be: 1242 × 2688px, 2688 × 1242px, 1284 × 2778px or 2778 × 1284px"),

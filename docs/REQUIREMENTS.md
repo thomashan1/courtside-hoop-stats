@@ -28,7 +28,7 @@ and a public link). See [`SHARING.md`](SHARING.md).
 | Concern | Decision |
 |---|---|
 | Platform / min target | **iOS 26** (Liquid Glass; no `if #available` fallbacks) |
-| Device family | **iPhone only** (`TARGETED_DEVICE_FAMILY = 1`; #7 resolved) |
+| Device family | **iPhone and iPad** (`TARGETED_DEVICE_FAMILY = "1,2"`, #232) — see §3.13 |
 | Language / UI | Swift / SwiftUI |
 | Persistence | UserDefaults + JSON (Codable) |
 | Dependencies | None (zero third-party) |
@@ -425,18 +425,33 @@ ViewModel layer yet.
 | Accessibility | Dynamic Type + in-app Text Size floor | End user needs larger text |
 | Persistence | UserDefaults JSON, optional new fields | Zero setup, migration-safe |
 
+
+### 3.13 iPad (#232)
+
+The same app on iPad, laid out for it rather than scaled up. Reopened from
+#32/#192 because people were using the app on an iPad only, where the
+stretched iPhone layout was their whole experience, and because #229 put an
+owner's whole season on their iPad.
+
+- **Live Scoring:** the Score Log and the players side by side under the
+  scoreboard, with bigger player cards; the deck is on the right, under a right
+  thumb. Below 700pt of width (a narrow Split View or Slide Over) it's the
+  iPhone layout.
+- **Lists and box scores** keep a readable width (`readableWidth()`): 720pt for
+  lists and forms, 900pt for a box score. The margins widen rather than the
+  view being framed, so scrolling and swipe actions still run edge to edge.
+- **PDF previews** open page-sized.
+- **Portrait and landscape** both, checked by `IPadScreenshotUITests`, which
+  captures every main screen both ways.
+- **iPhone is untouched**: everything above keys off a regular horizontal size
+  class, which no iPhone in portrait has.
+
 ---
 
 ## 7. Out of scope / deferred
 
 Game timer/shot clock · opponent player tracking · CSV export · season
-summary/archiving · watchOS · **iPad layout** (#32 closed — iPhone-only is the
-decision, and `TARGETED_DEVICE_FAMILY = 1` enforces it).
-
-**iPad** is declined twice (#32, #192): the strongest use case — reading a box
-score on a bigger screen — is already served by the PDF, and supporting iPad
-costs a second App Store screenshot set and a second form factor to not break,
-permanently.
+summary/archiving · watchOS.
 
 **Sharing:** read-only followers shipped in v1.2 (§3.10), and so did the two
 things this section used to list as pending — **push notifications** for

@@ -30,6 +30,7 @@ struct GameSummaryView: View {
             notesSection
             detailsSection
         }
+        .readableWidth(ReadableWidth.boxScore)
         .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

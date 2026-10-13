@@ -68,6 +68,7 @@ struct BackupBrowserView: View {
                     }
                 }
             }
+            .readableWidth()
         }
     }
 

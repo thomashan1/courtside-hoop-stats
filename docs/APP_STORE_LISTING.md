@@ -1,7 +1,7 @@
 # App Store Listing — Courtside Hoop Stats
 
 Copy-paste-ready metadata for App Store Connect. Everything here reflects the
-app **as it actually ships today** (iPhone-only, tap-to-score, no foul tracking,
+app **as it actually ships today** (iPhone and iPad, tap-to-score, no foul tracking,
 no undo button). Edit tone to taste before submitting.
 
 > **Live on the App Store:**
@@ -30,8 +30,8 @@ no undo button). Edit tone to taste before submitting.
 | **Price** | Free |
 | **Availability** | All countries, or just your region |
 
-Device support: **iPhone only** (`TARGETED_DEVICE_FAMILY = 1`) → **no iPad
-screenshots or iPad review required.**
+Device support: **iPhone and iPad** (`TARGETED_DEVICE_FAMILY = "1,2"`, #232) →
+the listing needs a **13" iPad screenshot set** as well (`docs/img/ipad/`).
 
 ---
 
@@ -114,6 +114,16 @@ Between them they're the only per-version record the project keeps: what
 shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
+
+### v1.14 — not yet submitted (draft)
+
+**Paste-ready — one line per item, no hard wraps.**
+
+> NEW
+> - Made for iPad: score with the Score Log beside your players, and read box scores and season stats on the big screen, in portrait or landscape.
+
+First iPad release: upload the ten `docs/img/ipad/` screenshots to the 13"
+iPad slot as well as the iPhone set.
 
 ### v1.13 — submitted 2026-10-13, 11:39 AM (build 219)
 
@@ -423,7 +433,12 @@ Only change them if the repo moves. They can't be edited without a new version.
 
 ## 9. Screenshots
 
-**iPhone-only.** This listing uses the **6.5" bucket: `1284 × 2778`** — that's
+**iPad: `docs/img/ipad/`, 13" (`2064 × 2752`)**, ten portrait shots in the
+same order as the iPhone set, captured on the iPad Pro 13-inch (M5)
+simulator. Upload them to the 13" iPad slot; App Store Connect scales them for
+smaller iPads.
+
+**iPhone:** this listing uses the **6.5" bucket: `1284 × 2778`** — that's
 what App Store Connect asks for here, because the slot was created at the 1.0
 submission. Capture on an iPhone 14 Plus-class simulator; see
 [`SCREENSHOTS.md`](SCREENSHOTS.md) for the exact command (drive it by simulator
@@ -522,7 +537,7 @@ No demo account needed (there is no login).
 
 - [x] Paid Apple Developer Program membership active
 - [x] Bundle ID registered (`com.thomashan.CourtsideHoopStats`)
-- [x] iPhone-only (`TARGETED_DEVICE_FAMILY = 1`)
+- [x] iPhone and iPad (`TARGETED_DEVICE_FAMILY = "1,2"`)
 - [x] Encryption declaration set (`ITSAppUsesNonExemptEncryption = NO`)
 - [x] App icon present (1024×1024, no alpha) — real art shipped, not a placeholder
 - [x] Privacy policy written (`docs/PRIVACY_POLICY.md`, contact thomashan@icloud.com)

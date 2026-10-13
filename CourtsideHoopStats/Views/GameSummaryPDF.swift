@@ -456,6 +456,10 @@ struct GameSummaryPDFPreview: View {
                     }
                 }
         }
+        // On iPad a default sheet shows the page at postcard size (#232); a
+        // page-sized one reads like the paper it is. An iPhone's sheet is
+        // already the full screen, so it doesn't change there.
+        .presentationSizing(.page)
     }
 }
 
