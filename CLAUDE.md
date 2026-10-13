@@ -189,6 +189,12 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
   for the wire and parks the truth under `laterPeriods`
   (`OvertimeWireCompatibilityTests`). Same shape of answer as `laterEvents`,
   and the two compose — a rebound in overtime is both problems at once.
+- **`recordZoneChanges(inZoneWith:since:)` returns one batch, not the zone.**
+  Read a zone through `CKDatabase.allRecordZoneChanges(in:)`, which follows
+  `moreComing`, and delete through `deleteRecords(_:)`, which surfaces
+  per-record failures. Reading one batch left a game Jean deleted on her
+  followers' phones for days: the owner's publish only deletes stale games it
+  can *see* (#230).
 - **`@ScaledMetric` content needs a height cap.** Uncapped, Live Scoring's
   player deck pushed the scoreboard and Score Log off the screen at
   accessibility text sizes. See `docs/UI_GUIDELINES.md` §8 — including why a
