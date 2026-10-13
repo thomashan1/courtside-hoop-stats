@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build once and install to the paired physical iPhones.
 #
-# Usage: scripts/install.sh [thomas|jean|all]     (default: all)
+# Usage: scripts/install.sh [thomas|jean|ipad|all]     (default: all — the two phones)
 #
 # Both devices are registered to the same Apple Developer team, so one Debug
 # build is signed for both — build once, install twice.
@@ -24,12 +24,16 @@ trap 'rm -rf "$TMPDIR_DEV"' EXIT
 
 THOMAS="161AC4C8-88E5-5FDA-9DA5-4F062C23D6B5"
 JEAN="AD793CF7-0739-509B-A6D2-33C490448B88"
+IPAD="F28FF410-BF61-59D0-94EB-355D7AE1EAA5"   # Thomas's iPad Pro, for iPad layout work
+# A new device isn't on the provisioning profile until one build targets it by
+# UDID with -allowProvisioningUpdates; until then installs fail with 0xe8008012.
 
 case "$TARGET" in
   thomas) IDS=("$THOMAS");          NAMES=("Thomas") ;;
   jean)   IDS=("$JEAN");            NAMES=("Jean") ;;
+  ipad)   IDS=("$IPAD");            NAMES=("iPad") ;;
   all)    IDS=("$THOMAS" "$JEAN");  NAMES=("Thomas" "Jean") ;;
-  *) echo "usage: $0 [thomas|jean|all]" >&2; exit 2 ;;
+  *) echo "usage: $0 [thomas|jean|ipad|all]" >&2; exit 2 ;;
 esac
 
 # Which of the requested devices are actually reachable right now.
