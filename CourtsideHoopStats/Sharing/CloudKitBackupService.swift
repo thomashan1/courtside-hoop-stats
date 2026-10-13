@@ -27,6 +27,31 @@ protocol BackupService: AnyObject {
     /// Everything currently in the backup. Used both to restore and to report
     /// what's there without restoring.
     func fetchBackup() async throws -> (teams: [Team], games: [Game], snapshot: BackupSnapshot)
+
+    // MARK: Sync across the owner's devices (#229 stage 2)
+
+    /// Upload just these teams and games, and delete these ids — the changes
+    /// this device made since its last sync. Never the whole set: a full
+    /// upload would overwrite newer edits another device already made.
+    func pushChanges(teams: [Team], games: [Game], deleting: Set<UUID>) async throws
+    /// What changed in the backup since `token` (all of it when nil),
+    /// including deletions, plus the token to pass next time.
+    func pullChanges(since token: Data?) async throws -> SyncPull
+}
+
+/// One pull's worth of changes from the owner's other devices.
+struct SyncPull {
+    var teams: [Team] = []
+    var games: [Game] = []
+    var deletedIDs: Set<UUID> = []
+    var token: Data?
+}
+
+extension BackupService {
+    // Defaults so stand-ins that only exercise backup don't have to know
+    // about sync.
+    func pushChanges(teams: [Team], games: [Game], deleting: Set<UUID>) async throws {}
+    func pullChanges(since token: Data?) async throws -> SyncPull { SyncPull(token: token) }
 }
 
 /// Automatic backup of **all** teams and games to the owner's own private
@@ -99,6 +124,78 @@ final class CloudKitBackupService: BackupService {
         let stale = changes.keys.filter { !keep.contains($0) && mine.contains($0) }
         guard !stale.isEmpty else { return }
         try await database.deleteRecords(Array(stale))
+    }
+
+    // MARK: - Sync (#229 stage 2)
+
+    func pushChanges(teams: [Team], games: [Game], deleting: Set<UUID>) async throws {
+        try await requireAccount()
+        try await ensureZone()
+        var records = teams.map { CloudKitSchema.backupRecord(for: $0, in: zoneID) }
+        records += games.map { CloudKitSchema.backupRecord(for: $0, in: zoneID) }
+        for batch in records.chunked(into: 200) {
+            let result = try await database.modifyRecords(saving: batch, deleting: [],
+                                                          savePolicy: .allKeys)
+            for (_, outcome) in result.saveResults {
+                if case .failure(let error) = outcome { throw error }
+            }
+        }
+        // Whether an id was a team or a game isn't kept for a deletion, so
+        // both names go; the one that never existed counts as already gone.
+        let doomed = deleting.flatMap { [CloudKitSchema.backupTeamRecordID($0, in: zoneID),
+                                         CloudKitSchema.backupGameRecordID($0, in: zoneID)] }
+        if !doomed.isEmpty { try await database.deleteRecords(doomed) }
+    }
+
+    func pullChanges(since tokenData: Data?) async throws -> SyncPull {
+        try await requireAccount()
+        guard try await zoneExists() else { return SyncPull(token: nil) }
+
+        var token = tokenData.flatMap {
+            try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: $0)
+        }
+        var pull = SyncPull()
+        var teamsByID: [UUID: Team] = [:]
+        var gamesByID: [UUID: Game] = [:]
+        repeat {
+            let page: (modificationResultsByID: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, any Error>],
+                       deletions: [CKDatabase.RecordZoneChange.Deletion],
+                       changeToken: CKServerChangeToken,
+                       moreComing: Bool)
+            do {
+                page = try await database.recordZoneChanges(inZoneWith: zoneID, since: token)
+            } catch let error as CKError where error.code == .changeTokenExpired && token != nil {
+                // Start over from scratch rather than fail: a full pull is
+                // only slower, never wrong.
+                token = nil
+                teamsByID = [:]; gamesByID = [:]; pull.deletedIDs = []
+                continue
+            }
+            for (_, result) in page.modificationResultsByID {
+                guard let record = try? result.get().record else { continue }
+                if let team = CloudKitSchema.backupTeam(from: record) {
+                    teamsByID[team.id] = team
+                } else if let game = CloudKitSchema.backupGame(from: record) {
+                    gamesByID[game.id] = game
+                }
+            }
+            for deletion in page.deletions {
+                guard let id = CloudKitSchema.backupID(from: deletion.recordID) else { continue }
+                teamsByID[id] = nil
+                gamesByID[id] = nil
+                pull.deletedIDs.insert(id)
+            }
+            if page.moreComing, page.changeToken == token { break }
+            token = page.changeToken
+            if !page.moreComing { break }
+        } while true
+
+        pull.teams = Array(teamsByID.values)
+        pull.games = Array(gamesByID.values)
+        pull.token = token.flatMap {
+            try? NSKeyedArchiver.archivedData(withRootObject: $0, requiringSecureCoding: true)
+        }
+        return pull
     }
 
     // MARK: - Reading

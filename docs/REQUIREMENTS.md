@@ -247,7 +247,21 @@ both, own teams first. Games and Roster hide, as for a pure follower. The
 subtitle says "From your iCloud · Updated …", and there's no Unfollow. It lags
 the scoring phone by the backup debounce (about 30 seconds), fine for viewing.
 Adding a player or a game on that device turns the view off, since the device
-then has data of its own. Editing from a second device is stage 2.
+then has data of its own.
+
+**Sync Across My Devices (#229, stage 2).** A switch in Settings → iCloud
+Backup, **off by default and per device**. With it on, the backup zone becomes a
+two-way channel: each device uploads only the teams and games it changed or
+deleted (debounced about 5 seconds), and pulls only what changed since its last
+pull, deletions included, at launch, on returning to the foreground, and every
+20 seconds while open. A full backup never runs on a syncing device, since
+uploading every record would overwrite newer edits from another device.
+**Conflict rule:** an edit not yet uploaded beats an incoming copy of the same
+game or team, and wins everywhere once it's pushed. Turning sync on offers
+everything on that device up once, so turn it on first on the device with the
+latest data. A device that had nothing of its own drops its blank default team
+when real ones arrive. Still to come: a game in progress locked to the device
+scoring it, and push-triggered pulls instead of polling.
 
 `BackupTeam`/`BackupGame` were deployed to the Production CloudKit schema on
 2026-09-17. **A new record type must be deployed before it can be used at all**
