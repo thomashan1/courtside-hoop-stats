@@ -212,12 +212,17 @@ Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 
 ## Environment
 
-- Dev machine: Mac Mini M4, **Xcode 27 beta** (ships the iOS 27 SDK — all iOS 26
-  Liquid Glass APIs available, plus iOS 27 ones).
+- Dev machine: Mac Mini M4 on **macOS 27.2**, **Xcode 27.2 beta**
+  (`/Applications/Xcode-beta.app`) with the **iOS 27.2** simulator runtime.
+  Keep Xcode and its simulator runtime in step with macOS: the 27.0 beta
+  tools on macOS 27.2 hung every test run before it started ("failed to bless
+  service hub", PosterBoard crashing inside the simulator).
 - Test device: **iPhone 17 Pro**. Signing via free **Personal Team** (works).
 - **End user (Thomas's wife):** on **iOS 26 now**, will move to iOS 27 at GM in
   **September 2026**. → Do not require iOS 27 before then.
-- **Simulators installed:** iPhone 17e, iPhone Air, iPhone 14 Plus. There is no
+- **Simulators installed (iOS 27.2):** iPhone 17e, iPhone Air, iPhone 14 Plus.
+  **Store screenshots come from iPhone 14 Plus** (1284 × 2778):
+  `scripts/screenshots.sh "iPhone 14 Plus"`. There is no
   "iPhone 17 Pro" or plain "iPhone 17". Drive `xcodebuild` **by UDID**
   (`xcrun simctl list devices available`) — a `name=` destination that doesn't
   resolve makes `xcodebuild` dump the destination list and exit, which reads as

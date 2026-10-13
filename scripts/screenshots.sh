@@ -3,8 +3,8 @@
 # PNGs to screenshots/. Serves README imagery and App Store listing shots.
 #
 # Usage: scripts/screenshots.sh [simulator name]
-#   scripts/screenshots.sh                     # iPhone 17 Pro (default)
-#   scripts/screenshots.sh "iPhone 17 Pro Max" # App Store 6.9" size
+#   scripts/screenshots.sh                     # iPhone 17e (default)
+#   scripts/screenshots.sh "iPhone 14 Plus"    # App Store size (1284 x 2778)
 set -euo pipefail
 
 SIM="${1:-iPhone 17e}"
