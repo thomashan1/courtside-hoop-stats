@@ -54,45 +54,104 @@ struct GamesListView: View {
         store.activeTeamGames.filter { $0.lifecycle == .complete }.sorted { $0.date > $1.date }
     }
 
+    // MARK: - Layout (#232)
+
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// iPad: the game open beside the list.
+    @State private var selection: GameRoute?
+    /// iPad: a game being scored. Live Scoring takes the whole screen there
+    /// too — it's the one screen that needs every point of it.
+    @State private var scoringGameID: UUID?
+    @State private var columns: NavigationSplitViewVisibility = .all
+
+    private var isSplit: Bool { sizeClass == .regular }
+
     var body: some View {
-        NavigationStack(path: $path) {
-            List {
-                if store.activeTeamGames.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Games Yet", systemImage: "basketball")
-                    } description: {
-                        Text("Tap ✚ to start your first game.")
-                    }
-                }
-
-                // Live first: mid-game, this is the row you're reaching for.
-                if !live.isEmpty {
-                    Section("Playing Now") {
-                        ForEach(live) { row($0) }
-                            .onDelete { offsets in
-                                // Has a score already — confirm before losing it.
-                                if let i = offsets.first { pendingDelete = live[i] }
-                            }
-                    }
-                }
-
-                if !scheduled.isEmpty {
-                    Section("Coming Up") {
-                        ForEach(scheduled) { row($0) }
-                            .onDelete { delete(scheduled, $0) }
-                    }
-                }
-
-                if !finished.isEmpty {
-                    Section("Final Scores") {
-                        ForEach(finished) { row($0) }
-                            .onDelete { offsets in
-                                // Played games have recorded scores — confirm.
-                                if let i = offsets.first { pendingDelete = finished[i] }
-                            }
-                    }
+        if isSplit {
+            // iPad: the list beside the game it opened.
+            NavigationSplitView(columnVisibility: $columns) {
+                gameList(List(selection: $selection) { listContent })
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 440)
+            } detail: {
+                NavigationStack { detailColumn }
+                    // A fresh stack per game, so nothing pushed inside one
+                    // game's detail is left showing under the next.
+                    .id(selection)
+            }
+            .navigationSplitViewStyle(.balanced)
+            .onChange(of: selection) { _, route in
+                // A game in progress opens straight into scoring.
+                if case .live(let id) = route {
+                    selection = nil
+                    scoringGameID = id
                 }
             }
+            // The open game moved on — started, finished, or deleted from
+            // another device — so the detail follows it.
+            .onChange(of: store.games) { _, _ in followSelection() }
+            .onChange(of: store.activeTeamID) { _, _ in selection = openingSelection }
+            // Open on a game rather than an empty pane, as Notes and Mail do.
+            // Never the live one: that would throw you straight into scoring.
+            .onAppear { if selection == nil { selection = openingSelection } }
+            .fullScreenCover(item: Binding(
+                get: { scoringGameID.map(ScoringGame.init) },
+                set: {
+                    if $0 == nil { lastScoredID = scoringGameID }
+                    scoringGameID = $0?.id
+                }
+            ), onDismiss: afterScoring) { game in
+                // Live Scoring's own Back button dismisses this cover.
+                NavigationStack { LiveScoringView(gameID: game.id) }
+            }
+        } else {
+            NavigationStack(path: $path) {
+                gameList(List { listContent })
+                    .navigationDestination(for: GameRoute.self) { destination($0) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var listContent: some View {
+        if store.activeTeamGames.isEmpty {
+            ContentUnavailableView {
+                Label("No Games Yet", systemImage: "basketball")
+            } description: {
+                Text("Tap ✚ to start your first game.")
+            }
+        }
+
+        // Live first: mid-game, this is the row you're reaching for.
+        if !live.isEmpty {
+            Section("Playing Now") {
+                ForEach(live) { row($0) }
+                    .onDelete { offsets in
+                        // Has a score already — confirm before losing it.
+                        if let i = offsets.first { pendingDelete = live[i] }
+                    }
+            }
+        }
+
+        if !scheduled.isEmpty {
+            Section("Coming Up") {
+                ForEach(scheduled) { row($0) }
+                    .onDelete { delete(scheduled, $0) }
+            }
+        }
+
+        if !finished.isEmpty {
+            Section("Final Scores") {
+                ForEach(finished) { row($0) }
+                    .onDelete { offsets in
+                        // Played games have recorded scores — confirm.
+                        if let i = offsets.first { pendingDelete = finished[i] }
+                    }
+            }
+        }
+    }
+
+    private func gameList(_ list: some View) -> some View {
+        list
             .readableWidth()
             // Show the active team name (multi-team) — the tab bar labels it "Games".
             // Sections here hold one or two rows each — Playing Now and
@@ -116,9 +175,8 @@ struct GamesListView: View {
                     Text("\(name) and its recorded scores will be deleted. This can't be undone.")
                 }
             }
-            .navigationDestination(for: GameRoute.self) { destination($0) }
             .sheet(isPresented: $showingNewGame) {
-                NewGameSheet(onStartNow: { path.append(.live($0)) })
+                NewGameSheet(onStartNow: startScoring)
             }
             // Declared out here rather than inside the toolbar: a sheet inherits
             // the environment of wherever it's declared, and that has bitten
@@ -165,7 +223,68 @@ struct GamesListView: View {
                 followerCount = (try? await sharing.participants(for: store.team))?
                     .filter { !$0.isOwner }.count
             }
+    }
+
+    /// The right-hand side on iPad.
+    @ViewBuilder
+    private var detailColumn: some View {
+        switch selection {
+        case .detail(let id):
+            GameDetailView(gameID: id) { startScoring($0) }
+        case .summary(let id):
+            GameSummaryView(gameID: id)
+        case .live, nil:
+            ContentUnavailableView {
+                Label("No Game Selected", systemImage: "basketball")
+            } description: {
+                Text(store.activeTeamGames.isEmpty
+                     ? "Tap ✚ to start your first game."
+                     : "Pick a game to see its score and stats.")
+            }
         }
+    }
+
+    /// The most recent finished game, else the next scheduled one.
+    private var openingSelection: GameRoute? {
+        (finished.first ?? scheduled.first).map(route(for:))
+    }
+
+    /// Start scoring a game: full screen on iPad, pushed on iPhone.
+    private func startScoring(_ id: UUID) {
+        if isSplit {
+            selection = nil
+            scoringGameID = id
+        } else {
+            path = [.live(id)]
+        }
+    }
+
+    /// Back from scoring on iPad: a game that finished opens its summary.
+    private func afterScoring() {
+        guard let id = lastScoredID,
+              let game = store.games.first(where: { $0.id == id }) else { return }
+        if game.lifecycle != .inProgress { selection = route(for: game) }
+    }
+
+    /// The last game scored, kept past the cover's dismissal so
+    /// `afterScoring` can still find it.
+    @State private var lastScoredID: UUID?
+
+    private func followSelection() {
+        let id: UUID? = switch selection {
+        case .detail(let id), .summary(let id), .live(let id): id
+        case nil: nil
+        }
+        guard let id else { return }
+        guard let game = store.games.first(where: { $0.id == id }),
+              game.teamID == store.team.id else {
+            selection = nil
+            return
+        }
+        // Started on another device: don't throw this one into scoring.
+        let current = route(for: game)
+        if case .live = current { selection = nil }
+        else if current != selection { selection = current }
     }
 
     private func row(_ game: Game) -> some View {
@@ -199,6 +318,11 @@ struct GamesListView: View {
     private func delete(_ list: [Game], _ offsets: IndexSet) {
         for index in offsets { store.deleteGame(id: list[index].id) }
     }
+}
+
+/// A game being scored on iPad, as a cover's item.
+private struct ScoringGame: Identifiable {
+    let id: UUID
 }
 
 // MARK: - New Game form (#44)

@@ -21,16 +21,42 @@ struct GameSummaryView: View {
         _game = State(initialValue: Game(opponent: ""))
     }
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var width: CGFloat = 0
+
+    /// Two columns once there's room for a box score beside the game (#232):
+    /// the result on the left, who scored and how on the right.
+    private var isWide: Bool { sizeClass == .regular && width >= 880 }
+
     var body: some View {
-        List {
-            finalScoreSection
-            periodSection
-            statsSection
-            eventLogSection
-            notesSection
-            detailsSection
+        Group {
+            if isWide {
+                HStack(spacing: 0) {
+                    List {
+                        finalScoreSection
+                        periodSection
+                        notesSection
+                        detailsSection
+                    }
+                    .frame(maxWidth: 420)
+                    List {
+                        statsSection
+                        eventLogSection
+                    }
+                }
+            } else {
+                List {
+                    finalScoreSection
+                    periodSection
+                    statsSection
+                    eventLogSection
+                    notesSection
+                    detailsSection
+                }
+                .readableWidth(ReadableWidth.boxScore)
+            }
         }
-        .readableWidth(ReadableWidth.boxScore)
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
         .navigationTitle(game.opponent.isEmpty ? "Game" : "vs \(game.opponent)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

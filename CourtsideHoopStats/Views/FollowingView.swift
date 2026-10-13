@@ -34,163 +34,183 @@ struct FollowingView: View {
         store.viewedTeams.first { $0.id == selectedTeamID } ?? store.viewedTeams.first
     }
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var columns: NavigationSplitViewVisibility = .all
+
     var body: some View {
-        NavigationStack {
-            Group {
-                if let followed = selected {
-                    gameList(for: followed)
-                } else {
-                    emptyState
+        if sizeClass == .regular {
+            // iPad (#232): the team's games beside the one being watched.
+            NavigationSplitView(columnVisibility: $columns) {
+                content
+                    .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 440)
+            } detail: {
+                ContentUnavailableView {
+                    Label("No Game Selected", systemImage: "binoculars")
+                } description: {
+                    Text("Pick a game to follow its score and stats.")
                 }
             }
-            // Same as the Games list: one or two rows per section, so the
-            // default gaps separate almost nothing (#193).
-            .listSectionSpacing(.compact)
-            .navigationTitle(selected?.team.name ?? "Following")
-            // Freshness (and who shared it, #120) belongs in chrome, not
-            // content: it's always visible, system-styled, and costs no room
-            // above the scores. Mail and Podcasts show last-updated the same
-            // way.
-            .navigationSubtitle(selected?.subtitle ?? "")
-            // The team being watched, not the active one — a follower's jersey
-            // bubbles belong to someone else's team.
-            .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
-            .toolbar {
-                // A follower has no Roster tab, so the season hangs off the
-                // followed team's list — which *is* their team view. Same
-                // screen as the owner's, which is safe because it can't change
-                // anything (#211).
-                if let followed = selected {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            SeasonStatsView(teamName: followed.team.name,
-                                            roster: followed.team.players,
-                                            games: followed.games,
-                                            kit: followed.team.kitColor)
-                        } label: {
-                            Image(systemName: "chart.bar.xaxis")
-                                .minimumTapTarget()
-                        }
-                        .accessibilityLabel("Season Averages")
-                    }
-                }
-                // Only a real choice when there's more than one team to pick.
-                // A plain toolbar `Menu` (#121) rather than `ToolbarTitleMenu`:
-                // the latter never actually opened when tapped — confirmed with
-                // hardcoded content, no subtitle, no sibling toolbar item, and
-                // unconditionally rendered, so the fix is a menu we control and
-                // can verify opens, not a further attempt at the built-in one.
-                if store.viewedTeams.count > 1 {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Menu {
-                            // A `Picker`, not a hand-built `ForEach` of
-                            // `Button`s with a conditional checkmark: passing
-                            // `systemImage: ""` for the unselected rows
-                            // doesn't reserve icon space the way an actual
-                            // (even hidden) icon would, so those rows' text
-                            // started further left than the checked one —
-                            // visibly misaligned. A native `Picker` inside a
-                            // `Menu` renders its own consistent checkmark
-                            // column, the same way Files' "Sort By" menu does.
-                            Picker("Team", selection: Binding(
-                                get: { selected?.id ?? "" },
-                                set: { selectedTeamID = $0 }
-                            )) {
-                                ForEach(store.viewedTeams) { followed in
-                                    Text(followed.team.name).tag(followed.id)
-                                }
-                            }
-                        } label: {
-                            // Named, not just drawn. The control was a bare
-                            // `person.2.fill`, which reads as *roster* in this
-                            // app — the Roster tab is `person.3.fill` — rather
-                            // than "change which team you're watching". Two
-                            // opposed arrows say "swap this one out", and are
-                            // distinct from the circular Refresh arrow beside
-                            // them; the words remove the guesswork entirely.
-                            // An explicit `HStack`, not `Label` +
-                            // `.labelStyle(.titleAndIcon)`: a toolbar collapses
-                            // a `Label` to its icon and silently drops the
-                            // title, which is the whole point here.
-                            HStack(spacing: 5) {
-                                Image(systemName: "arrow.left.arrow.right")
-                                Text("Switch Team")
-                            }
-                            .minimumTapTarget()
-                        }
-                        .accessibilityLabel("Switch Team")
-                    }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        Task { await refresh() }
-                    } label: {
-                        if isRefreshing {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "arrow.clockwise")
-                                .minimumTapTarget()
-                        }
-                    }
-                    .disabled(isRefreshing)
-                    .accessibilityLabel("Refresh")
-                }
-                // Only once there's a team to act on — matches every other
-                // toolbar item here in reading `selected`, not `store` directly.
-                // Your own team from iCloud isn't a share, so there's nothing
-                // to unfollow (#229).
-                if let selected, !selected.isOwnFromICloud {
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button(role: .destructive) {
-                                pendingUnfollow = selected
-                            } label: {
-                                Label("Unfollow \(selected.team.name)",
-                                      systemImage: "binoculars.fill")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                                .minimumTapTarget()
-                        }
-                        .accessibilityLabel("More")
-                    }
-                }
-            }
-            .alert("Couldn't Refresh", isPresented: Binding(
-                get: { refreshError != nil },
-                set: { if !$0 { refreshError = nil } }
-            )) {
-                Button("OK", role: .cancel) { refreshError = nil }
-            } message: {
-                Text(refreshError ?? "")
-            }
-            .confirmationDialog(
-                "Unfollow \"\(pendingUnfollow?.team.name ?? "")\"?",
-                isPresented: Binding(get: { pendingUnfollow != nil },
-                                     set: { if !$0 { pendingUnfollow = nil } }),
-                titleVisibility: .visible
-            ) {
-                Button("Unfollow", role: .destructive) {
-                    if let team = pendingUnfollow {
-                        Task { await unfollow(team) }
-                    }
-                    pendingUnfollow = nil
-                }
-                Button("Cancel", role: .cancel) { pendingUnfollow = nil }
-            } message: {
-                Text("You'll stop seeing their games and stats. They can invite you again anytime.")
-            }
-            .alert("Couldn't Unfollow", isPresented: Binding(
-                get: { unfollowError != nil },
-                set: { if !$0 { unfollowError = nil } }
-            )) {
-                Button("OK", role: .cancel) { unfollowError = nil }
-            } message: {
-                Text(unfollowError ?? "")
-            }
-            .disabled(isUnfollowing)
-            .task { await refresh() }
+            .navigationSplitViewStyle(.balanced)
+        } else {
+            NavigationStack { content }
         }
+    }
+
+    private var content: some View {
+        Group {
+            if let followed = selected {
+                gameList(for: followed)
+            } else {
+                emptyState
+            }
+        }
+        // Same as the Games list: one or two rows per section, so the
+        // default gaps separate almost nothing (#193).
+        .listSectionSpacing(.compact)
+        .navigationTitle(selected?.team.name ?? "Following")
+        // Freshness (and who shared it, #120) belongs in chrome, not
+        // content: it's always visible, system-styled, and costs no room
+        // above the scores. Mail and Podcasts show last-updated the same
+        // way.
+        .navigationSubtitle(selected?.subtitle ?? "")
+        // The team being watched, not the active one — a follower's jersey
+        // bubbles belong to someone else's team.
+        .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
+        .toolbar {
+            // A follower has no Roster tab, so the season hangs off the
+            // followed team's list — which *is* their team view. Same
+            // screen as the owner's, which is safe because it can't change
+            // anything (#211).
+            if let followed = selected {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SeasonStatsView(teamName: followed.team.name,
+                                        roster: followed.team.players,
+                                        games: followed.games,
+                                        kit: followed.team.kitColor)
+                    } label: {
+                        Image(systemName: "chart.bar.xaxis")
+                            .minimumTapTarget()
+                    }
+                    .accessibilityLabel("Season Averages")
+                }
+            }
+            // Only a real choice when there's more than one team to pick.
+            // A plain toolbar `Menu` (#121) rather than `ToolbarTitleMenu`:
+            // the latter never actually opened when tapped — confirmed with
+            // hardcoded content, no subtitle, no sibling toolbar item, and
+            // unconditionally rendered, so the fix is a menu we control and
+            // can verify opens, not a further attempt at the built-in one.
+            if store.viewedTeams.count > 1 {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        // A `Picker`, not a hand-built `ForEach` of
+                        // `Button`s with a conditional checkmark: passing
+                        // `systemImage: ""` for the unselected rows
+                        // doesn't reserve icon space the way an actual
+                        // (even hidden) icon would, so those rows' text
+                        // started further left than the checked one —
+                        // visibly misaligned. A native `Picker` inside a
+                        // `Menu` renders its own consistent checkmark
+                        // column, the same way Files' "Sort By" menu does.
+                        Picker("Team", selection: Binding(
+                            get: { selected?.id ?? "" },
+                            set: { selectedTeamID = $0 }
+                        )) {
+                            ForEach(store.viewedTeams) { followed in
+                                Text(followed.team.name).tag(followed.id)
+                            }
+                        }
+                    } label: {
+                        // Named, not just drawn. The control was a bare
+                        // `person.2.fill`, which reads as *roster* in this
+                        // app — the Roster tab is `person.3.fill` — rather
+                        // than "change which team you're watching". Two
+                        // opposed arrows say "swap this one out", and are
+                        // distinct from the circular Refresh arrow beside
+                        // them; the words remove the guesswork entirely.
+                        // An explicit `HStack`, not `Label` +
+                        // `.labelStyle(.titleAndIcon)`: a toolbar collapses
+                        // a `Label` to its icon and silently drops the
+                        // title, which is the whole point here.
+                        HStack(spacing: 5) {
+                            Image(systemName: "arrow.left.arrow.right")
+                            Text("Switch Team")
+                        }
+                        .minimumTapTarget()
+                    }
+                    .accessibilityLabel("Switch Team")
+                }
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    Task { await refresh() }
+                } label: {
+                    if isRefreshing {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "arrow.clockwise")
+                            .minimumTapTarget()
+                    }
+                }
+                .disabled(isRefreshing)
+                .accessibilityLabel("Refresh")
+            }
+            // Only once there's a team to act on — matches every other
+            // toolbar item here in reading `selected`, not `store` directly.
+            // Your own team from iCloud isn't a share, so there's nothing
+            // to unfollow (#229).
+            if let selected, !selected.isOwnFromICloud {
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button(role: .destructive) {
+                            pendingUnfollow = selected
+                        } label: {
+                            Label("Unfollow \(selected.team.name)",
+                                  systemImage: "binoculars.fill")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .minimumTapTarget()
+                    }
+                    .accessibilityLabel("More")
+                }
+            }
+        }
+        .alert("Couldn't Refresh", isPresented: Binding(
+            get: { refreshError != nil },
+            set: { if !$0 { refreshError = nil } }
+        )) {
+            Button("OK", role: .cancel) { refreshError = nil }
+        } message: {
+            Text(refreshError ?? "")
+        }
+        .confirmationDialog(
+            "Unfollow \"\(pendingUnfollow?.team.name ?? "")\"?",
+            isPresented: Binding(get: { pendingUnfollow != nil },
+                                 set: { if !$0 { pendingUnfollow = nil } }),
+            titleVisibility: .visible
+        ) {
+            Button("Unfollow", role: .destructive) {
+                if let team = pendingUnfollow {
+                    Task { await unfollow(team) }
+                }
+                pendingUnfollow = nil
+            }
+            Button("Cancel", role: .cancel) { pendingUnfollow = nil }
+        } message: {
+            Text("You'll stop seeing their games and stats. They can invite you again anytime.")
+        }
+        .alert("Couldn't Unfollow", isPresented: Binding(
+            get: { unfollowError != nil },
+            set: { if !$0 { unfollowError = nil } }
+        )) {
+            Button("OK", role: .cancel) { unfollowError = nil }
+        } message: {
+            Text(unfollowError ?? "")
+        }
+        .disabled(isUnfollowing)
+        .task { await refresh() }
     }
 
     /// Removes just this device's acceptance (#123) — the owner's copy and
@@ -490,111 +510,147 @@ private struct FollowedGameView: View {
         .accessibilityLabel("Live now")
     }
 
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var width: CGFloat = 0
+
+    /// Two columns on a wide iPad (#232): the score and the box score on the
+    /// left, the Score Log running down the right.
+    private func isWide(_ game: Game) -> Bool {
+        sizeClass == .regular && width >= 880 && !game.events.isEmpty
+    }
+
     private func content(for game: Game) -> some View {
-        List {
-            Section {
-                GameHeaderCard(game: game, ourName: teamName,
-                               kit: followed?.team.kitColor ?? .blue) {
-                    Label {
-                        Text("Following").font(.subheadline.weight(.semibold))
-                    } icon: {
-                        Image(systemName: "binoculars.fill").font(.caption)
+        Group {
+            if isWide(game) {
+                HStack(spacing: 0) {
+                    List {
+                        headerSections(game)
+                        statsSections(game)
                     }
-                } trailing: {
-                    // The owner's band carries the date here; a follower's
-                    // carried nothing, so a finished game showed *no* day
-                    // anywhere on the screen — the caption under the badge
-                    // only names a date for a game that hasn't tipped off
-                    // yet (#203).
-                    //
-                    // A live game keeps the pill instead and loses nothing:
-                    // it's being played now, so the date is today.
-                    if game.lifecycle == .inProgress {
-                        liveBadge
-                    } else if game.lifecycle == .complete {
-                        Text(game.date.gameDayShort)
-                            .font(.subheadline.weight(.semibold))
-                    }
+                    .frame(maxWidth: 480)
+                    List { logSection(game) }
                 }
-            }
-
-            // Nothing else on the screen for a game that hasn't tipped off, and
-            // a blank page reads as a failure to load rather than as "not yet".
-            if game.lifecycle == .scheduled {
-                Section {
-                    Text("Scores and stats appear here once the game starts.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+            } else {
+                List {
+                    headerSections(game)
+                    logSection(game)
+                    statsSections(game)
                 }
+                .readableWidth(ReadableWidth.boxScore)
             }
+        }
+        .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+    }
 
-            // Log first, oldest at the top like everywhere else (the scoring
-            // screen and the PDF). It used to run newest-first here, and a log
-            // that reads the other way on one screen reads as out of order.
-            if !game.events.isEmpty {
-                Section {
-                    EventLogView(game: .constant(game),
-                                 players: roster,
-                                 isEditable: false,
-                                 teamName: teamName,
-                                 persist: { _ in })
-                } header: {
-                    Text("Score Log")
+    @ViewBuilder
+    private func headerSections(_ game: Game) -> some View {
+        Section {
+            GameHeaderCard(game: game, ourName: teamName,
+                           kit: followed?.team.kitColor ?? .blue) {
+                Label {
+                    Text("Following").font(.subheadline.weight(.semibold))
+                } icon: {
+                    Image(systemName: "binoculars.fill").font(.caption)
                 }
-            }
-
-            // A game that hasn't tipped off would otherwise get a full roster of
-            // zeros, contradicting the card above it.
-            if game.lifecycle != .scheduled, !stats.isEmpty {
-                Section {
-                    PlayerStatsTable(stats: stats, didNotPlay: game.didNotPlay(from: roster))
-                } header: {
-                    Text("Player Stats")
-                } footer: {
-                    // A follower is the *most* likely reader to need this:
-                    // they never see the scoring screen the numbers come from
-                    // (#205).
-                    Text("2s / 3s are baskets made. FT is made/attempted.")
-                }
-            }
-
-            if !game.periodBreakdown().isEmpty {
-                Section("By Period") {
-                    PeriodBreakdownGrid(game: game, ourName: teamName)
-                }
-            }
-
-            // The tracker's note on the game. It was always being published —
-            // a game goes over the wire as one encoded blob, so `notes` has
-            // been sitting on every follower's device all along with no screen
-            // to show it. That was an oversight rather than a decision: this
-            // view's own doc comment claims it shows everything the owner's
-            // Game Summary does.
-            //
-            // Last, below the numbers: a follower opens this for the score,
-            // and the note is colour rather than the thing they came for.
-            if !game.notes.isEmpty {
-                Section {
-                    Text(game.notes)
-                } header: {
-                    // Say whose words these are. The follower's *list* carries
-                    // "Shared by Jean (Nicky's mom)" in the navigation
-                    // subtitle, but that's two screens away by the time anyone
-                    // reads a note — and an unattributed opinion about a game
-                    // reads oddly on a screen that's otherwise all numbers.
-                    //
-                    // Degrades to plain "Notes" when the owner hasn't set a
-                    // name (it's optional, and #166 only prompts for it).
-                    if let owner = followed?.team.ownerDisplayName, !owner.isEmpty {
-                        Text("Notes from \(owner)")
-                    } else {
-                        Text("Notes")
-                    }
+            } trailing: {
+                // The owner's band carries the date here; a follower's
+                // carried nothing, so a finished game showed *no* day
+                // anywhere on the screen — the caption under the badge
+                // only names a date for a game that hasn't tipped off
+                // yet (#203).
+                //
+                // A live game keeps the pill instead and loses nothing:
+                // it's being played now, so the date is today.
+                if game.lifecycle == .inProgress {
+                    liveBadge
+                } else if game.lifecycle == .complete {
+                    Text(game.date.gameDayShort)
+                        .font(.subheadline.weight(.semibold))
                 }
             }
         }
-        .readableWidth(ReadableWidth.boxScore)
+
+        // Nothing else on the screen for a game that hasn't tipped off, and
+        // a blank page reads as a failure to load rather than as "not yet".
+        if game.lifecycle == .scheduled {
+            Section {
+                Text("Scores and stats appear here once the game starts.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func logSection(_ game: Game) -> some View {
+        // Log first, oldest at the top like everywhere else (the scoring
+        // screen and the PDF). It used to run newest-first here, and a log
+        // that reads the other way on one screen reads as out of order.
+        if !game.events.isEmpty {
+            Section {
+                EventLogView(game: .constant(game),
+                             players: roster,
+                             isEditable: false,
+                             teamName: teamName,
+                             persist: { _ in })
+            } header: {
+                Text("Score Log")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func statsSections(_ game: Game) -> some View {
+        // A game that hasn't tipped off would otherwise get a full roster of
+        // zeros, contradicting the card above it.
+        if game.lifecycle != .scheduled, !stats.isEmpty {
+            Section {
+                PlayerStatsTable(stats: stats, didNotPlay: game.didNotPlay(from: roster))
+            } header: {
+                Text("Player Stats")
+            } footer: {
+                // A follower is the *most* likely reader to need this:
+                // they never see the scoring screen the numbers come from
+                // (#205).
+                Text("2s / 3s are baskets made. FT is made/attempted.")
+            }
+        }
+
+        if !game.periodBreakdown().isEmpty {
+            Section("By Period") {
+                PeriodBreakdownGrid(game: game, ourName: teamName)
+            }
+        }
+
+        // The tracker's note on the game. It was always being published —
+        // a game goes over the wire as one encoded blob, so `notes` has
+        // been sitting on every follower's device all along with no screen
+        // to show it. That was an oversight rather than a decision: this
+        // view's own doc comment claims it shows everything the owner's
+        // Game Summary does.
+        //
+        // Last, below the numbers: a follower opens this for the score,
+        // and the note is colour rather than the thing they came for.
+        if !game.notes.isEmpty {
+            Section {
+                Text(game.notes)
+            } header: {
+                // Say whose words these are. The follower's *list* carries
+                // "Shared by Jean (Nicky's mom)" in the navigation
+                // subtitle, but that's two screens away by the time anyone
+                // reads a note — and an unattributed opinion about a game
+                // reads oddly on a screen that's otherwise all numbers.
+                //
+                // Degrades to plain "Notes" when the owner hasn't set a
+                // name (it's optional, and #166 only prompts for it).
+                if let owner = followed?.team.ownerDisplayName, !owner.isEmpty {
+                    Text("Notes from \(owner)")
+                } else {
+                    Text("Notes")
+                }
+            }
+        }
     }
 }

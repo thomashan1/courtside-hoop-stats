@@ -433,6 +433,16 @@ The same app on iPad, laid out for it rather than scaled up. Reopened from
 stretched iPhone layout was their whole experience, and because #229 put an
 owner's whole season on their iPad.
 
+- **Games and Following are a list beside its game** (`NavigationSplitView`,
+  balanced, both columns showing in portrait and landscape). Games opens on
+  the latest finished game rather than an empty pane; a game in progress opens
+  Live Scoring **full screen** instead of in the right-hand pane, and is never
+  opened on its own (a game started on another device doesn't throw this one
+  into scoring). Finishing a game there shows its summary beside the list.
+- **Game summaries in two columns** when the pane is 880pt or wider: the
+  result, by-period table, notes and details on the left; player stats and the
+  Score Log on the right. A follower's game puts the box score left and the
+  Score Log right.
 - **Live Scoring:** the Score Log and the players side by side under the
   scoreboard, with bigger player cards; the deck is on the right, under a right
   thumb. Below 700pt of width (a narrow Split View or Slide Over) it's the

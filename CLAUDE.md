@@ -69,8 +69,10 @@ deployed 2026-09-17, write path confirmed against a real account).
 
 Builds clean (0 warnings). A UI-test screenshot harness covers the main flows
 (`scripts/screenshots.sh`). **iPhone and iPad** (`TARGETED_DEVICE_FAMILY =
-"1,2"`, #232): the iPad gets Live Scoring side by side and readable-width
-lists; an iPhone lays out exactly as before. See `docs/REQUIREMENTS.md` §3.13.
+"1,2"`, #232): on iPad, Games and Following are a list beside the open game,
+summaries run in two columns, Live Scoring puts the Score Log beside the
+players, and lists keep a readable width; an iPhone lays out exactly as
+before. See `docs/REQUIREMENTS.md` §3.13.
 
 ## What's built
 

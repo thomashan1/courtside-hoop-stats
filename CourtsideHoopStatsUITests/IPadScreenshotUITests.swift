@@ -31,6 +31,14 @@ final class IPadScreenshotUITests: XCTestCase {
         if inBar.exists { inBar.tap() } else { app.buttons[name].firstMatch.tap() }
     }
 
+    /// A game row, by its opponent. The open game's title says the same
+    /// thing beside the list, so match the row itself, not the text.
+    private func openRow(_ app: XCUIApplication, _ opponent: String) {
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", opponent + ",")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "no row for \(opponent)")
+        row.tap()
+    }
+
     func testPortrait() { capture(.portrait, "portrait") }
     func testLandscape() { capture(.landscapeLeft, "landscape") }
 
@@ -42,11 +50,11 @@ final class IPadScreenshotUITests: XCTestCase {
         let shot: (String) -> Void = { self.snap("40-ipad-\(label)-\($0)") }
 
         // Games.
-        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].firstMatch.waitForExistence(timeout: 10))
         shot("01-games")
 
         // Live scoring: the Score Log beside the players.
-        app.staticTexts["vs Northgate Falcons"].tap()
+        openRow(app, "vs Northgate Falcons")
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         shot("02-live-scoring")
 
@@ -74,10 +82,10 @@ final class IPadScreenshotUITests: XCTestCase {
         app.buttons["Stats"].tap()
 
         app.buttons["Back"].tap()
-        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
-        // A finished game: summary and its PDF.
-        app.staticTexts["vs Lakeside Lightning"].tap()
+        // A finished game: summary and its PDF, beside the list.
+        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].firstMatch.waitForExistence(timeout: 10))
+        openRow(app, "vs Lakeside Lightning")
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["DNP"].firstMatch.waitForExistence(timeout: 5))
         shot("07-game-summary")
@@ -86,15 +94,12 @@ final class IPadScreenshotUITests: XCTestCase {
         shot("08-box-score-pdf")
         app.buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["vs Lakeside Lightning"].waitForExistence(timeout: 10))
-        app.navigationBars["vs Lakeside Lightning"].buttons.firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["vs Northgate Falcons"].waitForExistence(timeout: 10))
 
+        // The list stays beside the game (#232): the next one is one tap away.
         // A scheduled game.
-        app.staticTexts["vs Summit Storm"].tap()
+        openRow(app, "vs Summit Storm")
         XCTAssertTrue(app.buttons["Start Game"].waitForExistence(timeout: 10))
         shot("09-scheduled-game")
-        app.navigationBars.buttons.firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["vs Lakeside Lightning"].waitForExistence(timeout: 10))
 
         // New Game form.
         app.buttons["New Game"].tap()
@@ -127,7 +132,7 @@ final class IPadScreenshotUITests: XCTestCase {
         let liveGame = app.staticTexts["vs Harbor Sharks"]
         XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
         shot("15-following")
-        liveGame.tap()
+        openRow(app, "vs Harbor Sharks")
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         shot("16-following-game")
     }
