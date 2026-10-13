@@ -27,15 +27,14 @@ Releases are grouped by GitHub milestone — `gh issue list --milestone vX.Y` fo
 what's in a release, and `docs/RELEASE_HISTORY.md` for build numbers and review
 turnaround.
 
-**v1.12 is being resubmitted.** Build 193 went in on 2026-10-12 and was
-withdrawn the same day so the season PDF wouldn't ship with surnames; the
-version number has to be reused, so `MARKETING_VERSION` is back to 1.12 and
-the resubmission carries: **season averages** with the team's record (#211,
-#213), the season as a **PDF** in first names (#215, #225), **Add Overtime**
-to a finished game (#221), score-log reorders that stick (#223), stats tables
-that never truncate (#222), reopening on the last tab (#227), and a Score Log
-that reads like the PDF (#226, #228). Submit the newest 1.12 build, then bump
-to 1.13 while it's in review.
+**v1.12 is in review** (resubmitted 2026-10-12, 6:44 PM, after build 193 was
+withdrawn so the season PDF wouldn't ship with surnames): **season averages**
+with the team's record (#211, #213), the season as a **PDF** in first names
+(#215, #225), **Add Overtime** to a finished game (#221), score-log reorders
+that stick (#223), stats tables that never truncate (#222), reopening on the
+last tab (#227), and a Score Log that reads like the PDF (#226, #228).
+
+**v1.13 is the open train.**
 
 **v1.11 was approved 2026-10-05** after eight days in the queue and 15 minutes
 in review: overtime on a game that already finished level (#201), the fix for

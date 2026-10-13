@@ -115,7 +115,7 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
-### v1.12 — resubmitting (first sent 2026-10-12 as build 193, withdrawn)
+### v1.12 — submitted 2026-10-12 (resubmitted after withdrawing build 193)
 
 Build 193 was pulled from the queue the same day so the season PDF wouldn't
 ship with surnames. The resubmission carries everything through #228, and the
