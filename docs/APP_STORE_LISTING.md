@@ -120,7 +120,7 @@ the code.
 **Paste-ready — one line per item, no hard wraps.**
 
 > NEW
-> - Your teams and games now sync across your iPhone, iPad and Mac.
+> - Teams you track now sync across your iPhone, iPad and Mac.
 > - Recently Deleted: recover a deleted game for 30 days.
 >
 > FIXES
