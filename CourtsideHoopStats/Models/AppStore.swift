@@ -21,9 +21,9 @@ struct TeamsState: Codable {
 /// before. Extra teams are managed in Settings; the Games list and Roster are
 /// scoped to the active team.
 final class AppStore: ObservableObject {
-    @Published var teams: [Team] { didSet { save() } }
+    @Published var teams: [Team] { didSet { noteLocalChanges(from: oldValue, to: teams); save() } }
     @Published var activeTeamID: UUID { didSet { save() } }
-    @Published var games: [Game] { didSet { save() } }
+    @Published var games: [Game] { didSet { noteLocalChanges(from: oldValue, to: games); save() } }
     /// In-app text-size step (index into `AppTextSize.steps`); applied app-wide
     /// as a Dynamic Type floor. 0 = default.
     @Published var textSizeIndex: Int { didSet { save() } }
@@ -197,6 +197,7 @@ final class AppStore: ObservableObject {
         } else {
             games = []
         }
+        loadSyncState()
     }
 
     // MARK: - Lenient loading (#180)
@@ -368,7 +369,10 @@ final class AppStore: ObservableObject {
 
         let task = Task { @MainActor [weak self] in
             defer { endOnce() }
-            try? await Task.sleep(for: self?.backupDebounce ?? .seconds(30))
+            // Another device is waiting on a sync; a backup only has to be
+            // current by the end of the game.
+            let wait = (self?.syncAcrossDevices ?? false) ? self?.syncDebounce : self?.backupDebounce
+            try? await Task.sleep(for: wait ?? .seconds(30))
             guard !Task.isCancelled, let self else { return }
             await self.performBackup(using: service)
         }
@@ -389,6 +393,9 @@ final class AppStore: ObservableObject {
 
     @MainActor
     private func performBackup(using service: any BackupService) async {
+        // Syncing replaces the full backup: uploading every record would
+        // overwrite newer edits another device already made.
+        if syncAcrossDevices { await syncNow(); return }
         guard !hasNoDataOfItsOwn else { return }
         isBackingUp = true
         backupError = nil
@@ -426,6 +433,192 @@ final class AppStore: ObservableObject {
             UserDefaults.standard.set(newValue.map(\.uuidString), forKey: backupUploadedKey)
         }
     }
+
+    // MARK: - Sync across the owner's own devices (#229 stage 2)
+    //
+    // The backup zone doubles as the channel: each device uploads only what
+    // it changed, and pulls only what changed since its last pull, deletions
+    // included. **Off by default, per device** — it's switched on in Settings
+    // on each device that should take part, so an update can't change how
+    // anyone's real season is stored until they choose to.
+
+    /// Whether this device takes part in sync. Per device, never synced.
+    @Published private(set) var syncAcrossDevices = false
+    @Published private(set) var isSyncing = false
+    @Published private(set) var syncError: String?
+    /// Short: the other device is waiting to see this change.
+    var syncDebounce: Duration = .seconds(5)
+
+    /// Teams and games changed here and not yet uploaded. An incoming copy
+    /// of one of these is ignored — the local edit is newer, and wins once
+    /// it's pushed.
+    private var pendingSyncIDs: Set<UUID> = [] { didSet { persistSyncState() } }
+    /// Ids deleted here and not yet deleted in iCloud.
+    private var pendingSyncDeletes: Set<UUID> = [] { didSet { persistSyncState() } }
+    private var syncToken: Data? { didSet { persistSyncState() } }
+    /// Set while applying a pull, so arriving changes aren't mistaken for
+    /// local edits and sent straight back.
+    private var applyingRemote = false
+
+    private let syncOnKey = "chs.syncAcrossDevices.v1"
+    private let syncPendingKey = "chs.syncPending.v1"
+    private let syncDeletesKey = "chs.syncPendingDeletes.v1"
+    private let syncTokenKey = "chs.syncToken.v1"
+
+    /// Record what changed between two versions of `teams` or `games`.
+    private func noteLocalChanges<T: Identifiable & Equatable>(from old: [T], to new: [T])
+        where T.ID == UUID {
+        guard syncAcrossDevices, !applyingRemote else { return }
+        let before = Dictionary(old.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var stillHere = Set<UUID>()
+        for item in new {
+            stillHere.insert(item.id)
+            if before[item.id] != item {
+                pendingSyncIDs.insert(item.id)
+                pendingSyncDeletes.remove(item.id)
+            }
+        }
+        for id in before.keys where !stillHere.contains(id) {
+            pendingSyncDeletes.insert(id)
+            pendingSyncIDs.remove(id)
+        }
+    }
+
+    /// Turn sync on or off for this device.
+    ///
+    /// Turning it on offers everything here up once, and pulls everything
+    /// from iCloud: what's only here is added there, what's only there is
+    /// added here, and where both have a copy, this device's wins. So turn
+    /// it on first on the device with the latest data.
+    @MainActor
+    func setSyncAcrossDevices(_ on: Bool) async {
+        guard on != syncAcrossDevices else { return }
+        syncAcrossDevices = on
+        if !ephemeral { UserDefaults.standard.set(on, forKey: syncOnKey) }
+        syncToken = nil
+        syncError = nil
+        if on {
+            pendingSyncIDs = hasNoDataOfItsOwn ? [] : Set(teams.map(\.id)).union(games.map(\.id))
+            pendingSyncDeletes = []
+            await syncNow()
+        } else {
+            pendingSyncIDs = []
+            pendingSyncDeletes = []
+        }
+        try? await refreshICloudTeams()
+    }
+
+    /// Pull what other devices changed, then push what this one did.
+    @MainActor
+    func syncNow() async {
+        guard syncAcrossDevices, !isSyncing,
+              let service = backupService, service.isAvailable else { return }
+        isSyncing = true
+        syncError = nil
+        defer { isSyncing = false }
+        do {
+            let pull = try await service.pullChanges(since: syncToken)
+            applyRemote(pull)
+            syncToken = pull.token
+
+            let sentTeams = teams.filter { pendingSyncIDs.contains($0.id) }
+            let sentGames = games.filter { pendingSyncIDs.contains($0.id) }
+            let sentDeletes = pendingSyncDeletes
+            if !sentTeams.isEmpty || !sentGames.isEmpty || !sentDeletes.isEmpty {
+                try await service.pushChanges(teams: sentTeams, games: sentGames,
+                                              deleting: sentDeletes)
+                // Only what's unchanged since it was sent counts as synced: a
+                // tap during the upload is still waiting to go.
+                for team in sentTeams where teams.first(where: { $0.id == team.id }) == team {
+                    pendingSyncIDs.remove(team.id)
+                }
+                for game in sentGames where games.first(where: { $0.id == game.id }) == game {
+                    pendingSyncIDs.remove(game.id)
+                }
+                for id in sentDeletes where !teams.contains(where: { $0.id == id })
+                    && !games.contains(where: { $0.id == id }) {
+                    pendingSyncDeletes.remove(id)
+                }
+            }
+
+            backupSnapshot = BackupSnapshot(backedUpAt: Date(), teamCount: teams.count,
+                                            gameCount: games.count)
+            persistBackupState()
+            // Everything here is in iCloud now, so if sync is turned off later
+            // the plain backup may prune any of it (#231).
+            uploadedToBackup = Set(teams.map(\.id)).union(games.map(\.id))
+        } catch {
+            syncError = error.localizedDescription
+        }
+    }
+
+    /// Merge a pull into local state. Local edits not yet pushed win.
+    @MainActor
+    private func applyRemote(_ pull: SyncPull) {
+        let mine = pendingSyncIDs.union(pendingSyncDeletes)
+        let wasBlank = hasNoDataOfItsOwn
+        var newTeams = teams
+        var newGames = games
+
+        for team in pull.teams where !mine.contains(team.id) {
+            if let i = newTeams.firstIndex(where: { $0.id == team.id }) {
+                newTeams[i] = team
+            } else {
+                newTeams.append(team)
+            }
+        }
+        for game in pull.games where !mine.contains(game.id) {
+            if let i = newGames.firstIndex(where: { $0.id == game.id }) {
+                newGames[i] = game
+            } else {
+                newGames.insert(game, at: 0)
+            }
+        }
+        for id in pull.deletedIDs where !mine.contains(id) {
+            newTeams.removeAll { $0.id == id }
+            newGames.removeAll { $0.id == id }
+        }
+        // A device that had nothing of its own drops its blank default team
+        // once real ones arrive, rather than keeping an empty team beside them.
+        if wasBlank, newTeams.count > 1 {
+            newTeams.removeAll { team in
+                team.players.isEmpty && !pull.teams.contains { $0.id == team.id }
+                    && !newGames.contains { $0.teamID == team.id }
+            }
+        }
+
+        applyingRemote = true
+        defer { applyingRemote = false }
+        if newTeams != teams { teams = newTeams }
+        if newGames != games { games = newGames }
+        if !teams.contains(where: { $0.id == activeTeamID }), let first = teams.first {
+            activeTeamID = first.id
+        }
+    }
+
+    private func loadSyncState() {
+        let defaults = UserDefaults.standard
+        syncAcrossDevices = defaults.bool(forKey: syncOnKey)
+        let ids: (String) -> Set<UUID> = { key in
+            Set((defaults.stringArray(forKey: key) ?? []).compactMap(UUID.init(uuidString:)))
+        }
+        pendingSyncIDs = ids(syncPendingKey)
+        pendingSyncDeletes = ids(syncDeletesKey)
+        syncToken = defaults.data(forKey: syncTokenKey)
+    }
+
+    private func persistSyncState() {
+        guard !ephemeral else { return }
+        let defaults = UserDefaults.standard
+        defaults.set(pendingSyncIDs.map(\.uuidString), forKey: syncPendingKey)
+        defaults.set(pendingSyncDeletes.map(\.uuidString), forKey: syncDeletesKey)
+        defaults.set(syncToken, forKey: syncTokenKey)
+    }
+
+#if DEBUG
+    /// Turns sync on without the initial round trip, for tests.
+    func enableSyncForTesting() { syncAcrossDevices = true }
+#endif
 
     private func persistBackupState() {
         guard !ephemeral else { return }

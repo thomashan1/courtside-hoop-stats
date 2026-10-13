@@ -305,6 +305,15 @@ enum CloudKitSchema {
         CKRecord.ID(recordName: "backup-game-\(id.uuidString)", zoneID: zoneID)
     }
 
+    /// The team or game id inside a backup record's name — all a deletion
+    /// carries, since the record itself is gone.
+    static func backupID(from recordID: CKRecord.ID) -> UUID? {
+        for prefix in ["backup-team-", "backup-game-"] where recordID.recordName.hasPrefix(prefix) {
+            return UUID(uuidString: String(recordID.recordName.dropFirst(prefix.count)))
+        }
+        return nil
+    }
+
     /// A team as a backup record.
     ///
     /// **No parent reference and no share.** The sharing records use a parent

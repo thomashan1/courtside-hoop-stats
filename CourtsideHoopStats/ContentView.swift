@@ -12,6 +12,7 @@ struct ContentView: View {
 
     @EnvironmentObject var store: AppStore
     @Environment(\.teamSharingService) private var sharing
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var selectedTab: Tab = .games
 
@@ -77,10 +78,25 @@ struct ContentView: View {
         .onAppear {
             selectedTab = initialTab
         }
+        // Sync while the app is open, so the other device's changes show up
+        // without a relaunch. Cheap: a pull with nothing new is one request.
+        .task(id: store.syncAcrossDevices) {
+            guard store.syncAcrossDevices else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(20))
+                if scenePhase == .active { await store.syncNow() }
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await store.syncNow() } }
+        }
         .onChange(of: selectedTab) { _, tab in
             UserDefaults.standard.set(tab.rawValue, forKey: Self.lastTabKey)
         }
         .task {
+            // Pull the owner's other devices first (#229), so anything
+            // published to followers below is already the merged copy.
+            await store.syncNow()
             await discoverFollowedTeams()
             // Silent at launch, like discovery: the cached copy still shows.
             try? await store.refreshICloudTeams()

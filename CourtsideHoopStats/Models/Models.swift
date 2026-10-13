@@ -30,7 +30,7 @@ enum JerseyColor: String, Codable, CaseIterable, Identifiable {
     static var teamColors: [JerseyColor] { allCases.filter { $0 != .white } }
 }
 
-struct Team: Identifiable, Codable {
+struct Team: Identifiable, Codable, Equatable {
     /// Stable identity so games and the active-team selection can reference it.
     /// Optional-decoded for backward compatibility: team JSON saved before
     /// multi-team support has no id and gets a fresh one on load.
@@ -231,7 +231,7 @@ enum EventType: String, Codable, CaseIterable {
     }
 }
 
-struct GameEvent: Identifiable, Codable {
+struct GameEvent: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     var playerID: UUID
     var type: EventType
@@ -315,14 +315,14 @@ enum PeriodFormat: String, Codable, CaseIterable {
 
 // MARK: - Scores
 
-struct PeriodEndScore: Codable {
+struct PeriodEndScore: Codable, Equatable {
     var ourRunningTotal: Int        // cumulative (not delta)
     var opponentRunningTotal: Int   // cumulative (not delta)
 }
 
 // MARK: - Game
 
-struct Game: Identifiable, Codable {
+struct Game: Identifiable, Codable, Equatable {
     var id: UUID = UUID()
     /// Which team played this game. Optional for backward compatibility: games
     /// saved before multi-team support decode as `nil` and are stamped with the
