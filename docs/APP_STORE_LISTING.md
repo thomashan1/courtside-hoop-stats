@@ -121,6 +121,7 @@ the code.
 
 > NEW
 > 1. Your teams and games on all your devices: sign in to the same Apple Account on your iPhone, iPad or Mac and everything stays in step, even scoring the same game on two at once.
+> 2. Recently Deleted in Settings: a deleted game can be recovered for 30 days.
 >
 > FIXES
 > 1. Deleted games now disappear for followers too.
