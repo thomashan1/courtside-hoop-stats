@@ -67,12 +67,14 @@ struct FollowingView: View {
         // Same as the Games list: one or two rows per section, so the
         // default gaps separate almost nothing (#193).
         .listSectionSpacing(.compact)
-        .navigationTitle(selected?.team.name ?? "Following")
+        // On iPad the list's own header carries the name (see `gameList`).
+        .navigationTitle(sizeClass == .regular && selected != nil
+                         ? "" : selected?.team.name ?? "Following")
         // Freshness (and who shared it, #120) belongs in chrome, not
         // content: it's always visible, system-styled, and costs no room
         // above the scores. Mail and Podcasts show last-updated the same
         // way.
-        .navigationSubtitle(selected?.subtitle ?? "")
+        .navigationSubtitle(sizeClass == .regular ? "" : selected?.subtitle ?? "")
         // The team being watched, not the active one — a follower's jersey
         // bubbles belong to someone else's team.
         .environment(\.teamKitColor, selected?.team.kitColor ?? .blue)
@@ -101,7 +103,7 @@ struct FollowingView: View {
             // hardcoded content, no subtitle, no sibling toolbar item, and
             // unconditionally rendered, so the fix is a menu we control and
             // can verify opens, not a further attempt at the built-in one.
-            if store.viewedTeams.count > 1 {
+            if store.viewedTeams.count > 1, sizeClass != .regular {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
                         // A `Picker`, not a hand-built `ForEach` of
@@ -113,14 +115,7 @@ struct FollowingView: View {
                         // visibly misaligned. A native `Picker` inside a
                         // `Menu` renders its own consistent checkmark
                         // column, the same way Files' "Sort By" menu does.
-                        Picker("Team", selection: Binding(
-                            get: { selected?.id ?? "" },
-                            set: { selectedTeamID = $0 }
-                        )) {
-                            ForEach(store.viewedTeams) { followed in
-                                Text(followed.team.name).tag(followed.id)
-                            }
-                        }
+                        teamPicker
                     } label: {
                         // Named, not just drawn. The control was a bare
                         // `person.2.fill`, which reads as *roster* in this
@@ -236,8 +231,58 @@ struct FollowingView: View {
         }
     }
 
+    private var teamPicker: some View {
+        Picker("Team", selection: Binding(
+            get: { selected?.id ?? "" },
+            set: { selectedTeamID = $0 }
+        )) {
+            ForEach(store.viewedTeams) { followed in
+                Text(followed.team.name).tag(followed.id)
+            }
+        }
+    }
+
+    private func sidebarHeader(for followed: FollowedTeam) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            if store.viewedTeams.count > 1 {
+                Menu {
+                    teamPicker
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(followed.team.name)
+                        Image(systemName: "chevron.down")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                .accessibilityLabel("Switch Team")
+                .accessibilityValue(followed.team.name)
+            } else {
+                Text(followed.team.name)
+            }
+            if !followed.subtitle.isEmpty {
+                Text(followed.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .font(.title2.bold())
+        .foregroundStyle(.primary)
+        .textCase(nil)
+        .lineLimit(2)
+    }
+
     private func gameList(for followed: FollowedTeam) -> some View {
         List {
+            // iPad (#232): Switch Team, the season and the menu fill the
+            // sidebar's bar, and the title is the first thing dropped — the
+            // team's name went missing. So the name heads the list instead,
+            // and is the team switch.
+            if sizeClass == .regular {
+                Section {
+                } header: {
+                    sidebarHeader(for: followed)
+                }
+            }
             // Same section titles as the Games tab.
             ForEach(gameGroups(for: followed), id: \.title) { group in
                 Section(group.title) {

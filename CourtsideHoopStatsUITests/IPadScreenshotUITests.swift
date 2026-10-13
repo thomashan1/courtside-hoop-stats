@@ -132,6 +132,17 @@ final class IPadScreenshotUITests: XCTestCase {
         let liveGame = app.staticTexts["vs Harbor Sharks"]
         XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
         shot("15-following")
+
+        // The team's name heads the list and is the switch: the sidebar's
+        // bar has no room for a title beside its buttons.
+        let switchTeam = app.buttons["Switch Team"]
+        XCTAssertTrue(switchTeam.waitForExistence(timeout: 5))
+        XCTAssertEqual(switchTeam.value as? String, "Swish Warriors")
+        switchTeam.tap()
+        XCTAssertTrue(app.buttons["Swish Warriors"].waitForExistence(timeout: 5),
+                      "the team menu didn't open")
+        app.buttons["Swish Warriors"].tap()
+        XCTAssertTrue(liveGame.waitForExistence(timeout: 5))
         openRow(app, "vs Harbor Sharks")
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         shot("16-following-game")
