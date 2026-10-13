@@ -16,7 +16,7 @@ Times are from each version's **Activity** list in App Store Connect:
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.12 | *202+* | `bf2e0b2`+ | *not yet submitted* | — | — | — | — |
+| v1.12 | 193 | `4d0f87c` | Mon 2026-10-12, *confirm time* | *in review* | — | — | — |
 | v1.11 | 176 | — | Sun 2026-09-27, 7:59 AM | Mon 2026-10-05, 7:49 AM | **7d 23h 50m** | 7d 23h 35m | **15m** |
 | v1.10 | 167 | — | Sun 2026-09-20, 8:48 PM | Mon 2026-09-21, 3:42 PM | 18h 54m | 16h 23m | 2h 31m |
 | v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | **42m** | 1h 43m |
