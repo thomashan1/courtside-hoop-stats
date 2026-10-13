@@ -115,6 +115,17 @@ shipped when is the question App Review, a bug report, or a "when did this
 change?" all start from, and it can't be recovered from the current state of
 the code.
 
+### v1.13 — not yet submitted
+
+**Paste-ready — one line per item, no hard wraps.**
+
+> NEW
+> 1. Your teams and games on all your devices: sign in to the same Apple Account on your iPhone, iPad or Mac and everything stays in step, even scoring the same game on two at once.
+>
+> FIXES
+> 1. Deleted games now disappear for followers too.
+> 2. A new device can no longer overwrite your iCloud backup.
+
 ### v1.12 — submitted 2026-10-12 (resubmitted after withdrawing build 193)
 
 Build 193 was pulled from the queue the same day so the season PDF wouldn't
