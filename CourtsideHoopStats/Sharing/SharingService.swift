@@ -99,6 +99,12 @@ protocol TeamSharingService {
     /// after any local edit to a shared team so followers see it.
     func publish(team: Team, games: [Game]) async throws
 
+    /// Publish, but only add and update: never delete a follower's game this
+    /// device doesn't have. Used when this device couldn't sync with the
+    /// owner's other devices (#229), so a game missing here may simply not
+    /// have arrived yet.
+    func publishWithoutDeleting(team: Team, games: [Game]) async throws
+
     /// Stop sharing a team (delete its `CKShare`). The local copy is untouched.
     func stopSharing(_ team: Team) async throws
 
@@ -219,3 +225,10 @@ struct DemoSharingService: TeamSharingService {
     func subscribeToFollowedTeamChanges() async throws {}
 }
 #endif
+
+extension TeamSharingService {
+    // Stand-ins that don't model deletion publish as usual.
+    func publishWithoutDeleting(team: Team, games: [Game]) async throws {
+        try await publish(team: team, games: games)
+    }
+}

@@ -26,6 +26,7 @@ struct OwnDeviceSyncTests {
 
     final class Device: BackupService {
         let cloud: FakeCloud
+        var offline = false
         init(cloud: FakeCloud) { self.cloud = cloud }
         var isAvailable: Bool { true }
 
@@ -44,6 +45,7 @@ struct OwnDeviceSyncTests {
             }
         }
         func pullChanges(since token: Data?) async throws -> SyncPull {
+            if offline { throw URLError(.notConnectedToInternet) }
             let from = token.flatMap { Int(String(decoding: $0, as: UTF8.self)) } ?? 0
             var pull = SyncPull()
             for id in Set(cloud.log.dropFirst(from)) {
@@ -271,6 +273,22 @@ struct OwnDeviceSyncTests {
 
         #expect(phone.games[0].events.map(\.id) == [kept.id])
         #expect(cloud.games[game.id]?.events.map(\.id) == [kept.id], "and the backup is corrected")
+    }
+
+    /// A device that couldn't sync may be missing games another device added,
+    /// so it mustn't delete anything for followers until it has synced.
+    @Test func publishingDeletesForFollowersOnlyAfterASync() async {
+        let cloud = FakeCloud()
+        let phone = AppStore(inMemory: true)
+        let service = cloud.service()
+        phone.backupService = service
+        service.offline = true
+        await phone.setSyncAcrossDevices(true)
+        #expect(!phone.mayDeleteForFollowers)
+
+        service.offline = false
+        await phone.syncNow()
+        #expect(phone.mayDeleteForFollowers)
     }
 
     /// Older builds backed up a fresh install's blank default team; a first

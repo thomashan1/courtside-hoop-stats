@@ -456,6 +456,13 @@ final class AppStore: ObservableObject {
     /// Ids deleted here and not yet deleted in iCloud.
     private var pendingSyncDeletes: Set<UUID> = [] { didSet { persistSyncState() } }
     private var syncToken: Data? { didSet { persistSyncState() } }
+    /// Whether this device's copy is known current with the owner's other
+    /// devices. Publishing deletes any follower game this device doesn't
+    /// have, so a device whose last sync failed may be missing a game that
+    /// simply hasn't arrived — it adds and updates, but doesn't delete.
+    var mayDeleteForFollowers: Bool { !syncAcrossDevices || (hasSynced && syncError == nil) }
+    private var hasSynced = false
+
     /// Whether this launch has asked iCloud to push this account's changes.
     private var subscribedToSync = false
     /// Set while applying a pull, so arriving changes aren't mistaken for
@@ -547,6 +554,7 @@ final class AppStore: ObservableObject {
                 }
             }
 
+            hasSynced = true
             backupSnapshot = BackupSnapshot(backedUpAt: Date(), teamCount: teams.count,
                                             gameCount: games.count)
             persistBackupState()
@@ -723,7 +731,11 @@ final class AppStore: ObservableObject {
                 // Catch followers up on anything recorded while we weren't
                 // publishing, whether or not the flag was already set.
                 let teamGames = games.filter { ($0.teamID ?? team.id) == team.id }
-                try? await service.publish(team: team, games: teamGames)
+                if mayDeleteForFollowers {
+                    try? await service.publish(team: team, games: teamGames)
+                } else {
+                    try? await service.publishWithoutDeleting(team: team, games: teamGames)
+                }
             } else if knownShared {
                 sharedTeamIDs.remove(team.id)
             }
@@ -804,7 +816,11 @@ final class AppStore: ObservableObject {
             guard let team = teams.first(where: { $0.id == id }) else { continue }
             let teamGames = games.filter { ($0.teamID ?? id) == id }
             do {
-                try await service.publish(team: team, games: teamGames)
+                if mayDeleteForFollowers {
+                    try await service.publish(team: team, games: teamGames)
+                } else {
+                    try await service.publishWithoutDeleting(team: team, games: teamGames)
+                }
             } catch SharingError.notShared {
                 // The share is gone (owner stopped sharing, or it was removed on
                 // another device). Stop trying, rather than recreating a zone
