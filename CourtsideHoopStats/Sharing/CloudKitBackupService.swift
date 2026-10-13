@@ -82,13 +82,10 @@ final class CloudKitBackupService: BackupService {
         let keep = Set(teams.map { CloudKitSchema.backupTeamRecordID($0.id, in: zoneID) })
             .union(games.map { CloudKitSchema.backupGameRecordID($0.id, in: zoneID) })
 
-        let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: nil)
-        let stale = changes.modificationResultsByID.keys.filter { !keep.contains($0) }
+        let changes = try await database.allRecordZoneChanges(in: zoneID)
+        let stale = changes.keys.filter { !keep.contains($0) }
         guard !stale.isEmpty else { return }
-
-        for batch in Array(stale).chunked(into: 200) {
-            _ = try await database.modifyRecords(saving: [], deleting: batch)
-        }
+        try await database.deleteRecords(Array(stale))
     }
 
     // MARK: - Reading
@@ -102,13 +99,13 @@ final class CloudKitBackupService: BackupService {
         // Zone *changes* rather than a query, for the same reason
         // `fetchFollowedTeams` uses them: a query needs the record type marked
         // queryable in the CloudKit schema, change fetching works as-is.
-        let changes = try await database.recordZoneChanges(inZoneWith: zoneID, since: nil)
+        let changes = try await database.allRecordZoneChanges(in: zoneID)
 
         var teams: [Team] = []
         var games: [Game] = []
         var newest: Date?
 
-        for (_, result) in changes.modificationResultsByID {
+        for (_, result) in changes {
             // One unreadable record must cost one record, never the archive.
             guard let record = try? result.get().record else { continue }
             if let team = CloudKitSchema.backupTeam(from: record) {
