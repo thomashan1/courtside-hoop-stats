@@ -269,6 +269,19 @@ Every save merges too (`updateGame` → `mergingEvents`), so a screen holding
 an older copy can't drop taps that arrived since it opened, and Live Scoring
 and the Game Summary adopt the store's copy as the other device's taps arrive.
 
+**Recently Deleted.** Every game that leaves a device, however it goes
+(deleted there, its team deleted, or deleted on another device and synced), is
+kept on that device for 30 days in Settings → Recently Deleted, with its team.
+**Recover** puts it back everywhere; swipe to delete for good. Sync deletes from
+iCloud too, so this is what stops one mistake on any device from erasing a real
+game everywhere. Hidden while empty.
+
+**Tested by a randomized stress test** (`SyncStressTests`): three simulated
+devices take 1,500 random actions each run (score, delete a tap, edit notes,
+add, delete or finish a game, sync) across 8 fixed seeds, and must end
+identical with no tap lost that nobody deleted and no deleted tap back. It's
+been checked to fail when the event merge or deletion memory is broken.
+
 **First launch with sync** offers everything on the device up once and pulls
 everything back. On that first pull the device's own copy wins outright (the
 cloud copy is its own possibly stale backup), and an empty team nobody's games
