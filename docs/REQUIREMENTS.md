@@ -439,6 +439,9 @@ owner's whole season on their iPad.
   Live Scoring **full screen** instead of in the right-hand pane, and is never
   opened on its own (a game started on another device doesn't throw this one
   into scoring). Finishing a game there shows its summary beside the list.
+  Following's list is headed by the **team's name and who shared it**, and on
+  more than one followed team the name is the team switch: the sidebar's bar
+  has no room for a title beside its buttons, so iOS dropped it.
 - **Game summaries in two columns** when the pane is 880pt or wider: the
   result, by-period table, notes and details on the left; player stats and the
   Score Log on the right. A follower's game puts the box score left and the
