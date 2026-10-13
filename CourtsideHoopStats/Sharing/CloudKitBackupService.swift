@@ -18,7 +18,12 @@ protocol BackupService: AnyObject {
     var isAvailable: Bool { get }
     /// Writes every team and game to the owner's private iCloud, returning the
     /// snapshot to show afterwards.
-    func backUp(teams: [Team], games: [Game]) async throws -> BackupSnapshot
+    ///
+    /// `prunable` is what this device itself uploaded last time: only those
+    /// may be deleted from the backup when they're gone locally. Anything else
+    /// in the backup came from another device (or an earlier install) and is
+    /// never this device's to delete.
+    func backUp(teams: [Team], games: [Game], prunable: Set<UUID>) async throws -> BackupSnapshot
     /// Everything currently in the backup. Used both to restore and to report
     /// what's there without restoring.
     func fetchBackup() async throws -> (teams: [Team], games: [Game], snapshot: BackupSnapshot)
@@ -52,7 +57,7 @@ final class CloudKitBackupService: BackupService {
 
     // MARK: - Writing
 
-    func backUp(teams: [Team], games: [Game]) async throws -> BackupSnapshot {
+    func backUp(teams: [Team], games: [Game], prunable: Set<UUID>) async throws -> BackupSnapshot {
         try await requireAccount()
         try await ensureZone()
 
@@ -66,7 +71,7 @@ final class CloudKitBackupService: BackupService {
                                                  savePolicy: .allKeys)
         }
 
-        try await deleteRecordsNoLongerPresent(teams: teams, games: games)
+        try await deleteRecordsNoLongerPresent(teams: teams, games: games, prunable: prunable)
 
         return BackupSnapshot(backedUpAt: Date(),
                               teamCount: teams.count,
@@ -78,12 +83,20 @@ final class CloudKitBackupService: BackupService {
     /// The alternative — keeping everything forever — sounds safer but makes
     /// the backup diverge from what the user believes they have, and a restore
     /// would resurrect games they deliberately removed.
-    private func deleteRecordsNoLongerPresent(teams: [Team], games: [Game]) async throws {
+    ///
+    /// Only records **this device uploaded** (`prunable`) are candidates. This
+    /// used to delete everything not on the device, so a fresh install — a new
+    /// phone before its restore, or an iPad on the same Apple Account — wiped
+    /// the whole backup down to its one empty team 30 seconds after launch.
+    private func deleteRecordsNoLongerPresent(teams: [Team], games: [Game],
+                                              prunable: Set<UUID>) async throws {
         let keep = Set(teams.map { CloudKitSchema.backupTeamRecordID($0.id, in: zoneID) })
             .union(games.map { CloudKitSchema.backupGameRecordID($0.id, in: zoneID) })
+        let mine = Set(prunable.map { CloudKitSchema.backupTeamRecordID($0, in: zoneID) })
+            .union(prunable.map { CloudKitSchema.backupGameRecordID($0, in: zoneID) })
 
         let changes = try await database.allRecordZoneChanges(in: zoneID)
-        let stale = changes.keys.filter { !keep.contains($0) }
+        let stale = changes.keys.filter { !keep.contains($0) && mine.contains($0) }
         guard !stale.isEmpty else { return }
         try await database.deleteRecords(Array(stale))
     }
@@ -175,7 +188,7 @@ struct StoredBackupState: Codable {
 final class DemoBackupService: BackupService {
     var isAvailable: Bool { true }
 
-    func backUp(teams: [Team], games: [Game]) async throws -> BackupSnapshot {
+    func backUp(teams: [Team], games: [Game], prunable: Set<UUID>) async throws -> BackupSnapshot {
         BackupSnapshot(backedUpAt: Date().addingTimeInterval(-8 * 60),
                        teamCount: teams.count, gameCount: games.count)
     }

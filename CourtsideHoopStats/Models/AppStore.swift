@@ -45,6 +45,11 @@ final class AppStore: ObservableObject {
     private let cadenceKey = "chs.alertCadence.v1"
     /// Last-backed-up state, so Settings can say so at launch (#177).
     private let backupStateKey = "chs.backupState.v1"
+    /// Team and game ids this device uploaded in its last backup — the only
+    /// records it may later delete from the backup. Absent on older installs,
+    /// which reads as "nothing yet", so the first backup after upgrading adds
+    /// and never deletes.
+    private let backupUploadedKey = "chs.backupUploadedIDs.v1"
     /// Where the raw bytes go when a game or team can't be decoded, so the
     /// unreadable record survives the load that skipped it (#180).
     private static let gamesQuarantineKey = "chs.games.unreadable.v1"
@@ -359,13 +364,24 @@ final class AppStore: ObservableObject {
         }
     }
 
+    /// Nothing entered on this device: the one blank default team and no
+    /// games. Such a device has nothing to back up — and backing it up is how
+    /// a fresh install could stand in for the owner's real data.
+    var hasNoDataOfItsOwn: Bool {
+        games.isEmpty && teams.count <= 1 && teams.allSatisfy(\.players.isEmpty)
+    }
+
     @MainActor
     private func performBackup(using service: any BackupService) async {
+        guard !hasNoDataOfItsOwn else { return }
         isBackingUp = true
         backupError = nil
         defer { isBackingUp = false }
         do {
-            backupSnapshot = try await service.backUp(teams: teams, games: games)
+            let uploading = Set(teams.map(\.id)).union(games.map(\.id))
+            backupSnapshot = try await service.backUp(teams: teams, games: games,
+                                                      prunable: uploadedToBackup)
+            uploadedToBackup = uploading
             persistBackupState()
         } catch {
             // Never surfaced as an alert: a failed backup must not interrupt a
@@ -382,6 +398,18 @@ final class AppStore: ObservableObject {
         backupSnapshot = snapshot
     }
 #endif
+
+    /// See `backupUploadedKey`.
+    private var uploadedToBackup: Set<UUID> {
+        get {
+            let raw = UserDefaults.standard.stringArray(forKey: backupUploadedKey) ?? []
+            return Set(raw.compactMap(UUID.init(uuidString:)))
+        }
+        set {
+            guard !ephemeral else { return }
+            UserDefaults.standard.set(newValue.map(\.uuidString), forKey: backupUploadedKey)
+        }
+    }
 
     private func persistBackupState() {
         guard !ephemeral else { return }
