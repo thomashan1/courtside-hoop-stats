@@ -213,12 +213,14 @@ final class ScreenshotUITests: XCTestCase {
         // (#207). Until then the editor was only reachable from the "Final"
         // divider, so a mistyped Q1 total stood — and showed on the
         // scoreboard — for the rest of the game.
-        let q1Header = app.buttons.containing(
-            NSPredicate(format: "label BEGINSWITH %@", "Q1")
+        // The closing line, not the header: since #228 the score sits at the
+        // end of the period, and that's what you tap to correct it.
+        let q1Footer = app.buttons.containing(
+            NSPredicate(format: "label BEGINSWITH %@", "End Q1")
         ).firstMatch
-        XCTAssertTrue(q1Header.waitForExistence(timeout: 10),
-                      "an ended period's header should be tappable mid-game")
-        q1Header.tap()
+        XCTAssertTrue(q1Footer.waitForExistence(timeout: 10),
+                      "an ended period's closing line should be tappable mid-game")
+        q1Footer.tap()
         XCTAssertTrue(app.navigationBars["Opponent Totals"].waitForExistence(timeout: 5),
                       "tapping it should open the opponent-total editor")
         snap(app, "29-edit-opponent-totals-midgame")
@@ -403,10 +405,12 @@ final class ScreenshotUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Lakeside Lightning, +2"].exists)
         app.buttons["Add"].tap()
-        // The Score Log's period header, not the sheet's "OT" section title.
-        let overtimeHeader = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'OT, 9 pts'")).firstMatch
-        XCTAssertTrue(overtimeHeader.waitForExistence(timeout: 10),
-                      "the log should now carry an OT period with Swish's 9")
+        // The Score Log's closing line for overtime, which only exists once
+        // the log carries an OT period.
+        let overtimeEnd = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH 'End OT'")).firstMatch
+        XCTAssertTrue(overtimeEnd.waitForExistence(timeout: 10),
+                      "the log should now carry an OT period")
         snap(app, "32a-overtime-added")
     }
 
