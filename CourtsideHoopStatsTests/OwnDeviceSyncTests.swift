@@ -303,6 +303,70 @@ struct OwnDeviceSyncTests {
 
         #expect(!phone.teams.contains { $0.id == blank.id })
     }
+
+    /// An older build elsewhere on the account (a Mac on the App Store
+    /// version) backs up its blank starter team long after these devices
+    /// first synced. It must not turn up on them.
+    @Test func aStarterTeamBackedUpLaterStaysOut() async {
+        let cloud = FakeCloud()
+        let phone = device(on: cloud)
+        phone.addPlayer(name: "Nicholas H", number: "77")
+        await phone.setSyncAcrossDevices(true)
+        let iPad = device(on: cloud)
+        await iPad.setSyncAcrossDevices(true)
+
+        let fromTheMac = Team(name: Team.starterName, players: [])
+        cloud.seed(fromTheMac)
+        await phone.syncNow()
+        await iPad.syncNow()
+
+        #expect(phone.teams.count == 1)
+        #expect(!phone.teams.contains { $0.id == fromTheMac.id })
+        #expect(!iPad.teams.contains { $0.id == fromTheMac.id })
+    }
+
+    /// One that already got through goes away, from iCloud too.
+    @Test func aStrayStarterTeamAlreadyHereIsRemoved() async {
+        let cloud = FakeCloud()
+        let phone = device(on: cloud)
+        phone.addPlayer(name: "Nicholas H", number: "77")
+        await phone.setSyncAcrossDevices(true)
+        let stray = Team(name: Team.starterName, players: [])
+        phone.teams.append(stray)
+
+        await phone.syncNow()
+
+        #expect(!phone.teams.contains { $0.id == stray.id })
+        #expect(phone.team.players.map(\.name) == ["Nicholas H"])
+        #expect(cloud.teams[stray.id] == nil)
+    }
+
+    /// The starter is only left alone once it's used — named, or given a
+    /// player or a game — and then it syncs like any team.
+    @Test func aStarterTeamThatGetsUsedSyncs() async {
+        let cloud = FakeCloud()
+        let phone = device(on: cloud)
+        phone.teams = [Team(name: Team.starterName, players: [])]
+        await phone.setSyncAcrossDevices(true)
+        phone.addGame(Game(opponent: "Graham Bears"))
+        await phone.syncNow()
+
+        let iPad = device(on: cloud)
+        await iPad.setSyncAcrossDevices(true)
+        #expect(iPad.teams.map(\.id) == phone.teams.map(\.id))
+        #expect(iPad.games.map(\.opponent) == ["Graham Bears"])
+    }
+
+    /// A device with nothing but the starter keeps it: there's always a team.
+    @Test func theOnlyTeamIsNeverRemoved() async {
+        let cloud = FakeCloud()
+        let phone = device(on: cloud)
+        phone.teams = [Team(name: Team.starterName, players: [])]
+        await phone.setSyncAcrossDevices(true)
+        await phone.syncNow()
+        #expect(phone.teams.count == 1)
+        #expect(phone.team.name == Team.starterName)
+    }
 }
 
 /// Games saved before deletions were remembered must still load.

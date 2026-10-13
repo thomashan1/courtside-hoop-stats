@@ -53,7 +53,9 @@ struct Team: Identifiable, Codable, Equatable {
     /// teams are never shared.
     var ownerDisplayName: String? = nil
 
-    static let empty = Team(name: "My Test Team", players: [])
+    /// The name of the blank team a fresh install starts with.
+    static let starterName = "My Test Team"
+    static let empty = Team(name: starterName, players: [])
 
     /// The colour of this team's non-white kit.
     var kitColor: JerseyColor { teamColor ?? .blue }

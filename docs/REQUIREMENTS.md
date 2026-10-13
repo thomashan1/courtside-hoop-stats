@@ -286,6 +286,11 @@ been checked to fail when the event merge or deletion memory is broken.
 everything back. On that first pull the device's own copy wins outright (the
 cloud copy is its own possibly stale backup), and an empty team nobody's games
 belong to is ignored (older builds backed up a fresh install's blank team).
+The untouched starter team ("My Test Team", no players, no games) is never
+synced at all, in either direction, since an older build on the same account
+keeps backing one up; a stray copy that already arrived beside a real team is
+removed, from iCloud too. Its first game sends it, and a device's only team
+is never removed.
 Publishing to followers syncs first, so followers get the merged copy from
 whichever device publishes.
 

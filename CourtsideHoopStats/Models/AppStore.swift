@@ -26,6 +26,7 @@ final class AppStore: ObservableObject {
     @Published var games: [Game] {
         didSet {
             noteLocalChanges(from: oldValue, to: games)
+            noteStarterTeamsInUse(from: oldValue)
             keepRemovedGames(from: oldValue)
             save()
         }
@@ -185,7 +186,7 @@ final class AppStore: ObservableObject {
             activeTeamID = saved.teams.contains(where: { $0.id == saved.activeTeamID })
                 ? saved.activeTeamID : saved.teams[0].id
         } else {
-            let first = Team(name: "My Test Team", players: [])
+            let first = Team(name: Team.starterName, players: [])
             teams = [first]
             activeTeamID = first.id
         }
@@ -398,6 +399,16 @@ final class AppStore: ObservableObject {
         games.isEmpty && teams.count <= 1 && teams.allSatisfy(\.players.isEmpty)
     }
 
+    /// The blank team a fresh install starts with, never touched: no
+    /// players, no games, the starter's name. It carries nothing, so it's
+    /// never synced. Older builds back it up from every fresh install, and
+    /// without this each one turned up on the owner's devices as a stray
+    /// "My Test Team" that couldn't be explained.
+    private func isUntouchedStarter(_ team: Team, games: [Game]) -> Bool {
+        team.name == Team.starterName && team.players.isEmpty
+            && !games.contains { $0.teamID == team.id }
+    }
+
     @MainActor
     private func performBackup(using service: any BackupService) async {
         // Syncing replaces the full backup: uploading every record would
@@ -569,6 +580,20 @@ final class AppStore: ObservableObject {
         }
     }
 
+    /// A starter team is never synced while it's untouched, so its first
+    /// game has to send it too — or that game arrives on the other device
+    /// with no team to sit under.
+    private func noteStarterTeamsInUse(from old: [Game]) {
+        guard syncAcrossDevices, !applyingRemote else { return }
+        let before = Set(old.map(\.id))
+        for game in games where !before.contains(game.id) {
+            if let team = teams.first(where: { $0.id == game.teamID }),
+               team.name == Team.starterName, team.players.isEmpty {
+                pendingSyncIDs.insert(team.id)
+            }
+        }
+    }
+
     /// Turn sync on or off for this device.
     ///
     /// Turning it on offers everything here up once, and pulls everything
@@ -609,6 +634,9 @@ final class AppStore: ObservableObject {
             }
             syncToken = pull.token
 
+            for team in teams where isUntouchedStarter(team, games: games) {
+                pendingSyncIDs.remove(team.id)
+            }
             let sentTeams = teams.filter { pendingSyncIDs.contains($0.id) }
             let sentGames = games.filter { pendingSyncIDs.contains($0.id) }
             let sentDeletes = pendingSyncDeletes
@@ -659,7 +687,9 @@ final class AppStore: ObservableObject {
         var newTeams = teams
         var newGames = games
 
-        for team in pull.teams where !mine.contains(team.id) && !blankFromBefore(team) {
+        let starter: (Team) -> Bool = { self.isUntouchedStarter($0, games: pull.games + self.games) }
+        for team in pull.teams where !mine.contains(team.id) && !blankFromBefore(team)
+            && !starter(team) {
             if let i = newTeams.firstIndex(where: { $0.id == team.id }) {
                 newTeams[i] = team
             } else {
@@ -692,6 +722,15 @@ final class AppStore: ObservableObject {
             newTeams.removeAll { team in
                 team.players.isEmpty && !pull.teams.contains { $0.id == team.id }
                     && !newGames.contains { $0.teamID == team.id }
+            }
+        }
+
+        // One that already arrived, beside a real team, goes — here and in
+        // iCloud, so it stops coming back.
+        if newTeams.contains(where: { !isUntouchedStarter($0, games: newGames) }) {
+            for team in newTeams where isUntouchedStarter(team, games: newGames) {
+                newTeams.removeAll { $0.id == team.id }
+                pendingSyncDeletes.insert(team.id)
             }
         }
 
