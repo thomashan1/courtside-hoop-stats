@@ -129,18 +129,41 @@ final class IPadScreenshotUITests: XCTestCase {
 
         // Following: the list and a live game.
         openTab(app, "Following")
+        // The chosen team is remembered across launches, so a run that
+        // stopped on the other team would start there.
+        let switchTeam = app.buttons["Switch Team"]
+        XCTAssertTrue(switchTeam.waitForExistence(timeout: 10))
+        if switchTeam.value as? String != "Swish Warriors" {
+            switchTeam.tap()
+            app.buttons["Swish Warriors"].tap()
+        }
         let liveGame = app.staticTexts["vs Harbor Sharks"]
         XCTAssertTrue(liveGame.waitForExistence(timeout: 10))
         shot("15-following")
 
         // The team's name heads the list and is the switch: the sidebar's
         // bar has no room for a title beside its buttons.
-        let switchTeam = app.buttons["Switch Team"]
-        XCTAssertTrue(switchTeam.waitForExistence(timeout: 5))
         XCTAssertEqual(switchTeam.value as? String, "Swish Warriors")
         switchTeam.tap()
         XCTAssertTrue(app.buttons["Swish Warriors"].waitForExistence(timeout: 5),
                       "the team menu didn't open")
+        app.buttons["Swish Warriors"].tap()
+        XCTAssertTrue(liveGame.waitForExistence(timeout: 5))
+
+        // Another team's game doesn't stay open beside this team's list.
+        openRow(app, "vs Harbor Sharks")
+        XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
+        let barY = switchTeam.frame.minY
+        switchTeam.tap()
+        XCTAssertTrue(app.buttons["Eastside Eagles"].waitForExistence(timeout: 5))
+        app.buttons["Eastside Eagles"].tap()
+        XCTAssertTrue(app.staticTexts["No Game Selected"].waitForExistence(timeout: 5),
+                      "the other team's game stayed open")
+        XCTAssertFalse(app.staticTexts["Score Log"].exists)
+        XCTAssertEqual(switchTeam.frame.minY, barY, accuracy: 2,
+                       "switching teams moved the sidebar")
+        shot("17-following-switched-team")
+        switchTeam.tap()
         app.buttons["Swish Warriors"].tap()
         XCTAssertTrue(liveGame.waitForExistence(timeout: 5))
         openRow(app, "vs Harbor Sharks")
