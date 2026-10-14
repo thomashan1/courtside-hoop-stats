@@ -36,6 +36,9 @@ struct FollowingView: View {
 
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var columns: NavigationSplitViewVisibility = .all
+    /// iPad (#232): the game open beside the list. Held here rather than by
+    /// a link, so switching teams can close it.
+    @State private var openGameID: UUID?
 
     var body: some View {
         if sizeClass == .regular {
@@ -44,13 +47,24 @@ struct FollowingView: View {
                 content
                     .navigationSplitViewColumnWidth(min: 300, ideal: 360, max: 440)
             } detail: {
-                ContentUnavailableView {
-                    Label("No Game Selected", systemImage: "binoculars")
-                } description: {
-                    Text("Pick a game to follow its score and stats.")
+                NavigationStack {
+                    if let followed = selected, let openGameID {
+                        FollowedGameView(followedID: followed.id, gameID: openGameID)
+                    } else {
+                        ContentUnavailableView {
+                            Label("No Game Selected", systemImage: "binoculars")
+                        } description: {
+                            Text("Pick a game to follow its score and stats.")
+                        }
+                    }
                 }
+                .id(openGameID)
             }
             .navigationSplitViewStyle(.balanced)
+            // Switching teams left the other team's game beside the new
+            // team's list. (Not `.id(team)` on the split view: rebuilding it
+            // slid its bars up under the tab bar.)
+            .onChange(of: selected?.id) { _, _ in openGameID = nil }
         } else {
             NavigationStack { content }
         }
@@ -272,7 +286,7 @@ struct FollowingView: View {
     }
 
     private func gameList(for followed: FollowedTeam) -> some View {
-        List {
+        List(selection: $openGameID) {
             // iPad (#232): Switch Team, the season and the menu fill the
             // sidebar's bar, and the title is the first thing dropped — the
             // team's name went missing. So the name heads the list instead,
@@ -287,13 +301,19 @@ struct FollowingView: View {
             ForEach(gameGroups(for: followed), id: \.title) { group in
                 Section(group.title) {
                     ForEach(group.games) { game in
-                        NavigationLink {
-                            // Identified rather than passed by value: the view
-                            // re-reads from the store, so a refresh reaches a
-                            // game already open.
-                            FollowedGameView(followedID: followed.id, gameID: game.id)
-                        } label: {
-                            GameRowView(game: game, ourName: followed.team.name)
+                        if sizeClass == .regular {
+                            NavigationLink(value: game.id) {
+                                GameRowView(game: game, ourName: followed.team.name)
+                            }
+                        } else {
+                            NavigationLink {
+                                // Identified rather than passed by value: the
+                                // view re-reads from the store, so a refresh
+                                // reaches a game already open.
+                                FollowedGameView(followedID: followed.id, gameID: game.id)
+                            } label: {
+                                GameRowView(game: game, ourName: followed.team.name)
+                            }
                         }
                     }
                 }
