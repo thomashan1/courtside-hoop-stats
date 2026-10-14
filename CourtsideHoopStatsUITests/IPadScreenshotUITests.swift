@@ -170,6 +170,18 @@ final class IPadScreenshotUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         shot("16-following-game")
 
+        // A game that hasn't started: one column, so its card sits in the
+        // readable-width margins.
+        openRow(app, "vs Pine Ridge Panthers")
+        let note = app.staticTexts["Scores and stats appear here once the game starts."]
+        XCTAssertTrue(note.waitForExistence(timeout: 10))
+        // The margins once replaced the inset for the sidebar, sliding the
+        // game under it.
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@",
+                                                   "vs Pine Ridge Panthers,")).firstMatch
+        XCTAssertGreaterThan(note.frame.minX, row.frame.maxX, "the game slid under the list")
+        shot("18-following-scheduled")
+
         // Picking other games beside the list mustn't flash their last
         // basket as if it had just been scored.
         let toast = app.descendants(matching: .any)["ScoreToast"]

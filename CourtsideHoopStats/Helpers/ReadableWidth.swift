@@ -28,6 +28,7 @@ private struct ReadableWidthModifier: ViewModifier {
     let maxWidth: CGFloat
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var width: CGFloat = 0
+    @State private var insets = EdgeInsets()
 
     /// `nil` is the system's own margin — what every compact width gets, so
     /// an iPhone is untouched.
@@ -38,7 +39,13 @@ private struct ReadableWidthModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .contentMargins(.horizontal, margin, for: .scrollContent)
+            // A margin set here *replaces* the safe-area inset rather than
+            // adding to it. A split view's detail column runs under the
+            // sidebar with a leading inset the size of it, so without
+            // adding that back the rows slid under the sidebar.
+            .contentMargins(.leading, margin.map { $0 + insets.leading }, for: .scrollContent)
+            .contentMargins(.trailing, margin.map { $0 + insets.trailing }, for: .scrollContent)
             .onGeometryChange(for: CGFloat.self, of: \.size.width) { width = $0 }
+            .onGeometryChange(for: EdgeInsets.self, of: \.safeAreaInsets) { insets = $0 }
     }
 }
