@@ -401,6 +401,10 @@ private struct FollowedGameView: View {
     /// appearance rather than empty — otherwise opening a game mid-way would
     /// announce a basket from ten minutes ago.
     @State private var seenEventIDs: Set<UUID>?
+    /// The game `seenEventIDs` belongs to. On iPad (#232) this view stays put
+    /// while the list beside it picks another game, so without it the other
+    /// game's last basket looked new and flashed.
+    @State private var seenGameID: UUID?
 
     private var followed: FollowedTeam? {
         store.viewedTeams.first { $0.id == followedID }
@@ -464,6 +468,10 @@ private struct FollowedGameView: View {
         .task { regeneratePDF() }
         .refreshable { await refresh() }
         .onChange(of: game?.events.count) { _, _ in flashNewestScore() }
+        // Seed the baseline as soon as a game is on screen, so its first new
+        // basket flashes rather than being taken for the baseline.
+        .onAppear { flashNewestScore() }
+        .onChange(of: gameID) { _, _ in flashNewestScore() }
         .task(id: game?.lifecycle) {
             // Only poll a game actually in progress; a finished game can't
             // change, and polling it would be pure battery cost.
@@ -482,8 +490,9 @@ private struct FollowedGameView: View {
         let ids = Set(game.events.map(\.id))
 
         // First look at this game establishes the baseline silently.
-        guard let seen = seenEventIDs else {
+        guard let seen = seenEventIDs, seenGameID == game.id else {
             seenEventIDs = ids
+            seenGameID = game.id
             return
         }
         seenEventIDs = ids

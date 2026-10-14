@@ -46,6 +46,7 @@ struct ScoreToast: View {
         .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(flash.playerName), \(flash.label). \(flash.teamScore) to \(flash.opponentScore)")
+        .accessibilityIdentifier("ScoreToast")
     }
 }
 

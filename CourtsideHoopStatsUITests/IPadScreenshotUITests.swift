@@ -146,5 +146,13 @@ final class IPadScreenshotUITests: XCTestCase {
         openRow(app, "vs Harbor Sharks")
         XCTAssertTrue(app.staticTexts["Score Log"].waitForExistence(timeout: 10))
         shot("16-following-game")
+
+        // Picking other games beside the list mustn't flash their last
+        // basket as if it had just been scored.
+        let toast = app.descendants(matching: .any)["ScoreToast"]
+        for opponent in ["vs Valley Vipers", "vs Central Cyclones", "vs Harbor Sharks"] {
+            openRow(app, opponent)
+            XCTAssertFalse(toast.waitForExistence(timeout: 2), "\(opponent) flashed an old basket")
+        }
     }
 }
