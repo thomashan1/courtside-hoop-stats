@@ -167,12 +167,20 @@ is what separates it from #175.
 - **FT% is a dash, not 0%**, for a player who never went to the line.
 - Only **completed** games count; a game in progress would drag every average
   down halfway through.
-- **Known limitation:** a player added mid-season counts the games before they
-  joined, because nothing records a join date and a past game's bench list
-  can't name someone who wasn't on the team yet. The alternative — counting
-  only games where they recorded something — inflates the average of anyone who
-  plays defence and doesn't score, which is the worse error to make about a
-  child.
+- **A player added mid-season doesn't count the games before they joined.**
+  A game remembers who was on the roster when it finished
+  (`Game.rosterPlayerIDs`), and someone added later isn't in it — not as a
+  row of zeroes, not as a DNP, not in GP. Games finished before that existed
+  have no list, so they still show the whole roster.
+- **Guests.** A player marked **Guest** (Roster → player; e.g. a borrowed
+  jersey) appears only in games where they have a stat, and starts every new
+  game in Not playing. It's also how a guest is cleaned out of older games
+  that have no roster list. Counting only games with a stat would be wrong for
+  a regular player — it inflates the average of anyone who plays defence and
+  doesn't score — so it's for guests alone.
+  Both rules live in `Game.onTeam(_:)`, which `stats(for:)` and
+  `didNotPlay(from:)` apply, so the box score, the PDF, a follower's view and
+  the season agree.
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
@@ -345,7 +353,7 @@ Key types (see source for full detail):
   `jersey(isHome:)`. The optionals are optional so older saved teams decode;
   `kitColor` defaults to blue, which is what they had, and `ownerDisplayName`
   is the per-team "Shared by" name (§3).
-- `Player { id, name, number }` + `firstName`.
+- `Player { id, name, number, isGuest: Bool? }` + `firstName`, `guest`.
 - `JerseyColor { white, blue }` + `opposite`.
 - `EventType { twoPoint, threePoint, ftMade, ftMissed, rebound, foul, unknown }`
   (+ points, labels). `foul` is retained only so older games decode; `unknown`
@@ -354,7 +362,7 @@ Key types (see source for full detail):
 - `GameEvent { id, playerID, type, period, timestamp, assistPlayerID: UUID? }`.
 - `PeriodFormat { quarters, halves, pickup }` (pickup = 1 running period, no breaks).
 - `PeriodEndScore { ourRunningTotal, opponentRunningTotal }` (opponent side authoritative; our side derived from events).
-- `Game { id, teamID: UUID?, date, opponent, league, location, locationAddress, isHome, periodFormat, events, periodEndScores, notes, benchedPlayerIDs, isComplete, hasStarted: Bool? }`
+- `Game { id, teamID: UUID?, date, opponent, league, location, locationAddress, isHome, periodFormat, events, periodEndScores, notes, benchedPlayerIDs, isComplete, hasStarted: Bool?, removedEventIDs, rosterPlayerIDs: [UUID]? }`
   - Derived: `ourScore`, `opponentScore`, `currentPeriod`, `result`, `periodBreakdown()` (our points from events), `stats(for:)`, `isStarted`, and **`lifecycle` { scheduled, inProgress, complete }**.
   - **Decodes leniently.** `Game` has a hand-written `init(from:)` (in an extension, so the memberwise init survives) reading every field with `decodeIfPresent`. This is a data-loss guard, not style: `AppStore.load()` uses `try?`, so one missing key silently wipes every saved game, and Swift's synthesized decoder throws on a missing key *even when the property has a default*. **Adding a stored property to `Game` means adding a line there**, covered by `GameMigrationTests`.
 - `PlayerStats` (derived, never stored).

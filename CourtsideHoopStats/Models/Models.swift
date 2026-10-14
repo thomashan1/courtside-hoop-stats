@@ -74,6 +74,14 @@ struct Player: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var name: String
     var number: String          // jersey number, stored as String (handles "0", "00")
+    /// Someone filling in, like a borrowed jersey for one game. A guest
+    /// appears only in games they recorded something in — never as a DNP,
+    /// never in another game's box score or GP — and starts each new game
+    /// on the bench. `Optional` so a roster saved before it decodes (nil =
+    /// a regular player), and so older builds simply ignore it.
+    var isGuest: Bool? = nil
+
+    var guest: Bool { isGuest == true }
 
     /// First name only, e.g. "Ava M." -> "Ava".
     var firstName: String {
@@ -355,6 +363,11 @@ struct Game: Identifiable, Codable, Equatable {
     /// devices that still has them can't bring them back (#229). Without it a
     /// deletion and "the other device hasn't seen this event yet" look alike.
     var removedEventIDs: [UUID] = []
+    /// Who was on the roster when the game finished, so a player added
+    /// later doesn't show up in it (as "played, scored 0", counting toward
+    /// their GP). `nil` on a game finished before this existed, or not
+    /// finished yet: the whole current roster, as before.
+    var rosterPlayerIDs: [UUID]? = nil
 
     // MARK: Derived (never stored)
 
@@ -639,12 +652,51 @@ struct Game: Identifiable, Codable, Equatable {
     /// must not also be listed here.
     func didNotPlay(from roster: [Player]) -> [Player] {
         let listed = Set(stats(for: roster).map(\.player.id))
-        return roster.filter {
+        return onTeam(roster).filter {
             benchedPlayerIDs.contains($0.id) && !listed.contains($0.id)
         }
     }
 
+    /// The part of the roster that belongs to this game at all: not a player
+    /// added after it finished (`rosterPlayerIDs`), and not a guest who
+    /// recorded nothing in it. Anyone with an event is always kept — they
+    /// were there, and their points are in the score.
+    func onTeam(_ roster: [Player]) -> [Player] {
+        let withEvents = playersWithEvents
+        let finishedRoster = rosterPlayerIDs.map(Set.init)
+        return roster.filter { player in
+            if withEvents.contains(player.id) { return true }
+            if player.guest { return false }
+            if let finishedRoster, !finishedRoster.contains(player.id) { return false }
+            return true
+        }
+    }
+
+    /// "Was at the game" = appears anywhere in the log, including a foul, a
+    /// missed free throw, or an assist on someone else's basket (all things
+    /// only a present player can do).
+    private var playersWithEvents: Set<UUID> {
+        Set(events.map(\.playerID) + events.compactMap(\.assistPlayerID))
+    }
+
+    /// Mark the game finished, remembering who was on the roster.
+    mutating func finish(roster: [Player]) {
+        isComplete = true
+        rosterPlayerIDs = roster.map(\.id)
+    }
+
+    /// Mark the game started. Guests begin on the bench — they're there for
+    /// the odd game, so the tracker brings one in rather than benching them
+    /// every time.
+    mutating func start(roster: [Player]) {
+        hasStarted = true
+        for player in roster where player.guest && !benchedPlayerIDs.contains(player.id) {
+            benchedPlayerIDs.append(player.id)
+        }
+    }
+
     func stats(for players: [Player]) -> [PlayerStats] {
+        let players = onTeam(players)
         var map: [UUID: PlayerStats] = [:]
         for player in players { map[player.id] = PlayerStats(player: player) }
         for event in events {
@@ -676,10 +728,7 @@ struct Game: Identifiable, Codable, Equatable {
                 map[assistID] = assistStats
             }
         }
-        // "Was at the game" = appears anywhere in the log, including a foul, a
-        // missed free throw, or an assist on someone else's basket (all things
-        // only a present player can do).
-        let playersWithEvents = Set(events.map(\.playerID) + events.compactMap(\.assistPlayerID))
+        let playersWithEvents = playersWithEvents
         return players
             .filter { !benchedPlayerIDs.contains($0.id) || playersWithEvents.contains($0.id) }
             .compactMap { map[$0.id] }
@@ -733,6 +782,7 @@ extension Game {
         var result = mergingEvents(from: other)
         result.periodEndScores = other.periodEndScores.merging(periodEndScores) { _, mine in mine }
         result.isComplete = isComplete || other.isComplete
+        result.rosterPlayerIDs = rosterPlayerIDs ?? other.rosterPlayerIDs
         return result
     }
 
@@ -758,6 +808,7 @@ extension Game {
         case id, teamID, date, opponent, league, location, locationAddress
         case isHome, periodFormat, events, periodEndScores
         case notes, benchedPlayerIDs, isComplete, hasStarted, removedEventIDs
+        case rosterPlayerIDs
     }
 
     init(from decoder: any Decoder) throws {
@@ -779,6 +830,7 @@ extension Game {
         isComplete = try container.decodeIfPresent(Bool.self, forKey: .isComplete) ?? false
         hasStarted = try container.decodeIfPresent(Bool.self, forKey: .hasStarted)
         removedEventIDs = try container.decodeIfPresent([UUID].self, forKey: .removedEventIDs) ?? []
+        rosterPlayerIDs = try container.decodeIfPresent([UUID].self, forKey: .rosterPlayerIDs)
     }
 }
 

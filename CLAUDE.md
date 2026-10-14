@@ -130,6 +130,9 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   something is shared with them. Invite-only, no public link. See
   `docs/SHARING.md` for the architecture, four hard-won gotchas, and how to test
   it with a single device.
+- **Guests and late joiners.** A finished game remembers its roster, so a
+  player added later isn't in it; a **Guest** (a borrowed jersey) shows only
+  in games where they have a stat and starts new games benched.
 - **Displays.** In-game and Game Summary show **first names only**, escalating
   only on collision (`Jake` → `Jake L.` → `Jake Moore`); the Roster keeps full
   names.
@@ -149,9 +152,10 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 
 - **Icon-only buttons need `.minimumTapTarget()`** — below 44pt they
   intermittently miss taps.
-- **`Game.stats(for:)` takes the full roster** and applies benching itself.
-  Passing a pre-filtered list makes the stats table disagree with the final
-  score.
+- **`Game.stats(for:)` takes the full roster** and applies benching itself,
+  plus who belongs in the game at all (`Game.onTeam`: not a player added after
+  it finished, not a guest without a stat). Passing a pre-filtered list makes
+  the stats table disagree with the final score.
 - **Every change must be backward compatible. There are real saved games now** —
   Jean's actual season, on her phone, not test data. A model change that can't
   read what a previous build wrote doesn't fail loudly; `AppStore.load()`

@@ -38,6 +38,11 @@ struct RosterView: View {
                                 Text(player.name)
                                     .foregroundStyle(.primary)
                                 Spacer()
+                                if player.guest {
+                                    Text("Guest")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                                 Image(systemName: "chevron.right")
                                     .font(.caption)
                                     .foregroundStyle(.tertiary)
@@ -110,6 +115,7 @@ struct PlayerEditSheet: View {
 
     @State private var name = ""
     @State private var number = ""
+    @State private var isGuest = false
 
     private var trimmedName: String {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -122,6 +128,12 @@ struct PlayerEditSheet: View {
                     .textInputAutocapitalization(.words)
                 TextField("Jersey Number", text: $number)
                     .keyboardType(.numbersAndPunctuation)
+
+                Section {
+                    Toggle("Guest", isOn: $isGuest)
+                } footer: {
+                    Text("For someone filling in, like a borrowed jersey. A guest only shows in games where they have a stat, and starts each new game in Not playing.")
+                }
 
                 // Delete lives here too, so you don't have to swipe the row.
                 if let player {
@@ -151,6 +163,7 @@ struct PlayerEditSheet: View {
                 if let player {
                     name = player.name
                     number = player.number
+                    isGuest = player.guest
                 }
             }
         }
@@ -161,9 +174,10 @@ struct PlayerEditSheet: View {
         if var player {
             player.name = trimmedName
             player.number = cleanNumber
+            player.isGuest = isGuest ? true : nil
             store.updatePlayer(player)
         } else {
-            store.addPlayer(name: trimmedName, number: cleanNumber)
+            store.addPlayer(name: trimmedName, number: cleanNumber, isGuest: isGuest)
         }
         dismiss()
     }
