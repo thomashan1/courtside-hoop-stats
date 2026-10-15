@@ -388,12 +388,17 @@ final class AppStore: ObservableObject {
     ///
     /// Additive like `restoreFromBackup`: anything already here is skipped
     /// rather than replaced, so a restore can never cost you data.
+    /// Also how an Export Everything file is imported. Returns what was added.
     @MainActor
-    func restore(teams newTeams: [Team], games newGames: [Game]) {
+    @discardableResult
+    func restore(teams newTeams: [Team], games newGames: [Game]) -> (teams: Int, games: Int) {
         let knownTeams = Set(self.teams.map(\.id))
         let knownGames = Set(self.games.map(\.id))
-        self.teams.append(contentsOf: newTeams.filter { !knownTeams.contains($0.id) })
-        self.games.append(contentsOf: newGames.filter { !knownGames.contains($0.id) })
+        let addedTeams = newTeams.filter { !knownTeams.contains($0.id) }
+        let addedGames = newGames.filter { !knownGames.contains($0.id) }
+        self.teams.append(contentsOf: addedTeams)
+        self.games.append(contentsOf: addedGames)
+        return (addedTeams.count, addedGames.count)
     }
 
     /// Debounced like `schedulePublish`, and background-protected for the same

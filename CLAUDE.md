@@ -124,6 +124,8 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   active team. **Export a Backup** writes a team + roster to `.json`
   (AirDrop/Files) and Import reads one back — roster-only, and distinct from
   both sharing and the iCloud backup: a copy you own that needs no iCloud.
+  **Export Everything** (Settings ▸ iCloud Backup) writes every team *and game*
+  to one file; Import from File merges it back, adding only what's missing.
 - **Sharing & Following (#57).** A team owner can share a team via CloudKit
   `CKShare`; invitees are added by Apple Account from the system share sheet and
   get a **read-only** view in a **Following** tab that appears only when

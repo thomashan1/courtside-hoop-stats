@@ -165,7 +165,7 @@ struct SettingsView: View {
                           allowedContentTypes: [.json]) { result in
                 handleImport(result)
             }
-            .alert("Import Team", isPresented: Binding(
+            .alert("Import", isPresented: Binding(
                 get: { importMessage != nil },
                 set: { if !$0 { importMessage = nil } }
             )) {
@@ -191,6 +191,12 @@ struct SettingsView: View {
     /// Deliberately not an alert or a badge: a failure must never interrupt a
     /// game, so this screen is where it surfaces.
     @ViewBuilder
+    /// The app's icon on the share sheet, where the file otherwise shows a
+    /// blank placeholder.
+    private var backupFileIcon: Image {
+        AppIconThumbnail.image.map(Image.init(uiImage:)) ?? Image(systemName: "doc")
+    }
+
     private var backupSection: some View {
         Section {
             LabeledContent("Last Backed Up") {
@@ -239,10 +245,17 @@ struct SettingsView: View {
                     .font(.footnote)
                     .foregroundStyle(.red)
             }
+
+            // A copy that doesn't depend on iCloud at all: every team
+            // and game in one file, read back by Import from File….
+            ShareLink(item: LibraryPackage(teams: store.teams, games: store.games),
+                      preview: SharePreview("Courtside Backup", image: backupFileIcon)) {
+                Label("Export Everything", systemImage: "square.and.arrow.up")
+            }
         } header: {
             Text("iCloud Backup")
         } footer: {
-            Text("Every team and game is kept in your own iCloud automatically, and stays the same on your iPhone and iPad when they're signed in to the same Apple Account. A lost or wiped phone doesn't take the season with it.")
+            Text("Every team and game is kept in your own iCloud automatically, and stays the same on your iPhone and iPad when they're signed in to the same Apple Account. Export Everything also saves it all to a file you keep; Import from File adds back anything missing.")
         }
         .sheet(isPresented: $browsingBackup) {
             BackupBrowserView()
@@ -286,7 +299,7 @@ struct SettingsView: View {
             Button {
                 showImporter = true
             } label: {
-                Label("Import Team…", systemImage: "square.and.arrow.down")
+                Label("Import from File…", systemImage: "square.and.arrow.down")
             }
         } header: {
             Text("Teams")
@@ -331,7 +344,7 @@ struct SettingsView: View {
             Button {
                 showImporter = true
             } label: {
-                Label("Import Team…", systemImage: "square.and.arrow.down")
+                Label("Import from File…", systemImage: "square.and.arrow.down")
             }
         } header: {
             Text("Teams")
@@ -350,6 +363,15 @@ struct SettingsView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             do {
                 let data = try Data(contentsOf: url)
+                // A whole-library file adds every team and game it holds
+                // that isn't already here.
+                if let library = LibraryExport.read(data) {
+                    let added = store.restore(teams: library.teams, games: library.games)
+                    importMessage = added.teams == 0 && added.games == 0
+                        ? "Nothing to add — this phone already has everything in that file."
+                        : "Added \(counted(added.games, "game")) and \(counted(added.teams, "team")). Nothing already on this phone was changed."
+                    return
+                }
                 let export = try TeamExport.coder.decoder.decode(TeamExport.self, from: data)
                 guard export.format == TeamExport.marker else {
                     importMessage = "That file isn't a Courtside team export."
@@ -358,7 +380,7 @@ struct SettingsView: View {
                 let team = store.importTeam(from: export)
                 importMessage = "Imported “\(team.name)” with \(counted(team.players.count, "player")). It's now the active team."
             } catch {
-                importMessage = "Couldn't read that file. Make sure it's a Courtside team export (.json)."
+                importMessage = "Couldn't read that file. Make sure it's a Courtside export (.json)."
             }
         case .failure:
             break   // user cancelled the picker
