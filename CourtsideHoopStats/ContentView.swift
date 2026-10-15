@@ -17,49 +17,20 @@ struct ContentView: View {
     @State private var selectedTab: Tab = .games
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // **First**, for anyone who has it (#189). The tab only exists
-            // when you actually follow someone (#57) — a tracker running only
-            // their own team never sees it — so putting it left costs nothing
-            // for them, and it matches what a follower-only person already
-            // sees, where Following is the first tab by default.
-            //
-            // The trade: someone who both owns and follows loses Games as
-            // their leftmost tab. Worth it because the reason to open the app
-            // as a follower is time-sensitive (a game happening now), while
-            // the reason to open it as a tracker is deliberate.
-            //
-            // It also carries this person's own teams from iCloud on a device
-            // with no data of its own (#229) — named for that when there's
-            // nothing followed, since "Following" your own team reads wrong.
-            if !store.viewedTeams.isEmpty {
-                FollowingView()
-                    .tabItem {
-                        if store.followedTeams.isEmpty {
-                            Label("My Teams", systemImage: "icloud")
-                        } else {
-                            Label("Following", systemImage: "binoculars")
-                        }
-                    }
-                    .tag(Tab.following)
+        Group {
+            // A brand-new install says what it's for first, instead of
+            // landing on Games with a blank placeholder team.
+            if store.needsWelcome {
+                WelcomeView()
+            } else {
+                tabs
             }
-
-            // Hidden for a pure follower (#115) — someone who only watches
-            // others' teams and has never touched their own local, blank
-            // default team. Reappears the moment they add a player or a game.
-            if !store.isViewOnly {
-                GamesListView()
-                    .tabItem { Label("Games", systemImage: "list.clipboard") }
-                    .tag(Tab.games)
-
-                RosterView()
-                    .tabItem { Label("Roster", systemImage: "person.3.fill") }
-                    .tag(Tab.roster)
-            }
-
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
+        }
+        // Leaving the welcome lands on the tab that matches the choice.
+        .onChange(of: store.tabRequest) { _, request in
+            guard let request else { return }
+            selectedTab = request == .follow ? .following : .games
+            store.tabRequest = nil
         }
         // Apply the in-app Text Size as a Dynamic Type floor for the whole app.
         .dynamicTypeSize(AppTextSize.floor(for: store.textSizeIndex)...)
@@ -138,6 +109,56 @@ struct ContentView: View {
         }
     }
 
+    private var tabs: some View {
+        TabView(selection: $selectedTab) {
+            // **First**, for anyone who has it (#189). The tab only exists
+            // when you actually follow someone (#57) — a tracker running only
+            // their own team never sees it — so putting it left costs nothing
+            // for them, and it matches what a follower-only person already
+            // sees, where Following is the first tab by default.
+            //
+            // The trade: someone who both owns and follows loses Games as
+            // their leftmost tab. Worth it because the reason to open the app
+            // as a follower is time-sensitive (a game happening now), while
+            // the reason to open it as a tracker is deliberate.
+            //
+            // It also carries this person's own teams from iCloud on a device
+            // with no data of its own (#229) — named for that when there's
+            // nothing followed, since "Following" your own team reads wrong.
+            //
+            // And for someone who chose Follow a Team on the welcome screen,
+            // before anything is shared with them: it's where they wait.
+            if !store.viewedTeams.isEmpty || store.isViewOnly {
+                FollowingView()
+                    .tabItem {
+                        if store.followedTeams.isEmpty && !store.iCloudTeams.isEmpty {
+                            Label("My Teams", systemImage: "icloud")
+                        } else {
+                            Label("Following", systemImage: "binoculars")
+                        }
+                    }
+                    .tag(Tab.following)
+            }
+
+            // Hidden for a pure follower (#115) — someone who only watches
+            // others' teams and has never touched their own local, blank
+            // default team. Reappears the moment they add a player or a game.
+            if !store.isViewOnly {
+                GamesListView()
+                    .tabItem { Label("Games", systemImage: "list.clipboard") }
+                    .tag(Tab.games)
+
+                RosterView()
+                    .tabItem { Label("Roster", systemImage: "person.3.fill") }
+                    .tag(Tab.roster)
+            }
+
+            SettingsView()
+                .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(Tab.settings)
+        }
+    }
+
     /// The remembered tab if it still exists; otherwise the old defaults. The
     /// screenshot harness always starts on the default so its runs don't
     /// depend on where the previous one ended.
@@ -149,7 +170,7 @@ struct ContentView: View {
         guard let raw = UserDefaults.standard.string(forKey: Self.lastTabKey),
               let tab = Tab(rawValue: raw) else { return fallback }
         switch tab {
-        case .following: return store.viewedTeams.isEmpty ? fallback : tab
+        case .following: return store.viewedTeams.isEmpty && !store.isViewOnly ? fallback : tab
         case .games, .roster: return store.isViewOnly ? fallback : tab
         case .settings: return tab
         }

@@ -41,7 +41,7 @@ struct FollowingView: View {
     @State private var openGameID: UUID?
 
     var body: some View {
-        if sizeClass == .regular {
+        if sizeClass == .regular, selected != nil {
             // iPad (#232): the team's games beside the one being watched.
             NavigationSplitView(columnVisibility: $columns) {
                 content
@@ -237,12 +237,11 @@ struct FollowingView: View {
         }
     }
 
+    /// How to get invited, and a check for an invite that already went
+    /// through — the tab is here before anything is shared with someone
+    /// who chose Follow a Team on the welcome screen.
     private var emptyState: some View {
-        ContentUnavailableView {
-            Label("Not Following Anyone", systemImage: "binoculars")
-        } description: {
-            Text("When someone shares their team with you, it appears here so you can follow their games and stats.")
-        }
+        FollowHelpView()
     }
 
     private var teamPicker: some View {

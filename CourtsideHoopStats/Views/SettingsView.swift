@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var browsingBackup = false
 
     @State private var showAddTeam = false
+    @State private var showingWelcome = false
     @State private var newTeamName = ""
     @State private var editingTeam: TeamRef?
 
@@ -77,6 +78,23 @@ struct SettingsView: View {
                     Text("Makes text throughout the app larger. Also follows your device's text size if that's set higher.")
                 }
 
+                // The invite link is the way in, and it brings the Following
+                // tab with it. This is the way back when the link didn't
+                // take, for someone with no Following tab to look in.
+                if store.followedTeams.isEmpty && !store.isViewOnly {
+                    Section {
+                        NavigationLink {
+                            FollowHelpView()
+                                .navigationTitle("Follow a Team")
+                                .navigationBarTitleDisplayMode(.inline)
+                        } label: {
+                            Label("Follow a Team", systemImage: "binoculars")
+                        }
+                    } footer: {
+                        Text("Watch the games and stats of a team someone else keeps score for.")
+                    }
+                }
+
                 // Only meaningful once you're following someone — an owner
                 // scoring their own game has nothing to be notified about.
                 if !store.followedTeams.isEmpty {
@@ -90,6 +108,16 @@ struct SettingsView: View {
                         Text("Following Notifications")
                     } footer: {
                         Text(store.alertCadence.detail)
+                    }
+                }
+
+                // The first-launch choice, for anyone who wants it again —
+                // to switch to following, or just to see it.
+                Section {
+                    Button {
+                        showingWelcome = true
+                    } label: {
+                        Label("Welcome Screen", systemImage: "hand.wave")
                     }
                 }
 
@@ -123,6 +151,9 @@ struct SettingsView: View {
                 Button("Add") { store.addTeam(name: newTeamName) }
             } message: {
                 Text("Create another team to track separately. It becomes the active team.")
+            }
+            .sheet(isPresented: $showingWelcome) {
+                WelcomeView { showingWelcome = false }
             }
             .sheet(item: $editingTeam) { ref in
                 NavigationStack { TeamDetailView(teamID: ref.id) }
