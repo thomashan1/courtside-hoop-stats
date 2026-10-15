@@ -76,8 +76,12 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
     from such a file. Roster-only — games excluded (`TeamTransfer.swift`, #40).
     Distinct from both sharing and the iCloud backup (§3.9a): a copy you own and
     can edit, that needs no iCloud and works offline.
-  - **Backup** — "Last Backed Up", what's in iCloud, **Back Up Now**, and a
-    browse-and-pick **restore** (§3.9a).
+  - **Backup** — "Last Backed Up", what's in iCloud, **Back Up Now**, a
+    browse-and-pick **restore** (§3.9a), and **Export Everything**: every team
+    and game in one dated `.json` (`LibraryExport`), independent of iCloud.
+    **Import from File…** reads either kind of file; a library file is merged
+    like the iCloud restore — it only adds what's missing, never overwrites,
+    and a game it can't read is skipped rather than failing the file.
 
 ### 3.3 Games list (Games tab)
 - Three sections, live first (mid-game it's the row you're reaching for):
