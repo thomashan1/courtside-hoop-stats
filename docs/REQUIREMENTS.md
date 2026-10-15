@@ -261,6 +261,21 @@ records this device uploaded last time. Before that, a fresh install (a new
 phone before its restore, or an iPad on the same Apple Account) wiped the whole
 backup 30 seconds after launch (#231).
 
+**A deletion waits 30 days, and a wipe is refused.** Because the backup copies
+deletions — and sync passes them to every device — a bug that emptied the app
+on one phone would otherwise empty iCloud seconds later. So nothing is deleted
+outright: each record is first copied to a second zone, `backup-deleted`, and
+Restore from iCloud lists it under **Deleted in the Last 30 Days**, ready to pick
+like any other game. A copy older than 30 days (by its `creationDate`) is
+purged. The zone reuses `BackupTeam`/`BackupGame`, so the deployed schema is
+unchanged, and older builds never read it. Plain Restore (the confirmation in
+Settings) never brings back deleted items — only picking them does.
+`BackupDeletionGuard` then refuses what no user does in one change: deleting
+the last team with players, more than one such team at once, or more than half
+the games (beyond five) that aren't going with their team. Refused deletions
+stay in iCloud — the owner's other devices keep them, and Restore brings them
+back here. Empty teams (an older build's blank starter) always go.
+
 **Your own teams on another device (#229, stage 1).** A device with no data of
 its own reads the backup and shows the owner's teams **read-only**, in the same
 screen a follower uses. The tab is called **My Teams** (iCloud icon) when

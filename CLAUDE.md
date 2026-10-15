@@ -116,7 +116,9 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 - **iCloud backup (#177).** Every team and game is copied automatically to the
   owner's *private* CloudKit database, debounced like the follower publish.
   Settings shows "Last backed up" and offers Back Up Now plus a browse-and-pick
-  restore. Deliberately **not** sharing: that's a mirror, so unsharing or
+  restore. A deletion is copied to a `backup-deleted` zone for 30 days first
+  (Restore lists it), and `BackupDeletionGuard` refuses a wipe — the last
+  team, several teams, or most of the games at once. Deliberately **not** sharing: that's a mirror, so unsharing or
   deleting removes it. The backup zone carries no `CKShare` and no parent
   references, so nothing in the sharing code can reach it, and it's one record
   per game so a corrupt record costs one game.

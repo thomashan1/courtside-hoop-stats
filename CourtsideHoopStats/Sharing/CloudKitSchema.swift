@@ -342,6 +342,17 @@ enum CloudKitSchema {
         return record
     }
 
+    /// `record` as a fresh record in another zone, every field carried over.
+    static func copy(of record: CKRecord, in zoneID: CKRecordZone.ID) -> CKRecord {
+        let copy = CKRecord(recordType: record.recordType,
+                            recordID: CKRecord.ID(recordName: record.recordID.recordName,
+                                                  zoneID: zoneID))
+        for key in record.allKeys() {
+            copy[key] = record[key]
+        }
+        return copy
+    }
+
     static func backupTeam(from record: CKRecord) -> Team? {
         guard record.recordType == backupTeamRecordType,
               let data = record[Key.payload] as? Data else { return nil }
