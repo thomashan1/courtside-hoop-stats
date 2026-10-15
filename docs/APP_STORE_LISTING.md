@@ -122,6 +122,7 @@ the code.
 > NEW
 > - Made for iPad: games beside the list, box scores in two columns.
 > - Guest players: a borrowed jersey only shows in games they played.
+> - Welcome screen: keep score, or follow a team with invite help.
 >
 > FIXES
 > - An invite link opened with the app closed now follows the team.

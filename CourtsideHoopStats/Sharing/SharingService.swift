@@ -202,6 +202,9 @@ struct DemoSharingService: TeamSharingService {
     /// everything made `syncSharedState()` adopt *every* demo team, so the
     /// second team picked up a "Shared" tag it was never given.
     let sharedTeamID: UUID
+    /// What "Check for Invites" and launch discovery find. Empty for the
+    /// brand-new-install run, which has nothing shared with it yet.
+    var followed: [FollowedTeam] = [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
 
     var isAvailable: Bool { true }
 
@@ -211,9 +214,7 @@ struct DemoSharingService: TeamSharingService {
     func publish(team: Team, games: [Game]) async throws {}
     func stopSharing(_ team: Team) async throws {}
     func acceptShare(_ metadata: CKShare.Metadata) async throws {}
-    func fetchFollowedTeams() async throws -> [FollowedTeam] {
-        [DemoData.makeFollowedTeam(), DemoData.makeSecondFollowedTeam()]
-    }
+    func fetchFollowedTeams() async throws -> [FollowedTeam] { followed }
     func unfollow(_ team: FollowedTeam) async throws {}
     func isSharing(_ team: Team) async throws -> Bool { team.id == sharedTeamID }
     func participants(for team: Team) async throws -> [SharedParticipant] {

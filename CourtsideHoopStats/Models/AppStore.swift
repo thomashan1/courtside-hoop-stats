@@ -7,6 +7,14 @@ enum PlayerSort {
     case name, number
 }
 
+/// What a brand-new user is here for, asked once on the welcome screen.
+enum WelcomeChoice: String {
+    /// Track their own team's games.
+    case keepScore
+    /// Watch a team someone else scores — wait on the Following tab.
+    case follow
+}
+
 /// The persisted multi-team container (new-format blob, #20).
 struct TeamsState: Codable {
     var teams: [Team]
@@ -54,6 +62,19 @@ final class AppStore: ObservableObject {
     /// Teams this user has shared *out* (#57). Tracked locally so an edit knows
     /// whether it needs publishing without asking CloudKit on every keystroke.
     @Published var sharedTeamIDs: Set<UUID> { didSet { save() } }
+    /// A tab the welcome screen wants shown, taken (and cleared) by
+    /// `ContentView`.
+    @Published var tabRequest: WelcomeChoice?
+    /// What a brand-new user said they're here for, on the welcome screen.
+    /// `nil` until they choose — and for everyone who installed before it
+    /// existed, which is harmless: `needsWelcome` only asks a device with
+    /// nothing on it.
+    @Published var welcomeChoice: WelcomeChoice? = nil {
+        didSet {
+            guard !ephemeral else { return }
+            UserDefaults.standard.set(welcomeChoice?.rawValue, forKey: welcomeKey)
+        }
+    }
 
     private let teamsKey = "chs.teams.v1"        // multi-team blob
     private let gamesKey = "chs.games.v1"
@@ -69,6 +90,7 @@ final class AppStore: ObservableObject {
     /// and never deletes.
     private let backupUploadedKey = "chs.backupUploadedIDs.v1"
     private let iCloudTeamsKey = "chs.iCloudTeams.v1"
+    private let welcomeKey = "chs.welcomeChoice.v1"
     /// Where the raw bytes go when a game or team can't be decoded, so the
     /// unreadable record survives the load that skipped it (#180).
     private static let gamesQuarantineKey = "chs.games.unreadable.v1"
@@ -110,6 +132,19 @@ final class AppStore: ObservableObject {
         }
 
         #if DEBUG
+        // A brand-new install, for the welcome screen's UI test.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestFreshInstall") {
+            let starter = Team(name: Team.starterName, players: [])
+            teams = [starter]
+            activeTeamID = starter.id
+            games = []
+            textSizeIndex = 0
+            followedTeams = []
+            sharedTeamIDs = []
+            alertCadence = .periodEnd
+            ephemeral = true
+            return
+        }
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
             let demoTeam = DemoData.makeTeam()
             let secondTeam = DemoData.makeSecondTeam()
@@ -204,6 +239,8 @@ final class AppStore: ObservableObject {
         } else {
             games = []
         }
+        welcomeChoice = UserDefaults.standard.string(forKey: welcomeKey)
+            .flatMap(WelcomeChoice.init(rawValue:))
         loadSyncState()
         loadRecentlyDeleted()
     }
@@ -981,8 +1018,31 @@ final class AppStore: ObservableObject {
     /// always a way out: adding or importing a second team (#118) flips this
     /// false immediately, before that team has any players, which is what
     /// un-hides Roster so they can actually add players to it.
+    ///
+    /// Also true for someone who chose **Follow a Team** on the welcome
+    /// screen, before anything is shared with them: the Following tab is
+    /// where they wait for the invite.
     var isViewOnly: Bool {
-        hasNoDataOfItsOwn && !viewedTeams.isEmpty
+        hasNoDataOfItsOwn && (!viewedTeams.isEmpty || welcomeChoice == .follow)
+    }
+
+    /// A brand-new user who hasn't said what they're here for. Nothing on the
+    /// device, nothing followed, nothing in iCloud — so it can't be someone
+    /// reinstalling, whose teams come back without being asked. The blank
+    /// starter team is never shown to them by name.
+    var needsWelcome: Bool {
+        welcomeChoice == nil && hasNoDataOfItsOwn && viewedTeams.isEmpty
+            && team.name == Team.starterName
+    }
+
+    /// Welcome → **Keep Score**: the blank starter becomes their team.
+    func startKeepingScore(teamName: String) {
+        let trimmed = teamName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, var mine = teams.first(where: { $0.id == activeTeamID }) {
+            mine.name = trimmed
+            updateTeam(mine)
+        }
+        welcomeChoice = .keepScore
     }
 
     /// Everything shown read-only: this person's own teams from iCloud first,

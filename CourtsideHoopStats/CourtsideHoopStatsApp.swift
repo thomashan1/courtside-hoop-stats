@@ -22,6 +22,13 @@ struct CourtsideHoopStatsApp: App {
         // The screenshot harness runs offline against seeded data, so it gets a
         // stand-in service. Without it the seeded team reports zero followers
         // and every sharing screen captures in its empty state.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestFreshInstall") {
+            let demo = DemoSharingService(sharedTeamID: UUID(), followed: [])
+            appStore.sharingService = demo
+            sharing = demo
+            _store = StateObject(wrappedValue: appStore)
+            return
+        }
         if ProcessInfo.processInfo.arguments.contains("-uiTestSeedDemo") {
             let demo = DemoSharingService(sharedTeamID: appStore.team.id)
             appStore.sharingService = demo

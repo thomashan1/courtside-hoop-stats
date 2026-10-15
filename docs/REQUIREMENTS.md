@@ -42,8 +42,18 @@ still decodes (a `try?` decode failure would wipe the user's games).
 
 ## 3. Features (current)
 
+**First launch:** a **welcome screen** with the app icon asks what you're here
+for. **Keep Score** asks for the team's name and opens Games; **Follow a Team**
+opens Following, which explains how to get invited and offers **Check for
+Invites**. The blank starter team is never shown by name. It's skipped for
+anyone with data on the device, a followed team, or teams coming back from
+iCloud, and **Settings ▸ Welcome Screen** opens it again — there, Keep Score
+goes to Games and Follow a Team to the invite help, without taking a
+scorekeeper's tabs away.
+
 **Tabs:** Games · Roster · Settings, plus a **Following** tab — **first in the
-bar** — that appears only when someone has shared a team with you (§3.10).
+bar** — that appears when someone has shared a team with you (§3.10), or when
+you chose Follow a Team on the welcome screen.
 Leftmost is not the same as default-selected: an owner still lands on Games. A follower sees the owner's **game notes** too, on screen and in the box score PDF — they were always published inside the game blob, so this shows what was already on their device. The editor says so where the note is typed. The "Shared by" name is **per team** on purpose — "Jean (Nicky's mom)" is a different answer for a different child's team — and the Followers screen asks for it when a shared team hasn't got one, that being the only screen where it has any effect. The team last viewed is remembered across launches, and **Switch Team** (shown only when following two or more) carries its own label rather than a bare icon.
 
 ### 3.1 Roster (Roster tab)
@@ -318,8 +328,12 @@ against Production.
   [`SHARING.md`](SHARING.md)) and no public link (a forwardable URL to a
   children's roster is the wrong default, and the trade for link-joining is
   losing *control* of who joins, not gaining visibility).
-- **Follower:** a **Following tab** appears only when a team is actually shared
-  with you. It lists each followed team's games with scores and a **Live** flag,
+- **Follower:** a **Following tab** appears when a team is shared with you, or
+  when you chose Follow a Team on the welcome screen — empty, it says how to get
+  invited (by the phone number or email **of your Apple Account**) and offers
+  **Check for Invites**. A scorekeeper with no Following tab finds the same help
+  under **Settings ▸ Follow a Team**. An invite tapped with the app closed is
+  accepted too (`ShareInbox`). It lists each followed team's games with scores and a **Live** flag,
   opening to a read-only detail (score card, player stats, per-period
   breakdown). No scoring or editing anywhere in it. The detail leads with the
   **same `GameScoreCard` the Game Summary uses**, not Live Scoring's navy

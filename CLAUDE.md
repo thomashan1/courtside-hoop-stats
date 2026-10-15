@@ -136,9 +136,14 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 - **Displays.** In-game and Game Summary show **first names only**, escalating
   only on collision (`Jake` → `Jake L.` → `Jake Moore`); the Roster keeps full
   names.
+- **Welcome screen.** A brand-new install chooses **Keep Score** (name the
+  team) or **Follow a Team** (invite help + Check for Invites) instead of
+  landing on a blank "My Test Team"; Settings ▸ Welcome Screen reopens it.
+  `Team.starterName` stays "My Test Team" internally — it's how every build
+  recognises the untouched placeholder.
 - **Tabs.** Games / Roster / Settings, plus **Following first** when a team is
-  shared with you (#189) — the tab only exists if you follow someone, so a
-  tracker's bar is unchanged. Leftmost is not the same as default-selected: an
+  shared with you (#189) or you chose Follow a Team — a tracker's bar is
+  unchanged. Leftmost is not the same as default-selected: an
   owner lands on Games, and after that the app reopens on the last tab used.
 - **Also live:** each Score Log period closing with its score (`End Q1  Swish 10 – Harbor 8`, as on the PDF), the
   REB column hidden when a game has no rebounds, edit-a-finished-game,
