@@ -101,16 +101,16 @@ iPhone ten:
 
 | # | File | Captured from |
 |---|---|---|
-| 1 | `01-game-live-scoring.png` | `40-ipad-portrait-05-live-bench` |
-| 2 | `02-game-score-pad.png` | `40-ipad-portrait-03-score-pad` |
-| 3 | `03-game-assist.png` | `40-ipad-portrait-04-assist` |
-| 4 | `04-following-game.png` | `40-ipad-portrait-16-following-game` |
-| 5 | `05-game-summary.png` | `40-ipad-portrait-07-game-summary` |
-| 6 | `06-game-summary-share-pdf.png` | `40-ipad-portrait-08-box-score-pdf` |
-| 7 | `07-season.png` | `40-ipad-portrait-12-season` |
-| 8 | `08-games.png` | `40-ipad-portrait-01-games` |
-| 9 | `09-roster.png` | `40-ipad-portrait-11-roster` |
-| 10 | `10-team-jerseys.png` | `40-ipad-portrait-14-team-detail` |
+| 1 | `01-welcome.png` | `50-welcome` (`WelcomeUITests`, portrait) |
+| 2 | `02-game-live-scoring.png` | `40-ipad-portrait-05-live-bench` |
+| 3 | `03-game-score-pad.png` | `40-ipad-portrait-03-score-pad` |
+| 4 | `04-game-assist.png` | `40-ipad-portrait-04-assist` |
+| 5 | `05-following-game.png` | `40-ipad-portrait-16-following-game` |
+| 6 | `06-game-summary.png` | `40-ipad-portrait-07-game-summary` |
+| 7 | `07-game-summary-share-pdf.png` | `40-ipad-portrait-08-box-score-pdf` |
+| 8 | `08-season.png` | `40-ipad-portrait-12-season` |
+| 9 | `09-games.png` | `40-ipad-portrait-01-games` |
+| 10 | `10-roster.png` | `40-ipad-portrait-11-roster` |
 
 Promote and upload all ten at each submission, like the iPhone set.
 
@@ -160,16 +160,16 @@ image in the page is worse than no number at all.
 
 | # | File | Captured from |
 |---|---|---|
-| 1 | `01-game-live-scoring.png` | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
-| 2 | `02-game-score-pad.png` | `12-score-pad` |
-| 3 | `03-game-assist.png` | `17-score-pad-assist` — the optional assist step, one tap after a make |
-| 4 | `04-following-game.png` | `21-following-game` — a follower watching a game |
-| 5 | `05-game-summary.png` | `02-game-summary` |
-| 6 | `06-game-summary-share-pdf.png` | `14-box-score-pdf` |
-| 7 | `07-season.png` | `30-season-averages` — season averages with the team's record |
-| 8 | `08-games.png` | `01-games-list` |
-| 9 | `09-roster.png` | `04-roster` |
-| 10 | `10-team-jerseys.png` | `09-team-detail` — the team editor, where the colour and home kit are picked |
+| 1 | `01-welcome.png` | `50-welcome` (`WelcomeUITests`) — a brand-new install's first screen |
+| 2 | `02-game-live-scoring.png` | `11-bench` — live scoring with the "Not playing" strip open, so one image shows both |
+| 3 | `03-game-score-pad.png` | `12-score-pad` |
+| 4 | `04-game-assist.png` | `17-score-pad-assist` — the optional assist step, one tap after a make |
+| 5 | `05-following-game.png` | `21-following-game` — a follower watching a game |
+| 6 | `06-game-summary.png` | `02-game-summary` |
+| 7 | `07-game-summary-share-pdf.png` | `14-box-score-pdf` |
+| 8 | `08-season.png` | `30-season-averages` — season averages with the team's record |
+| 9 | `09-games.png` | `01-games-list` |
+| 10 | `10-roster.png` | `04-roster` |
 | — | `app-icon.png` | not a screenshot; unnumbered |
 
 **Ten, because App Store Connect takes ten.** That's a hard cap, not a taste

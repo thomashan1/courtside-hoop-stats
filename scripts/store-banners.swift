@@ -52,9 +52,9 @@ struct Header: View {
             bg
             Title(scale: 0.74).padding(.leading, 200)
             HStack(alignment: .top, spacing: 60) {
-                Phone(name: "01-game-live-scoring.png", width: 520).offset(y: 300)
-                Phone(name: "07-season.png", width: 520).offset(y: 140)
-                Phone(name: "04-following-game.png", width: 520).offset(y: 320)
+                Phone(name: "02-game-live-scoring.png", width: 520).offset(y: 300)
+                Phone(name: "08-season.png", width: 520).offset(y: 140)
+                Phone(name: "05-following-game.png", width: 520).offset(y: 320)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             .padding(.trailing, 140)
@@ -70,10 +70,10 @@ struct Search: View {
             bg
             Title(scale: 1).padding(.top, 170).frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 240)
             HStack(alignment: .top, spacing: 120) {
-                Phone(name: "01-game-live-scoring.png", width: 620).offset(y: 120)
-                Phone(name: "05-game-summary.png", width: 620)
-                Phone(name: "07-season.png", width: 620).offset(y: 120)
-                Phone(name: "04-following-game.png", width: 620).offset(y: 240)
+                Phone(name: "02-game-live-scoring.png", width: 620).offset(y: 120)
+                Phone(name: "06-game-summary.png", width: 620)
+                Phone(name: "08-season.png", width: 620).offset(y: 120)
+                Phone(name: "05-following-game.png", width: 620).offset(y: 240)
             }
             .padding(.top, 1020)
         }

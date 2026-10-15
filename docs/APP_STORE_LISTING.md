@@ -469,16 +469,16 @@ taps through to the listing.
 
 | # | File | Why it's here |
 |---|---|---|
-| 1 | `01-game-live-scoring` | The hero: scoring mid-game, bench strip open. The one screen the app exists for. |
-| 2 | `02-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
-| 3 | `03-game-assist` | v1.6's headline: the optional assist step, one tap after a make. Follows #2 because it's the same flow a beat later. |
-| 4 | `04-following-game` | Family watching a live score from their own phone. |
-| 5 | `05-game-summary` | The payoff: final score, linescore, per-player stats. |
-| 6 | `06-game-summary-share-pdf` | The box score people actually send around. |
-| 7 | `07-season` | Season averages and the team's record — the payoff of keeping every game, after the single-game payoff in #5–6. |
-| 8 | `08-games` | Season shape: past, live and scheduled together. |
-| 9 | `09-roster` | Answers "how much setup is this?" |
-| 10 | `10-team-jerseys` | Colour and home kit — small, but it's what makes the app feel like *your* team. |
+| 1 | `01-welcome` | The app's two uses on one screen — keep score, or follow a team — with the icon people just tapped. |
+| 2 | `02-game-live-scoring` | Scoring mid-game, bench strip open. The one screen the app exists for. |
+| 3 | `03-game-score-pad` | Makes the two-tap promise concrete — tap a player, tap a number. |
+| 4 | `04-game-assist` | The optional assist step, one tap after a make. Follows #3 because it's the same flow a beat later. |
+| 5 | `05-following-game` | Family watching a live score from their own phone. |
+| 6 | `06-game-summary` | The payoff: final score, linescore, per-player stats. |
+| 7 | `07-game-summary-share-pdf` | The box score people actually send around. |
+| 8 | `08-season` | Season averages and the team's record — the payoff of keeping every game, after the single-game payoff in #6–7. |
+| 9 | `09-games` | Season shape: past, live and scheduled together. |
+| 10 | `10-roster` | Answers "how much setup is this?" |
 
 **Header and Search Results banners** (Product Page Information → Header and
 Search Results): `docs/img/store-header-3840x1646.png` and
@@ -488,6 +488,10 @@ search results. They're built from the promoted screenshots by
 `swift scripts/store-banners.swift` (run from the repo root), so re-run it
 after re-promoting screenshots and upload both again.
 
+**Cut in v1.14 to make room for the welcome screen:** `10-team-jerseys`. The
+team's colour and home kit were the smallest idea of the ten; the welcome
+screen says what the app is for, which the first slot is worth spending on.
+
 **Cut in v1.12 to make room for the season screen:** `09-new-game`. A form
 whose selling point — every field is optional — doesn't show in a picture;
 every other slot shows the app doing something. The README keeps the sentence
@@ -495,7 +499,7 @@ about it.
 
 **Cut in v1.6 to make room for the assist step:** `06-following`, the
 follower's team *list*. Following was already carried by
-`04-following-game` — the live score being watched, which is the far stronger
+`05-following-game` — the live score being watched, which is the far stronger
 image of the same feature — so the list was the softest of the ten, and two
 slots on one feature was the least defensible spend once assists needed one.
 

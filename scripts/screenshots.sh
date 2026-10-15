@@ -7,8 +7,9 @@
 #   scripts/screenshots.sh "iPhone 14 Plus"    # App Store size (1284 x 2778)
 #   scripts/screenshots.sh "iPad Pro 13-inch (M5)"   # iPad store size (2064 x 2752)
 #
-# On an iPad only IPadScreenshotUITests runs: every main screen in portrait
-# and landscape (40-ipad-*). The iPhone flows assume an iPhone's layout.
+# On an iPad only IPadScreenshotUITests runs — every main screen in portrait
+# and landscape (40-ipad-*) — plus WelcomeUITests for the first store image
+# (50-welcome). The iPhone flows assume an iPhone's layout.
 set -euo pipefail
 
 SIM="${1:-iPhone 17e}"
@@ -28,15 +29,16 @@ if [ -z "$UDID" ]; then
   exit 1
 fi
 
-TESTS="CourtsideHoopStatsUITests"
-case "$SIM" in iPad*) TESTS="CourtsideHoopStatsUITests/IPadScreenshotUITests" ;; esac
+ONLY=(-only-testing:CourtsideHoopStatsUITests)
+case "$SIM" in iPad*) ONLY=(-only-testing:CourtsideHoopStatsUITests/IPadScreenshotUITests
+                            -only-testing:CourtsideHoopStatsUITests/WelcomeUITests) ;; esac
 
 echo "▶︎ Running screenshot UI tests on '$SIM' ($UDID)…"
 xcodebuild test \
   -project "$ROOT/CourtsideHoopStats.xcodeproj" \
   -scheme CourtsideHoopStats \
   -destination "platform=iOS Simulator,id=$UDID" \
-  -only-testing:"$TESTS" \
+  "${ONLY[@]}" \
   -resultBundlePath "$RESULT" \
   >/dev/null
 

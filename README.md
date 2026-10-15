@@ -17,6 +17,15 @@ Home-screen name: **Courtside** · Bundle: `com.thomashan.CourtsideHoopStats`
   <img src="docs/img/app-icon.png" width="96" alt="Courtside Hoop Stats app icon">
 </p>
 
+### First launch
+
+Keep score for your own team, or follow one someone else scores — with help
+on getting invited.
+
+| Welcome |
+|---|
+| <img src="docs/img/01-welcome.png" width="240"> |
+
 ### Scoring courtside
 
 The main event: two taps per basket, big targets, and the score log always
@@ -24,7 +33,7 @@ visible. Absent players are benched so the grid stays uncluttered.
 
 | Live scoring | Tap a player, then the basket | Credit the assist, or skip |
 |---|---|---|
-| <img src="docs/img/01-game-live-scoring.png" width="240"> | <img src="docs/img/02-game-score-pad.png" width="240"> | <img src="docs/img/03-game-assist.png" width="240"> |
+| <img src="docs/img/02-game-live-scoring.png" width="240"> | <img src="docs/img/03-game-score-pad.png" width="240"> | <img src="docs/img/04-game-assist.png" width="240"> |
 
 ### Starting a game
 
@@ -35,7 +44,7 @@ schedule it. Locations autocomplete from Maps and from gyms you've used before.
 
 | Game summary | Box score PDF — preview, then send to the group chat |
 |---|---|
-| <img src="docs/img/05-game-summary.png" width="240"> | <img src="docs/img/06-game-summary-share-pdf.png" width="240"> |
+| <img src="docs/img/06-game-summary.png" width="240"> | <img src="docs/img/07-game-summary-share-pdf.png" width="240"> |
 
 ### The season
 
@@ -44,22 +53,23 @@ own record above them — and the whole thing shares as a one-page PDF.
 
 | Season averages and record |
 |---|
-| <img src="docs/img/07-season.png" width="240"> |
+| <img src="docs/img/08-season.png" width="240"> |
 
 ### Your team
 
-| Games | Roster | Jerseys |
-|---|---|---|
-| <img src="docs/img/08-games.png" width="240"> | <img src="docs/img/09-roster.png" width="240"> | <img src="docs/img/10-team-jerseys.png" width="240"> |
+| Games | Roster |
+|---|---|
+| <img src="docs/img/09-games.png" width="240"> | <img src="docs/img/10-roster.png" width="240"> |
 
 ### Following a shared team
 
 What a **follower** sees — the same scores and stats, with no way to change
-anything. The tab appears only once a team has actually been shared with you.
+anything. The tab appears once a team has been shared with you, or when you
+chose **Follow a Team** on the welcome screen.
 
 | Watching a game |
 |---|
-| <img src="docs/img/04-following-game.png" width="240"> |
+| <img src="docs/img/05-following-game.png" width="240"> |
 
 ## What it does
 
