@@ -51,9 +51,13 @@ struct CourtsideHoopStatsApp: App {
                 // Lets the store push edits to followers. Set here rather than
                 // in AppStore.init so tests and previews stay offline.
                 .task { store.sharingService = sharing }
-                .onReceive(NotificationCenter.default.publisher(for: .cloudKitShareAccepted)) { note in
-                    guard let metadata = note.object as? CKShare.Metadata else { return }
-                    Task { await accept(metadata) }
+                // `$pending` replays what's already waiting, so an invite
+                // that launched the app is accepted too.
+                .onReceive(ShareInbox.shared.$pending) { pending in
+                    guard !pending.isEmpty else { return }
+                    for metadata in ShareInbox.shared.take() {
+                        Task { await accept(metadata) }
+                    }
                 }
         }
     }

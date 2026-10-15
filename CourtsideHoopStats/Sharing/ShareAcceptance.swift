@@ -3,26 +3,58 @@ import UIKit
 import CloudKit
 
 extension Notification.Name {
-    /// Posted when the user taps a share invitation and iOS hands the app its
-    /// metadata. Carries the `CKShare.Metadata` as its object.
-    static let cloudKitShareAccepted = Notification.Name("chs.cloudKitShareAccepted")
     /// Posted when CloudKit wakes the app because shared data changed.
     static let sharedDataChanged = Notification.Name("chs.sharedDataChanged")
 }
 
+/// Invitations waiting to be accepted.
+///
+/// Held rather than broadcast: an invite that launches the app arrives before
+/// any view is listening, and a notification posted then is simply lost —
+/// the app opened and did nothing. Whoever reads `pending` gets what's
+/// already waiting as well as what comes next.
+@MainActor
+final class Mailbox<Item>: ObservableObject {
+    @Published private(set) var pending: [Item] = []
+
+    func post(_ item: Item) { pending.append(item) }
+
+    /// Everything waiting, emptying the box so nothing is handled twice.
+    func take() -> [Item] {
+        defer { pending = [] }
+        return pending
+    }
+}
+
+@MainActor
+enum ShareInbox {
+    static let shared = Mailbox<CKShare.Metadata>()
+}
+
 /// Receives share invitations (#57).
 ///
-/// A SwiftUI-lifecycle app has nowhere to catch
-/// `userDidAcceptCloudKitShareWith`, so the app installs this scene delegate to
-/// get it. The metadata is re-broadcast as a notification rather than handled
-/// here, because accepting needs the sharing service and the store — neither of
-/// which a scene delegate should reach into.
+/// A SwiftUI-lifecycle app has nowhere to catch them, so the app installs
+/// this scene delegate. The metadata goes to `ShareInbox` rather than being
+/// handled here, because accepting needs the sharing service and the store —
+/// neither of which a scene delegate should reach into.
 final class ShareAcceptingSceneDelegate: NSObject, UIWindowSceneDelegate {
     var window: UIWindow?
 
+    /// An invite that *launches* the app comes here, not to
+    /// `userDidAcceptCloudKitShareWith` — which only fires for an app that's
+    /// already running. Missing this left a new follower, who almost always
+    /// taps the link with the app closed, with an app that opened and did
+    /// nothing.
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions) {
+        if let metadata = connectionOptions.cloudKitShareMetadata {
+            MainActor.assumeIsolated { ShareInbox.shared.post(metadata) }
+        }
+    }
+
     func windowScene(_ windowScene: UIWindowScene,
                      userDidAcceptCloudKitShareWith metadata: CKShare.Metadata) {
-        NotificationCenter.default.post(name: .cloudKitShareAccepted, object: metadata)
+        MainActor.assumeIsolated { ShareInbox.shared.post(metadata) }
     }
 }
 

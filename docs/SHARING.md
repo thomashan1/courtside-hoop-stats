@@ -182,8 +182,11 @@ Account**. With one iPhone plus a Mac:
   Messages/Mail in the Simulator.
 - ⚠️ Opening a share link in **Simulator Safari fails** ("iCloud has stopped
   responding"). Open it from inside another app instead.
-- ⚠️ Test **cold launch and warm launch separately** — `userDidAcceptCloudKitShareWith`
-  has been reported not to fire on cold launch, including in Apple's own sample.
+- ⚠️ Test **cold launch and warm launch separately.** An invite that launches
+  the app arrives in `scene(_:willConnectTo:options:)` as
+  `connectionOptions.cloudKitShareMetadata`, *not* through
+  `userDidAcceptCloudKitShareWith`, and before any view is listening — so
+  invites go into `ShareInbox`, which holds them until the app takes them.
 - ⚠️ Create the test Apple Account **once and keep it.** Repeatedly creating
   accounts triggers rate-limiting Apple support may not lift.
 - Stay in the **Development** CloudKit environment. Production does not
