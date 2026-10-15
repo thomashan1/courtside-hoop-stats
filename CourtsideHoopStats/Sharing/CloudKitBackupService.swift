@@ -27,6 +27,10 @@ protocol BackupService: AnyObject {
     /// Everything currently in the backup. Used both to restore and to report
     /// what's there without restoring.
     func fetchBackup() async throws -> (teams: [Team], games: [Game], snapshot: BackupSnapshot)
+    /// What left the backup in the last 30 days, kept so Restore can bring
+    /// it back. Never part of `fetchBackup`: a plain restore must not
+    /// resurrect what was deliberately deleted.
+    func fetchRecentlyDeleted() async throws -> DeletedFromBackup
 
     // MARK: Sync across the owner's devices (#229 stage 2)
 
@@ -40,6 +44,16 @@ protocol BackupService: AnyObject {
     /// Ask iCloud for a silent push whenever this account's own data changes,
     /// so the other device updates within seconds rather than at its next poll.
     func subscribeToChanges() async throws
+}
+
+/// Teams and games deleted from the backup in the last 30 days.
+struct DeletedFromBackup {
+    var teams: [Team] = []
+    var games: [Game] = []
+    /// When each one was deleted, by team or game id.
+    var deletedAt: [UUID: Date] = [:]
+
+    static let days = 30
 }
 
 /// One pull's worth of changes from the owner's other devices.
@@ -56,6 +70,7 @@ extension BackupService {
     func pushChanges(teams: [Team], games: [Game], deleting: Set<UUID>) async throws {}
     func pullChanges(since token: Data?) async throws -> SyncPull { SyncPull(token: token) }
     func subscribeToChanges() async throws {}
+    func fetchRecentlyDeleted() async throws -> DeletedFromBackup { DeletedFromBackup() }
 }
 
 /// Automatic backup of **all** teams and games to the owner's own private
@@ -77,6 +92,12 @@ final class CloudKitBackupService: BackupService {
     /// Its own zone, never `team-<id>`: those get deleted when sharing stops.
     private let zoneID = CKRecordZone.ID(zoneName: "backup",
                                          ownerName: CKCurrentUserDefaultName)
+    /// Where a deleted record waits 30 days before it's gone for good. A zone
+    /// of its own, so no build's sync or restore ever reads it by mistake —
+    /// older builds don't know it exists — and the same record types, so it
+    /// needs no change to the deployed schema.
+    private let deletedZoneID = CKRecordZone.ID(zoneName: "backup-deleted",
+                                                ownerName: CKCurrentUserDefaultName)
 
     init(container: CKContainer = .default()) {
         self.container = container
@@ -107,7 +128,8 @@ final class CloudKitBackupService: BackupService {
                               gameCount: games.count)
     }
 
-    /// A game or team deleted on the device is deleted from the backup too.
+    /// A game or team deleted on the device is deleted from the backup too —
+    /// into Recently Deleted, and only as far as `BackupDeletionGuard` allows.
     ///
     /// The alternative — keeping everything forever — sounds safer but makes
     /// the backup diverge from what the user believes they have, and a restore
@@ -127,7 +149,56 @@ final class CloudKitBackupService: BackupService {
         let changes = try await database.allRecordZoneChanges(in: zoneID)
         let stale = changes.keys.filter { !keep.contains($0) && mine.contains($0) }
         guard !stale.isEmpty else { return }
-        try await database.deleteRecords(Array(stale))
+        try await delete(Array(stale), from: changes)
+    }
+
+    /// Deletes what the guard allows of `ids`, copying each record into
+    /// Recently Deleted first. `zone` is the backup as it stands, which the
+    /// guard needs to tell a deletion from a wipe.
+    ///
+    /// What the guard refuses stays in iCloud, so the owner's other devices
+    /// keep it and Restore can bring it back here.
+    private func delete(_ ids: [CKRecord.ID],
+                        from zone: [CKRecord.ID: Result<CKDatabase.RecordZoneChange.Modification, any Error>])
+        async throws {
+        let records = zone.values.compactMap { try? $0.get().record }
+        // Anything not in the zone is already gone.
+        let doomed = ids.compactMap { id in records.first { $0.recordID == id } }
+        let allowed = BackupDeletionGuard.allowed(
+            teams: doomed.compactMap(CloudKitSchema.backupTeam(from:)),
+            games: doomed.compactMap(CloudKitSchema.backupGame(from:)),
+            allTeams: records.compactMap(CloudKitSchema.backupTeam(from:)),
+            allGames: records.compactMap(CloudKitSchema.backupGame(from:)))
+        let going = doomed.filter {
+            CloudKitSchema.backupID(from: $0.recordID).map(allowed.contains) ?? false
+        }
+        guard !going.isEmpty else { return }
+
+        try await ensureZone(deletedZoneID)
+        let copies = going.map { CloudKitSchema.copy(of: $0, in: deletedZoneID) }
+        // Replaced rather than overwritten, so a copy's creation date is
+        // always when it was last deleted — which is what the 30 days count.
+        try await database.deleteRecords(copies.map(\.recordID))
+        for batch in copies.chunked(into: 200) {
+            let result = try await database.modifyRecords(saving: batch, deleting: [],
+                                                          savePolicy: .allKeys)
+            for (_, outcome) in result.saveResults {
+                // No copy, no delete.
+                if case .failure(let error) = outcome { throw error }
+            }
+        }
+        try await database.deleteRecords(going.map(\.recordID))
+        try? await purgeExpiredDeletions()
+    }
+
+    /// Past 30 days a deletion is final.
+    private func purgeExpiredDeletions() async throws {
+        let cutoff = Date().addingTimeInterval(-Double(DeletedFromBackup.days) * 86_400)
+        let expired = try await database.allRecordZoneChanges(in: deletedZoneID)
+            .values.compactMap { try? $0.get().record }
+            .filter { ($0.creationDate ?? .distantFuture) < cutoff }
+            .map(\.recordID)
+        if !expired.isEmpty { try await database.deleteRecords(expired) }
     }
 
     // MARK: - Sync (#229 stage 2)
@@ -148,7 +219,9 @@ final class CloudKitBackupService: BackupService {
         // both names go; the one that never existed counts as already gone.
         let doomed = deleting.flatMap { [CloudKitSchema.backupTeamRecordID($0, in: zoneID),
                                          CloudKitSchema.backupGameRecordID($0, in: zoneID)] }
-        if !doomed.isEmpty { try await database.deleteRecords(doomed) }
+        if !doomed.isEmpty {
+            try await delete(doomed, from: database.allRecordZoneChanges(in: zoneID))
+        }
     }
 
     func subscribeToChanges() async throws {
@@ -254,6 +327,26 @@ final class CloudKitBackupService: BackupService {
                 snapshot)
     }
 
+    func fetchRecentlyDeleted() async throws -> DeletedFromBackup {
+        try await requireAccount()
+        guard try await zoneExists(deletedZoneID) else { return DeletedFromBackup() }
+        let cutoff = Date().addingTimeInterval(-Double(DeletedFromBackup.days) * 86_400)
+        var deleted = DeletedFromBackup()
+        for result in try await database.allRecordZoneChanges(in: deletedZoneID).values {
+            guard let record = try? result.get().record,
+                  let when = record.creationDate, when > cutoff else { continue }
+            if let team = CloudKitSchema.backupTeam(from: record) {
+                deleted.teams.append(team)
+                deleted.deletedAt[team.id] = when
+            } else if let game = CloudKitSchema.backupGame(from: record) {
+                deleted.games.append(game)
+                deleted.deletedAt[game.id] = when
+            }
+        }
+        deleted.games.sort { $0.date > $1.date }
+        return deleted
+    }
+
     // MARK: - Plumbing
 
     private func requireAccount() async throws {
@@ -261,13 +354,17 @@ final class CloudKitBackupService: BackupService {
         guard status == .available else { throw SharingError.iCloudAccountUnavailable }
     }
 
-    private func ensureZone() async throws {
-        guard try await !zoneExists() else { return }
+    private func ensureZone() async throws { try await ensureZone(zoneID) }
+
+    private func ensureZone(_ zoneID: CKRecordZone.ID) async throws {
+        guard try await !zoneExists(zoneID) else { return }
         _ = try await database.modifyRecordZones(saving: [CKRecordZone(zoneID: zoneID)],
                                                  deleting: [])
     }
 
-    private func zoneExists() async throws -> Bool {
+    private func zoneExists() async throws -> Bool { try await zoneExists(zoneID) }
+
+    private func zoneExists(_ zoneID: CKRecordZone.ID) async throws -> Bool {
         do {
             _ = try await database.recordZone(for: zoneID)
             return true
@@ -329,6 +426,21 @@ final class DemoBackupService: BackupService {
         return ([team, oldTeam], games,
                 BackupSnapshot(backedUpAt: Date().addingTimeInterval(-8 * 60),
                                teamCount: 2, gameCount: games.count))
+    }
+
+    /// One game deleted two days ago, so the browser captures Recently
+    /// Deleted too.
+    func fetchRecentlyDeleted() async throws -> DeletedFromBackup {
+        let team = DemoData.makeTeam()
+        var game = Game(opponent: "Harbor Hawks")
+        game.teamID = team.id
+        game.date = Date().addingTimeInterval(-9 * 24 * 60 * 60)
+        game.isComplete = true
+        game.hasStarted = true
+        game.events = [GameEvent(playerID: team.players[0].id, type: .threePoint, period: 1)]
+        game.periodEndScores = [1: PeriodEndScore(ourRunningTotal: 3, opponentRunningTotal: 2)]
+        return DeletedFromBackup(teams: [team], games: [game],
+                                 deletedAt: [game.id: Date().addingTimeInterval(-2 * 24 * 60 * 60)])
     }
 }
 #endif
