@@ -32,7 +32,7 @@ and a public link). See [`SHARING.md`](SHARING.md).
 | Language / UI | Swift / SwiftUI |
 | Persistence | UserDefaults + JSON (Codable) |
 | Dependencies | None (zero third-party) |
-| Sync | **CloudKit `CKShare`** for read-only followers (§3.10, `SHARING.md`), and a **private CloudKit backup** of every team and game (§3.9a). The owner's local store stays the source of truth and is mirrored up; nothing syncs back except an explicit restore. Manual **team export/import** via a `.json` file remains, as an offline copy that needs no iCloud. |
+| Sync | **CloudKit `CKShare`** for read-only followers (§3.10, `SHARING.md`), and a **private CloudKit backup** of every team and game (§3.9a). The same backup zone syncs the owner's own devices (§3.9a), and deletions wait there 30 days before they're final. Manual **team export/import** via a `.json` file remains, as an offline copy that needs no iCloud. |
 | Dev env | Xcode 27 beta (iOS 27 SDK); test device iPhone 17 Pro |
 
 New stored `Codable` fields are added as **optionals** so existing saved data
