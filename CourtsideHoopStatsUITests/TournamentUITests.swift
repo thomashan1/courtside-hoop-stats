@@ -50,6 +50,31 @@ final class TournamentUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Per game, across 4 games"].waitForExistence(timeout: 10))
     }
 
+    /// One league is still a named section, and the season carries its name.
+    func testOneLeagueIsStillNamed() {
+        let app = launch()
+        app.buttons["Games"].firstMatch.tap()
+        let other = app.staticTexts["Other Games"]
+        for _ in 0..<4 where !other.exists { app.swipeUp() }
+        // Merge the pickup game in, leaving a single league.
+        app.buttons["Other Games options"].tap()
+        app.buttons["Name Tournament…"].tap()
+        app.textFields["Tournament"].typeText("Metro Youth League")
+        app.alerts.buttons["Save"].tap()
+        XCTAssertTrue(app.staticTexts["Metro Youth League"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Other Games"].exists)
+        XCTAssertFalse(app.staticTexts["Final Scores"].exists)
+        for _ in 0..<4 { app.swipeDown() }
+        snap("61-games-one-league")
+
+        app.buttons["Roster"].firstMatch.tap()
+        app.buttons["Season Averages"].tap()
+        XCTAssertTrue(app.staticTexts["Per game, across 4 games"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tournament'"))
+            .firstMatch.exists)
+        snap("62-season-one-league")
+    }
+
     /// A follower sees which league a game was in, and where.
     func testFollowerSeesTheLeague() {
         let app = launch()

@@ -51,4 +51,11 @@ struct TournamentTests {
         #expect(mine == ["NJB Fall 15U", "NJB Fall 15U", "Summer League"])
         #expect(store.games.last?.league == "NJB Fall", "another team's games are left alone")
     }
+
+    /// One league is still shown by name; only a season with none stays plain.
+    @Test func oneLeagueIsStillNamed() {
+        #expect(Tournaments.named(Tournaments.groups([game("NJB Fall 15U", daysAgo: 1)])))
+        #expect(!Tournaments.named(Tournaments.groups([game("", daysAgo: 1)])))
+        #expect(!Tournaments.named([]))
+    }
 }

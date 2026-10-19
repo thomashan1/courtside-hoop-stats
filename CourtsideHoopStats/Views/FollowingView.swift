@@ -349,10 +349,10 @@ struct FollowingView: View {
         let finished = followed.games
             .filter { $0.lifecycle == .complete }.sorted { $0.date > $1.date }
 
-        // Final scores by tournament once there's more than one, as on the
+        // Final scores by tournament once any game has a league, as on the
         // owner's Games tab.
         let tournaments = Tournaments.groups(finished)
-        let final = tournaments.count > 1
+        let final = Tournaments.named(tournaments)
             ? tournaments.map { GameGroup(title: $0.title, games: $0.games) }
             : [GameGroup(title: "Final Scores", games: finished)]
         return ([
