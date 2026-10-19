@@ -1202,6 +1202,22 @@ final class AppStore: ObservableObject {
         games[index] = game.mergingEvents(from: games[index])
     }
 
+    /// Renames a tournament on every one of the active team's games, or —
+    /// from Other Games, where `from` is empty — names the games left blank.
+    /// Renaming to an existing tournament's name merges the two.
+    func renameTournament(_ from: String, to newName: String) {
+        let key = Tournaments.key(from)
+        let name = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard Tournaments.key(name) != key || name != from else { return }
+        var updated = games
+        for i in updated.indices
+            where (updated[i].teamID ?? activeTeamID) == activeTeamID
+                && Tournaments.key(updated[i].league) == key {
+            updated[i].league = name
+        }
+        if updated != games { games = updated }
+    }
+
     func deleteGame(id: UUID) {
         games.removeAll { $0.id == id }
     }

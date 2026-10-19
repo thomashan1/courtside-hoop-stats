@@ -105,6 +105,10 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   out entirely while rebounds aren't really being tracked. The team's own
   record (W–L–T, Win %, points scored/allowed per game) sits above it — **not**
   league standings, since the app only knows the games this tracker kept.
+- **Tournaments.** One team plays tournament after tournament; the game's
+  **League** field is the tournament. Final Scores groups by it (with Rename
+  Tournament on each header), and Season Averages picks one, opening on the
+  latest. A follower's game shows its League and Location.
 - **Game Summary.** Final score, cumulative by-period linescore, per-player
   stats with **FT** (`5/6`; the percentage is the PDF's, where there's room),
   editable opponent totals, editable log.

@@ -20,6 +20,9 @@ struct GamesListView: View {
     /// `nil` means "not asked yet, or the ask failed" — the marker still shows,
     /// just without a number.
     @State private var followerCount: Int?
+    /// The tournament being renamed, and the name being typed.
+    @State private var renaming: TournamentGroup?
+    @State private var newTournamentName = ""
 
     @Environment(\.teamSharingService) private var sharing
 
@@ -52,6 +55,13 @@ struct GamesListView: View {
     /// Finished games, most recent first (active team only).
     private var finished: [Game] {
         store.activeTeamGames.filter { $0.lifecycle == .complete }.sorted { $0.date > $1.date }
+    }
+
+    /// Final scores by tournament, once there's more than one. A team that
+    /// has only ever played one keeps a plain Final Scores list.
+    private var finishedByTournament: [TournamentGroup]? {
+        let groups = Tournaments.groups(finished)
+        return groups.count > 1 ? groups : nil
     }
 
     // MARK: - Layout (#232)
@@ -139,7 +149,18 @@ struct GamesListView: View {
             }
         }
 
-        if !finished.isEmpty {
+        if let groups = finishedByTournament {
+            ForEach(groups) { group in
+                Section {
+                    ForEach(group.games) { row($0) }
+                        .onDelete { offsets in
+                            if let i = offsets.first { pendingDelete = group.games[i] }
+                        }
+                } header: {
+                    tournamentHeader(group)
+                }
+            }
+        } else if !finished.isEmpty {
             Section("Final Scores") {
                 ForEach(finished) { row($0) }
                     .onDelete { offsets in
@@ -150,8 +171,44 @@ struct GamesListView: View {
         }
     }
 
+    /// The tournament's name, and a way to fix it on all its games at once —
+    /// a misspelling splits a season in two, and Other Games are the ones
+    /// with no league typed.
+    private func tournamentHeader(_ group: TournamentGroup) -> some View {
+        HStack {
+            Text(group.title)
+            Spacer()
+            Menu {
+                Button(group.name == nil ? "Name Tournament…" : "Rename Tournament…",
+                       systemImage: "pencil") {
+                    newTournamentName = group.name ?? ""
+                    renaming = group
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .minimumTapTarget()
+            }
+            .accessibilityLabel("\(group.title) options")
+        }
+    }
+
     private func gameList(_ list: some View) -> some View {
         list
+            .alert(renaming?.name == nil ? "Name Tournament" : "Rename Tournament",
+                   isPresented: Binding(get: { renaming != nil },
+                                        set: { if !$0 { renaming = nil } })) {
+                TextField("Tournament", text: $newTournamentName)
+                Button("Cancel", role: .cancel) { renaming = nil }
+                Button("Save") {
+                    if let group = renaming {
+                        store.renameTournament(group.name ?? "", to: newTournamentName)
+                    }
+                    renaming = nil
+                }
+                .disabled(newTournamentName.trimmingCharacters(in: .whitespaces).isEmpty)
+            } message: {
+                Text("Changes the League on every game in it, including any coming up. Use another tournament's name to merge the two.")
+            }
             .readableWidth()
             // Show the active team name (multi-team) — the tab bar labels it "Games".
             // Sections here hold one or two rows each — Playing Now and

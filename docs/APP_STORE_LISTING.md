@@ -125,9 +125,11 @@ the code.
 > - Welcome screen: keep score, or follow a team with invite help.
 > - Export Everything: every team and game saved to a file you keep.
 > - iCloud keeps deleted teams and games for 30 days, ready to restore.
+> - Tournaments: games and season stats grouped by league, same team.
 >
 > FIXES
 > - An invite link opened with the app closed now follows the team.
+> - Followers now see each game's league and location.
 
 First iPad release: upload the ten `docs/img/ipad/` screenshots to the 13"
 iPad slot as well as the iPhone set.
