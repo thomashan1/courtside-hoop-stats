@@ -47,4 +47,11 @@ enum Tournaments {
         let blank: [TournamentGroup] = groups.filter { $0.name == nil }
         return named + blank
     }
+
+    /// Worth showing as tournaments — even one, so it's named and followers
+    /// see where the next one will go. Only a season with no league at all
+    /// stays a plain list.
+    static func named(_ groups: [TournamentGroup]) -> Bool {
+        groups.contains { $0.name != nil }
+    }
 }

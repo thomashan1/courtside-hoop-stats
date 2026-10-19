@@ -95,9 +95,11 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
 - Swipe-to-delete.
 - **Tournaments.** A team keeps playing one tournament after another, so the
   same team (and its followers) carries on and only the **League** field
-  changes. Once a team has finished games in more than one league, Final
-  Scores splits into a section per league, newest tournament first, with games
-  left blank last as **Other Games**. Names that differ only in case or spaces
+  changes. Once any finished game has a league, Final Scores becomes a section
+  per league — even a single one, so it's named and followers see where the
+  next tournament will go — newest tournament first, with games left blank
+  last as **Other Games**. A team that never fills in a league keeps a plain
+  Final Scores list. Names that differ only in case or spaces
   are one tournament (`Tournaments.groups`). Each header's ⋯ menu offers
   **Rename Tournament…** (or **Name Tournament…** for Other Games), which sets
   the League on every game of the active team in it, coming-up games included;
@@ -206,11 +208,12 @@ is what separates it from #175.
   Both rules live in `Game.onTeam(_:)`, which `stats(for:)` and
   `didNotPlay(from:)` apply, so the box score, the PDF, a follower's view and
   the season agree.
-- **By tournament.** When finished games span more than one league (§3.3), a
+- **By tournament.** When any finished game has a league (§3.3), a
   **Tournament** picker heads the screen and it opens on the most recent one —
   the tournament being played — with **All Games** as the last choice. The
   record, the averages and the PDF follow the pick; the PDF's title becomes
-  "Swish Warriors · NJB Fall 15U". One league, no picker: nothing changes.
+  "Swish Warriors · NJB Fall 15U". With one league the picker still shows, so
+  the summary carries its name; with no league at all, nothing changes.
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.

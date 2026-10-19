@@ -27,8 +27,8 @@ struct SeasonStatsView: View {
     private var tournaments: [TournamentGroup] {
         Tournaments.groups(games.filter { $0.lifecycle == .complete })
     }
-    /// Only a choice once there's more than one.
-    private var offersTournaments: Bool { tournaments.count > 1 }
+    /// Offered even for one, so the summary carries its name.
+    private var offersTournaments: Bool { Tournaments.named(tournaments) }
     private var scope: String { chosenTournament ?? tournaments.first?.id ?? Self.allGames }
     private var scopedTournament: TournamentGroup? {
         guard offersTournaments else { return nil }

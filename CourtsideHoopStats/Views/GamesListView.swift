@@ -57,11 +57,11 @@ struct GamesListView: View {
         store.activeTeamGames.filter { $0.lifecycle == .complete }.sorted { $0.date > $1.date }
     }
 
-    /// Final scores by tournament, once there's more than one. A team that
-    /// has only ever played one keeps a plain Final Scores list.
+    /// Final scores by tournament, once any game has a league. A team that
+    /// never fills one in keeps a plain Final Scores list.
     private var finishedByTournament: [TournamentGroup]? {
         let groups = Tournaments.groups(finished)
-        return groups.count > 1 ? groups : nil
+        return Tournaments.named(groups) ? groups : nil
     }
 
     // MARK: - Layout (#232)
