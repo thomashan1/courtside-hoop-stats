@@ -17,12 +17,31 @@ struct SeasonStatsView: View {
     var kit: JerseyColor = .blue
 
     @State private var pdf: SeasonPDFFile?
+    /// The tournament picked, by `TournamentGroup.id`; nil means the most
+    /// recent one, which is the one being played.
+    @State private var chosenTournament: String?
+    private static let allGames = "*all*"
 
-    private var season: [SeasonStats] { SeasonStats.season(for: roster, in: games) }
+    /// Tournaments with a finished game — one with only scheduled games
+    /// would offer an empty sheet.
+    private var tournaments: [TournamentGroup] {
+        Tournaments.groups(games.filter { $0.lifecycle == .complete })
+    }
+    /// Only a choice once there's more than one.
+    private var offersTournaments: Bool { tournaments.count > 1 }
+    private var scope: String { chosenTournament ?? tournaments.first?.id ?? Self.allGames }
+    private var scopedTournament: TournamentGroup? {
+        guard offersTournaments else { return nil }
+        return tournaments.first { $0.id == scope }
+    }
+    /// The games the numbers are drawn from.
+    private var scopedGames: [Game] { scopedTournament?.games ?? games }
+
+    private var season: [SeasonStats] { SeasonStats.season(for: roster, in: scopedGames) }
 
     /// Games that actually contributed — the denominator people will check.
     private var completedGames: Int {
-        games.filter { $0.lifecycle == .complete }.count
+        scopedGames.filter { $0.lifecycle == .complete }.count
     }
 
     var body: some View {
@@ -35,8 +54,18 @@ struct SeasonStatsView: View {
                 )
             } else {
                 List {
+                    if offersTournaments {
+                        Section {
+                            Picker("Tournament", selection: Binding(
+                                get: { scope }, set: { chosenTournament = $0 })) {
+                                ForEach(tournaments) { Text($0.title).tag($0.id) }
+                                Text("All Games").tag(Self.allGames)
+                            }
+                            .pickerStyle(.menu)
+                        }
+                    }
                     Section {
-                        TeamRecordCard(record: TeamRecord.record(from: games))
+                        TeamRecordCard(record: TeamRecord.record(from: scopedGames))
                             .listRowInsets(EdgeInsets(top: 12, leading: 16,
                                                       bottom: 12, trailing: 16))
                     } header: {
@@ -67,7 +96,8 @@ struct SeasonStatsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         pdf = SeasonPDF.render(teamName: teamName, roster: roster,
-                                               games: games, kit: kit)
+                                               games: scopedGames, kit: kit,
+                                               tournament: scopedTournament?.title)
                             .map(SeasonPDFFile.init)
                     } label: {
                         Image(systemName: "square.and.arrow.up")
@@ -79,7 +109,8 @@ struct SeasonStatsView: View {
         }
         .sheet(item: $pdf) { file in
             GameSummaryPDFPreview(url: file.url,
-                                  shareTitle: SeasonPDF.title(teamName: teamName))
+                                  shareTitle: SeasonPDF.title(teamName: teamName,
+                                                              tournament: scopedTournament?.title))
         }
     }
 }

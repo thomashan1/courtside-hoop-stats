@@ -13,6 +13,8 @@ struct SeasonPrintout: View {
     let teamName: String
     let roster: [Player]
     let games: [Game]
+    /// The tournament the sheet covers, when it's one of several.
+    var tournament: String? = nil
 
     private var season: [SeasonStats] { SeasonStats.season(for: roster, in: games) }
 
@@ -48,7 +50,7 @@ struct SeasonPrintout: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("\(teamName) · Season")
+            Text(SeasonPDF.title(teamName: teamName, tournament: tournament))
                 .font(.system(size: 20, weight: .heavy))
                 .foregroundStyle(.black)
             Text(subtitle)
@@ -244,15 +246,17 @@ enum SeasonPDF {
     /// room to spare. A very long season grows the page instead of spilling.
     @MainActor
     static func render(teamName: String, roster: [Player], games: [Game],
-                       kit: JerseyColor = .blue) -> URL? {
-        let page = SeasonPrintout(teamName: teamName, roster: roster, games: games)
+                       kit: JerseyColor = .blue, tournament: String? = nil) -> URL? {
+        let page = SeasonPrintout(teamName: teamName, roster: roster, games: games,
+                                  tournament: tournament)
             .environment(\.teamKitColor, kit)
 
         let renderer = ImageRenderer(content: page)
         renderer.proposedSize = ProposedViewSize(width: PrintPage.size.width, height: nil)
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(filename(teamName: teamName))
+            .appendingPathComponent(filename(teamName: [teamName, tournament ?? ""]
+                .joined(separator: " ")))
 
         var made = false
         renderer.render { size, drawInContext in
@@ -285,7 +289,8 @@ enum SeasonPDF {
         return team.isEmpty ? "season-\(stamp).pdf" : "\(team)-season-\(stamp).pdf"
     }
 
-    static func title(teamName: String) -> String {
-        teamName.isEmpty ? "Season" : "\(teamName) · Season"
+    static func title(teamName: String, tournament: String? = nil) -> String {
+        let season = tournament ?? "Season"
+        return teamName.isEmpty ? season : "\(teamName) · \(season)"
     }
 }

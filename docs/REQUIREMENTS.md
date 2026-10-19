@@ -93,6 +93,17 @@ Leftmost is not the same as default-selected: an owner still lands on Games. A f
   The date outranks the gym name when the two compete for width.
 - Routing by lifecycle: scheduled → **Game Detail**; in-progress → **Live Scoring**; complete → **Game Summary**.
 - Swipe-to-delete.
+- **Tournaments.** A team keeps playing one tournament after another, so the
+  same team (and its followers) carries on and only the **League** field
+  changes. Once a team has finished games in more than one league, Final
+  Scores splits into a section per league, newest tournament first, with games
+  left blank last as **Other Games**. Names that differ only in case or spaces
+  are one tournament (`Tournaments.groups`). Each header's ⋯ menu offers
+  **Rename Tournament…** (or **Name Tournament…** for Other Games), which sets
+  the League on every game of the active team in it, coming-up games included;
+  typing another tournament's name merges the two. No new stored field: the
+  League has always been on every game and on the wire to followers, whose list
+  groups the same way, and whose game screen shows the League and Location.
 
 ### 3.4 New Game (form — #44)
 - Opened by the **+** button on the Games tab. **Every field is optional** —
@@ -195,6 +206,11 @@ is what separates it from #175.
   Both rules live in `Game.onTeam(_:)`, which `stats(for:)` and
   `didNotPlay(from:)` apply, so the box score, the PDF, a follower's view and
   the season agree.
+- **By tournament.** When finished games span more than one league (§3.3), a
+  **Tournament** picker heads the screen and it opens on the most recent one —
+  the tournament being played — with **All Games** as the last choice. The
+  record, the averages and the PDF follow the pick; the PDF's title becomes
+  "Swish Warriors · NJB Fall 15U". One league, no picker: nothing changes.
 
 ### 3.7 Game Summary (completed games)
 - Final score + W/L/T (`GameScoreCard`, shared with the follower's detail); period grid (our points derived from events, opponent from recorded totals); **editable opponent totals**.
