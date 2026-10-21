@@ -347,6 +347,9 @@ synced at all, in either direction, since an older build on the same account
 keeps backing one up; a stray copy that already arrived beside a real team is
 removed, from iCloud too. Its first game sends it, and a device's only team
 is never removed.
+A starter that *has* been used (players or games) but never renamed is the
+owner's real season, so it's kept and renamed **"My Team"** on launch, or as it
+arrives from a device on an older build; the new name syncs back.
 Publishing to followers syncs first, so followers get the merged copy from
 whichever device publishes.
 

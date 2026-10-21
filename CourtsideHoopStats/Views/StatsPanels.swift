@@ -261,24 +261,30 @@ struct PlayerStatsTable: View {
         showsRebounds ? 6 : 5
     }
 
+    /// The table's own width, measured — see `StatsColumns`.
+    @State private var width: CGFloat = 0
+
     var body: some View {
         WidthFillingTable {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: StatsColumns.spacing(in: width),
+                 verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("PTS").frame(maxWidth: .infinity)
+                    // Never "P…": a header is as wide as its label, the same
+                    // rule as the numbers under it.
+                    Text("PTS").fixedSize().frame(maxWidth: .infinity)
                     // "2s"/"3s", not "2P"/"3P": these are shots **made**, and
                     // beside FT's "5/6" the bare integers were being read as
                     // attempts — the wrong guess, which is worse than an
                     // ambiguous one (#205). "2PM"/"3PM" is the conventional
                     // fix, but it's a character wider on two columns and this
                     // table has no width to give (UI_GUIDELINES §9).
-                    Text("2s").frame(maxWidth: .infinity)
-                    Text("3s").frame(maxWidth: .infinity)
-                    Text("AST").frame(maxWidth: .infinity)
-                    if showsRebounds { Text("REB").frame(maxWidth: .infinity) }
+                    Text("2s").fixedSize().frame(maxWidth: .infinity)
+                    Text("3s").fixedSize().frame(maxWidth: .infinity)
+                    Text("AST").fixedSize().frame(maxWidth: .infinity)
+                    if showsRebounds { Text("REB").fixedSize().frame(maxWidth: .infinity) }
                     // Last on purpose — see the note above.
-                    Text("FT").frame(maxWidth: .infinity)
+                    Text("FT").fixedSize().frame(maxWidth: .infinity)
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)
@@ -327,6 +333,21 @@ struct PlayerStatsTable: View {
             // sitting 10pt apart.
             .padding(.horizontal, 10)
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.width
+        } action: { width = $0 }
+    }
+}
+
+/// Column spacing for the stats tables.
+///
+/// At 12pt a narrow phone (iPhone 17e) ran the last column off the edge —
+/// GP on the season table, the headers truncated to "P…" on a game's. A
+/// column past the edge is invisible (§9), so a narrow table closes the
+/// gaps instead. Wider phones, the iPad and the store screenshots keep 12.
+enum StatsColumns {
+    static func spacing(in width: CGFloat) -> CGFloat {
+        width > 0 && width < 380 ? 6 : 12
     }
 }
 

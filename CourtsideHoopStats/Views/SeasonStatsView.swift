@@ -166,17 +166,18 @@ struct SeasonStatsTable: View {
 
     var body: some View {
         WidthFillingTable {
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 10) {
+            Grid(alignment: .leading, horizontalSpacing: StatsColumns.spacing(in: width),
+                 verticalSpacing: 10) {
                 GridRow {
                     Text("Player").frame(minWidth: 100, alignment: .leading)
-                    Text("PPG").frame(maxWidth: .infinity)
+                    Text("PPG").fixedSize().frame(maxWidth: .infinity)
                     // No 2s column. Eight columns clipped FT% off the right
                     // edge — the failure §9 of the UI guidelines warns about,
                     // where a scrollable table hides a column nobody knows to
                     // scroll for. PPG already carries the twos; threes are the
                     // number people actually look for.
-                    Text("3s").frame(maxWidth: .infinity)
-                    if showsAssists { Text("AST").frame(maxWidth: .infinity) }
+                    Text("3s").fixedSize().frame(maxWidth: .infinity)
+                    if showsAssists { Text("AST").fixedSize().frame(maxWidth: .infinity) }
                     // "FT" as made/attempted, not "FT%". A season percentage
                     // with no denominator can't tell 1-for-1 from 12-for-12,
                     // and it's the same rule the game table follows: the
@@ -187,9 +188,9 @@ struct SeasonStatsTable: View {
                     // it to "12/…" — the widest value has to claim its room
                     // before the rest divide what's left (#216).
                     if showsFreeThrows {
-                        Text("FT").frame(minWidth: 46, maxWidth: .infinity)
+                        Text("FT").fixedSize().frame(minWidth: 46, maxWidth: .infinity)
                     }
-                    Text("GP").frame(maxWidth: .infinity)
+                    Text("GP").fixedSize().frame(maxWidth: .infinity)
                 }
                 .font(.caption).bold()
                 .foregroundStyle(.secondary)

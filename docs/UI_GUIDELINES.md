@@ -132,6 +132,11 @@ least important value instead of hiding a whole column — FT's `1/1 (100%)` is
 three times any other width, which is why it sits after AST — then the column
 gaps, then that value's format.
 
+The gaps already flex: `StatsColumns.spacing(in:)` closes them from 12pt to 6pt
+when a table is under 380pt wide (an iPhone 17e), which is what brought GP back
+on screen in Season Averages. Headers are `.fixedSize()` like the numbers, so a
+squeeze can never shorten a label to "P…" — it widens the table instead.
+
 ## 10. Owning a team and following one must look different
 
 The Games tab and the Following tab show the same team, the same games, the same
