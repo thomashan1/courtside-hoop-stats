@@ -243,6 +243,33 @@ final class AppStore: ObservableObject {
             .flatMap(WelcomeChoice.init(rawValue:))
         loadSyncState()
         loadRecentlyDeleted()
+
+        let renamed = Self.renameUsedStarters(&teams, games: games)
+        if !renamed.isEmpty {
+            persistTeams()
+            pendingSyncIDs.formUnion(renamed)
+            persistSyncState()
+        }
+    }
+
+    /// The name a starter team takes once it's really in use.
+    static let usedStarterName = "My Team"
+
+    /// A starter team someone scored with but never renamed is their real
+    /// season, so it can't go — but "My Test Team" reads like a mistake on
+    /// every screen and PDF. It becomes "My Team", keeping everything in it.
+    /// An untouched starter keeps its name: that's how every build, older
+    /// ones included, recognises the placeholder. Returns the ids renamed.
+    static func renameUsedStarters(_ teams: inout [Team], games: [Game]) -> [UUID] {
+        var renamed: [UUID] = []
+        for i in teams.indices where teams[i].name == Team.starterName {
+            let id = teams[i].id
+            guard !teams[i].players.isEmpty || games.contains(where: { $0.teamID == id })
+            else { continue }
+            teams[i].name = usedStarterName
+            renamed.append(id)
+        }
+        return renamed
     }
 
     // MARK: - Lenient loading (#180)
@@ -775,6 +802,8 @@ final class AppStore: ObservableObject {
                 pendingSyncDeletes.insert(team.id)
             }
         }
+        // A device on an older build can still send one back by its old name.
+        pendingSyncIDs.formUnion(Self.renameUsedStarters(&newTeams, games: newGames))
 
         applyingRemote = true
         defer { applyingRemote = false }

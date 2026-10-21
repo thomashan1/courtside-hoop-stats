@@ -97,6 +97,26 @@ struct OwnDeviceSyncTests {
         #expect(phone.games.first?.notes == "Edited on the iPad")
     }
 
+    /// An older build sends a "My Test Team" someone really scored with.
+    /// It arrives as "My Team", and the new name goes back to iCloud.
+    @Test func aUsedStarterTeamFromAnOlderBuildArrivesRenamed() async {
+        let cloud = FakeCloud()
+        let phone = device(on: cloud)
+        phone.addPlayer(name: "Nicholas H", number: "77")
+        await phone.setSyncAcrossDevices(true)
+
+        let fromTheMac = Team(name: Team.starterName,
+                              players: [Player(name: "Jake L", number: "7")])
+        cloud.seed(fromTheMac)
+        await phone.syncNow()
+
+        let arrived = phone.teams.first { $0.id == fromTheMac.id }
+        #expect(arrived?.name == "My Team")
+        #expect(arrived?.players.map(\.name) == ["Jake L"])
+        await phone.syncNow()
+        #expect(cloud.teams[fromTheMac.id]?.name == "My Team")
+    }
+
     /// The phantom-game bug, across devices: a deletion must travel too.
     @Test func aDeletionOnOneDeviceRemovesTheGameOnTheOther() async {
         let cloud = FakeCloud()
