@@ -20,9 +20,9 @@ surnames; resubmitted at 6:44 PM with everything through #228.
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.13 | 219 | `aee54ca` | Tue 2026-10-13, 11:39 AM | *in review* | — | — | — |
+| v1.13 | 219 | `aee54ca` | Tue 2026-10-13, 11:39 AM | Wed 2026-10-21, 11:06 AM | **7d 23h 27m** | 7d 23h 20m | **7m** |
 | v1.12 | *confirm build* | `951ab83` | Mon 2026-10-12, 6:44 PM | Tue 2026-10-13, 11:23 AM | 16h 39m | 16h 2m | 37m |
-| v1.11 | 176 | — | Sun 2026-09-27, 7:59 AM | Mon 2026-10-05, 7:49 AM | **7d 23h 50m** | 7d 23h 35m | **15m** |
+| v1.11 | 176 | — | Sun 2026-09-27, 7:59 AM | Mon 2026-10-05, 7:49 AM | **7d 23h 50m** | 7d 23h 35m | 15m |
 | v1.10 | 167 | — | Sun 2026-09-20, 8:48 PM | Mon 2026-09-21, 3:42 PM | 18h 54m | 16h 23m | 2h 31m |
 | v1.9 | 157 | `f1f5ed9` | Fri 2026-09-18, 8:57 AM | Fri 2026-09-18, 11:22 AM | **2h 25m** | **42m** | 1h 43m |
 | v1.8 | 147 | `911cdae` | Thu 2026-09-17, 7:32 PM | Fri 2026-09-18, 7:54 AM | **12h 22m** | 10h 34m | 1h 48m |

@@ -34,7 +34,7 @@ with the team's record (#211, #213), the season as a **PDF** in first names
 that stick (#223), stats tables that never truncate (#222), reopening on the
 last tab (#227), and a Score Log that reads like the PDF (#226, #228).
 
-**v1.13 is in review** (submitted 2026-10-13, 11:39 AM, build 219):
+**v1.13 was approved 2026-10-21** (build 219; eight days queued, 7 minutes in review):
 **your teams on all your devices** (#229) — always-on sync of the owner's
 teams and games across their iPhone, iPad and Mac, games merged so two devices
 can score at once — plus Recently Deleted, and fixes for followers' deleted
