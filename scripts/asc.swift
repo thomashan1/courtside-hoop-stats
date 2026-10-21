@@ -4,14 +4,18 @@
 //   swift scripts/asc.swift POST /v1/reviewSubmissions body.json
 //
 // Reads ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH (the .p8) from the
-// environment; the key itself never enters the repo.
+// environment, or else `.asc.local.json` ({"keyID", "issuerID", "keyPath"}),
+// which is git-ignored: the repo is public, and the key never enters it.
 import CryptoKit
 import Foundation
 
 let env = ProcessInfo.processInfo.environment
-guard let keyID = env["ASC_KEY_ID"], let issuer = env["ASC_ISSUER_ID"],
-      let keyPath = env["ASC_KEY_PATH"] else {
-    FileHandle.standardError.write("Set ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH.\n".data(using: .utf8)!)
+let local = (try? Data(contentsOf: URL(fileURLWithPath: ".asc.local.json")))
+    .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: String] } ?? [:]
+guard let keyID = env["ASC_KEY_ID"] ?? local["keyID"],
+      let issuer = env["ASC_ISSUER_ID"] ?? local["issuerID"],
+      let keyPath = env["ASC_KEY_PATH"] ?? local["keyPath"] else {
+    FileHandle.standardError.write("Set ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH, or write .asc.local.json.\n".data(using: .utf8)!)
     exit(2)
 }
 let args = CommandLine.arguments.dropFirst()

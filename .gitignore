@@ -46,3 +46,4 @@ fastlane/screenshots/**/*.png
 
 # Generated app screenshots (regenerate via scripts/screenshots.sh)
 screenshots/
+.asc.local.json
