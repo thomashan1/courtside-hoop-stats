@@ -41,7 +41,7 @@ can score at once — plus Recently Deleted, and fixes for followers' deleted
 games (#230) and the backup (#231). See the trap below and
 `docs/REQUIREMENTS.md` §3.9a.
 
-**v1.14 is the open train**: the iPad layout (#232), guest players (#241),
+**v1.14 is in review** (submitted 2026-10-21, 12:54 PM, build 240, by API — `scripts/asc.swift`): the iPad layout (#232), guest players (#241),
 the welcome screen, Export Everything, and a backup that keeps deletions for
 30 days and refuses a wipe.
 
