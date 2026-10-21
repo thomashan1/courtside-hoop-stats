@@ -106,7 +106,7 @@ iPhone ten:
 | 3 | `03-game-score-pad.png` | `40-ipad-portrait-03-score-pad` |
 | 4 | `04-game-assist.png` | `40-ipad-portrait-04-assist` |
 | 5 | `05-following-game.png` | `40-ipad-portrait-16-following-game` |
-| 6 | `06-game-summary.png` | `40-ipad-landscape-07-game-summary`, rotated upright to 2752 × 2064 — the summary in two columns; the portrait one repeats slot 9 |
+| 6 | `06-game-summary.png` | `40-ipad-portrait-06-live-stats` — the portrait summary repeats slot 9, and App Store Connect turns a landscape image upright, so it would show sideways |
 | 7 | `07-game-summary-share-pdf.png` | `40-ipad-portrait-08-box-score-pdf` |
 | 8 | `08-season.png` | `40-ipad-portrait-12-season` |
 | 9 | `09-games.png` | `40-ipad-portrait-01-games` |
