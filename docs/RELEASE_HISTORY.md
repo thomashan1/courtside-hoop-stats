@@ -20,7 +20,7 @@ surnames; resubmitted at 6:44 PM with everything through #228.
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.15 | 246 | `ebc3c96` | Wed 2026-10-21, 8:36 PM | *in review* | | | |
+| v1.15 | 246 | `ebc3c96` | Wed 2026-10-21, 8:36 PM | Thu 2026-10-22, 11:07 AM | 14h 31m | 14h 30m | **1m** |
 | v1.14 | 240 | `219c660` | Wed 2026-10-21, 12:54 PM | Wed 2026-10-21, 3:28 PM | 2h 34m | 1h 53m | 41m |
 | v1.13 | 219 | `aee54ca` | Tue 2026-10-13, 11:39 AM | Wed 2026-10-21, 11:06 AM | **7d 23h 27m** | 7d 23h 20m | **7m** |
 | v1.12 | *confirm build* | `951ab83` | Mon 2026-10-12, 6:44 PM | Tue 2026-10-13, 11:23 AM | 16h 39m | 16h 2m | 37m |
@@ -82,7 +82,7 @@ v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
 | | Range | Spread |
 |---|---|---|
 | **Queued** (*Waiting for Review*) | 42m → 13d 9h | **460×** |
-| **In review** (*In Review*) | 17m → 3h 29m | 12× |
+| **In review** (*In Review*) | 1m → 3h 29m | 209× |
 
 v1.6 fits the pattern exactly: **3d 0h queued, 2h 22m in review.**
 

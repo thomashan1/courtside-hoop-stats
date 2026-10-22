@@ -45,6 +45,10 @@ games (#230) and the backup (#231). See the trap below and
 the welcome screen, Export Everything, and a backup that keeps deletions for
 30 days and refuses a wipe.
 
+**v1.15 was approved 2026-10-22** (build 246; 14h 31m, 1 minute in review):
+stats tables that fit narrow iPhones (#252), a used "My Test Team" renamed
+"My Team" (#253), and store banners with their text in Apple's safe area.
+
 **v1.11 was approved 2026-10-05** after eight days in the queue and 15 minutes
 in review: overtime on a game that already finished level (#201), the fix for
 v1.10's finished games claiming OT, and the follower's game date (#203).
