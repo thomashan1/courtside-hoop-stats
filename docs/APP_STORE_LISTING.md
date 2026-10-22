@@ -492,6 +492,17 @@ search results. They're built from the promoted screenshots by
 `swift scripts/store-banners.swift` (run from the repo root), so re-run it
 after re-promoting screenshots and upload both again.
 
+**Keep text inside the safe area.** Each device crops these differently; only
+a centred box is always shown — header x 1097–2743, y 493–1154; search results
+x 836–3004, y 765–1795 (from Apple's templates). The v1.14 header had its
+headline at the left edge and the iPhone product page cut it to "very basket".
+Phones and court lines outside the box are decoration and may be cut.
+
+Upload them by API onto the **draft** version (a live version is locked):
+`swift scripts/asc.swift banner <localizationID> PRODUCT_PAGE_HEADER_ASSET
+docs/img/store-header-3840x1646.png`, and the same with
+`APP_STORE_SEARCH_RESULTS_ASSET` for the other.
+
 **Cut in v1.14 to make room for the welcome screen:** `10-team-jerseys`. The
 team's colour and home kit were the smallest idea of the ten; the welcome
 screen says what the app is for, which the first slot is worth spending on.
