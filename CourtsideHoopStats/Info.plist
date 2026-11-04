@@ -21,6 +21,25 @@
 			<string>Hoop Stats</string>
 		</dict>
 	</array>
+	<!-- The game being scored on the Lock Screen and in the Dynamic Island
+	     (#260), drawn by the CourtsideLiveActivity extension. Without this,
+	     Activity.request throws and nothing appears. -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<!-- courtsidehoopstats://game/<id>, what a tap on the Live Activity opens
+	     (GameLink). Registered so the same link works from simctl openurl
+	     and the UI tests. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.thomashan.CourtsideHoopStats.game</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>courtsidehoopstats</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

@@ -22,6 +22,10 @@ struct CourtsideHoopStatsApp: App {
         // Siri answers from this same store (#255), so it says what the app shows.
         SiriStore.current = appStore
         CourtsideShortcuts.updateAppShortcutParameters()
+        // The game being scored on the Lock Screen (#260): kept in step with
+        // every change to the store, and anything stale from a killed launch
+        // ended now. Does nothing on iPad and Mac.
+        LiveActivityController.shared.follow(appStore)
         #if DEBUG
         // The screenshot harness runs offline against seeded data, so it gets a
         // stand-in service. Without it the seeded team reports zero followers

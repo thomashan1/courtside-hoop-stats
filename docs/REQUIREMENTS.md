@@ -432,6 +432,86 @@ against Production.
 - Works on iOS 26. Testing it with Siri Evaluations (#256) needs iOS 27.3 on
   the test machine only.
 
+### 3.12 Live Activity (#260)
+
+The game being scored stays on the **Lock Screen** and in the **Dynamic
+Island**, so the score is there at a glance between possessions, at timeouts
+and at quarter breaks without unlocking and finding the game again. A tap goes
+straight back into Live Scoring.
+
+- **Start:** Live Scoring opening a game in progress (Start Game, a scheduled
+  game started, an in-progress game resumed, a finished game reopened into
+  overtime). One activity per game, found again by its game ID
+  (`GameActivityAttributes.gameID`, never stored on `Game`), so going back into
+  the game reuses it. One game at a time: starting another takes the previous
+  one down, final score and all. Editing a finished game starts nothing.
+- **Update:** everything that changes the game reaches it: a basket, an edit,
+  delete or reorder in the Score Log, End Period, a change synced from the
+  owner's other device. `LiveActivityController` watches `store.games` rather
+  than relying on each screen to call it. It shows exactly what the scoreboard
+  shows, no more current: the opponent's total is the one typed at the last End
+  Period, and the activity says so with **"thru Q2"** under it.
+- **End:** finishing leaves the final up, with **W / L / T** and `Final` (or
+  `Final/OT` when it went to overtime, never for a tie that stood, #201), for
+  the system's default dismissal. Deleting the game, moving it back to
+  Scheduled, or reopening it takes it down at once, even if it was already
+  showing a final. On launch the same rules end anything a killed app left
+  behind.
+- **Layouts** (`CourtsideShared/GameActivityViews.swift`): the **Lock Screen**
+  card (also the banner on an iPhone without a Dynamic Island) is the
+  scoreboard: both teams, both scores, the period, "thru Q2". **Dynamic
+  Island:** compact is 🏀 our score on the left of the camera and theirs on
+  the right; minimal is our score; expanded has both teams and scores, the
+  period, and the last basket (`Nicholas +3`). Pickup shows no period.
+- **Look:** the solid navy scoreboard, our score in the scoreboard's bright
+  blue (#5B9CF5; `teamAccent`'s light-mode #1E5FCF is only 2.3:1 on navy),
+  theirs in white, monospaced digits. The same in light and dark, like the
+  banner it copies. No Liquid Glass in it. The Lock Screen card caps its text
+  at the first accessibility size, since the card can't grow.
+- **Names:** the Lock Screen shows teams and scores only, because anyone near
+  the phone can read it without unlocking. A player is named only in the
+  expanded island's last basket, by first name with the usual collision rule
+  (`Jake` → `Jake L.`, `PlayerDisplayName`).
+- **Tap:** `courtsidehoopstats://game/<id>` (`GameLink`; the scheme is
+  registered in Info.plist so `simctl openurl` and the UI tests can use it
+  too). It opens the game on its own team's Games tab: Live Scoring while it's
+  being played, its summary once finished.
+- **Local updates only:** `Activity.request` / `update` / `end` from the app.
+  No push token, no server. There's no in-app switch: the system's per-app
+  Live Activities setting is the switch, and the first activity on a phone
+  brings up iOS's own "Allow Live Activities from Courtside?" on the Lock
+  Screen.
+- **Owner only.** A follower never gets one: their games aren't in
+  `store.games`, and Live Scoring never opens them. A follower's Live Activity
+  would need ActivityKit **push** updates sent to APNs from a server, against
+  the no-server design. That's the open question, and it's separate from this.
+- **iPad and Mac: nothing.** `LiveActivityController` only acts on an iPhone
+  (`userInterfaceIdiom == .phone`, not an iPhone app on a Mac), so Live
+  Scoring on an iPad starts nothing and nothing fails
+  (`LiveActivityDeviceTests`). That's a choice, not a platform limit: on the
+  iPad Pro 13-inch (M5) simulator with iPadOS 27.2, `ActivityAuthorizationInfo().areActivitiesEnabled`
+  is **true**, a direct `Activity.request` succeeds, and the iPad Lock Screen
+  shows the card (there's no Dynamic Island). Letting an iPad that's scoring
+  show it would mean dropping the idiom check and checking the card on an
+  iPad Lock Screen. iPadOS 26 hasn't been checked, since no iPadOS 26
+  simulator is installed.
+- **Nothing stored.** No change to `Game` or the wire format. The content
+  (`GameActivityState`, built by `init(game:team:)`) is derived from what's
+  already saved and lives only as long as the activity. `LiveActivityTests`
+  covers the mapping and the plan for a running activity;
+  `LiveActivityUITests` covers the real Lock Screen, the tap and a deletion.
+- **Plumbing:** the `CourtsideLiveActivity` WidgetKit extension (bundle ID
+  `com.thomashan.CourtsideHoopStats.LiveActivity`, iOS 26), embedded in the
+  app. `CourtsideShared/` is compiled into both targets: the attributes, the
+  link, the views and the scoreboard colours. The extension has none of the
+  app's other code, so nothing in `CourtsideShared/` may use `Game`,
+  `AppStore` or `DesignSystem`. `NSSupportsLiveActivities = YES` is in the
+  app's Info.plist. The extension's `MARKETING_VERSION` and
+  `CURRENT_PROJECT_VERSION` must equal the app's.
+- **Elsewhere, at no cost:** an iPhone's Live Activity also appears in the
+  Apple Watch Smart Stack and, on macOS 26, in the Mac's menu bar through the
+  iPhone. Neither needs code here, and neither has been checked on hardware.
+
 ---
 
 ## 4. Data Model (`Models.swift`)
@@ -495,8 +575,21 @@ Sharing/
   FollowerNotifier / FollowerAlerts         — silent push → local notification
   ShareAcceptance                           — accepting an invite
 
+LiveActivity/ (app only, §3.12)
+  LiveActivityController                    — start / update / end; watches
+                                              store.games; LiveActivityPlan
+  GameActivityState+Game                    — Game → what the activity shows
+
+CourtsideShared/ (compiled into the app AND the CourtsideLiveActivity extension)
+  GameActivityAttributes, GameLink          — the activity's data and tap URL
+  GameActivityViews                         — Lock Screen + Dynamic Island
+  ScoreboardColors                          — scoreboardBackground (navy),
+                                              scoreboardAccent
+
+CourtsideLiveActivity/ (the widget extension: GameLiveActivity + Info.plist)
+
 Helpers/DesignSystem.swift
-  Color.teamAccent (blue, adaptive), scoreboardBackground (navy),
+  Color.teamAccent (blue, adaptive),
   JerseyBadge, ScoreboardView, JerseyColor.swatch, JerseyIndicator,
   SuggestingTextField (autocomplete), AppTextSize (Dynamic Type steps)
 ```

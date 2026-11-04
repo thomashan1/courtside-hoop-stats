@@ -64,6 +64,17 @@ struct ContentView: View {
         .onChange(of: selectedTab) { _, tab in
             UserDefaults.standard.set(tab.rawValue, forKey: Self.lastTabKey)
         }
+        // A tap on the Live Activity (#260): that game, on its own team's
+        // Games tab — Live Scoring if it's still being played.
+        .onOpenURL { url in
+            guard let id = GameLink.gameID(from: url), !store.isViewOnly,
+                  let game = store.game(id: id) else { return }
+            if let teamID = game.teamID, teamID != store.activeTeamID {
+                store.setActiveTeam(teamID)
+            }
+            selectedTab = .games
+            store.gameRequest = id
+        }
         .task {
             // Pull the owner's other devices first (#229), so anything
             // published to followers below is already the merged copy.

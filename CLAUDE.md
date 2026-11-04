@@ -66,7 +66,10 @@ fails with `ITMS-90186` even if it only touched Markdown. Bumping early has no
 cost — a build at the new version simply isn't offered for the submitted one.
 Minor versions keep counting, 1.9 → 1.10 → … → 1.13: App Store Connect
 compares components numerically, so 1.10 > 1.9, and 2.0 is saved for a release
-that earns it.
+that earns it. **A bump covers the `CourtsideLiveActivity` extension too**:
+its `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` must equal the app's or
+App Store validation rejects the upload, so replace every occurrence in
+`project.pbxproj`, not only the app target's.
 
 The CloudKit schema is deployed to Production and verified for **both**
 features — sharing (two TestFlight builds shared and followed each other's
@@ -159,6 +162,14 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   shared with you (#189) or you chose Follow a Team — a tracker's bar is
   unchanged. Leftmost is not the same as default-selected: an
   owner lands on Games, and after that the app reopens on the last tab used.
+- **Live Activity (#260).** The game being scored stays on the Lock Screen
+  and in the Dynamic Island as the navy scoreboard, with the opponent's total
+  marked "thru Q2". It runs from when Live Scoring opens the game until it
+  finishes (the final, W/L/T) or is deleted, and a tap goes back into Live
+  Scoring. Local updates only, owner only, iPhone only; the Lock Screen names
+  no players. It's a `CourtsideLiveActivity` widget extension, with
+  `CourtsideShared/` compiled into both targets. See `docs/REQUIREMENTS.md`
+  §3.12.
 - **Siri and Shortcuts (#255).** "What was the score of the last game in
   Courtside" and "Courtside record" answer from the app's own store, for the
   active team or a named one. Read-only; works on iOS 26. See
@@ -237,6 +248,10 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   per-record failures. Reading one batch left a game Jean deleted on her
   followers' phones for days: the owner's publish only deletes stale games it
   can *see* (#230).
+- **`CourtsideShared/` is compiled into the Live Activity extension (#260)**,
+  which has none of the app's other code. Anything there that reaches for
+  `Game`, `AppStore` or `DesignSystem.swift` builds in the app and breaks the
+  extension. The mapping from a `Game` lives app-side, in `LiveActivity/`.
 - **A new list or form needs `.readableWidth()` (#232).** Without it, it
   stretches across a 13" iPad. Check any layout change in both orientations
   on the iPad simulator (`IPadScreenshotUITests`), not only on an iPhone.

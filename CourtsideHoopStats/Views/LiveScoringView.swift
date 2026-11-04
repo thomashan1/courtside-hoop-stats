@@ -150,7 +150,19 @@ struct LiveScoringView: View {
         // Hide the tab bar while scoring: more room, and no accidental
         // navigation away from a live game.
         .toolbar(.hidden, for: .tabBar)
-        .onAppear(perform: loadGameIfNeeded)
+        .onAppear {
+            loadGameIfNeeded()
+            // On the Lock Screen while it's being scored (#260). Going back
+            // into the same game finds its activity rather than adding one;
+            // editing a finished game starts nothing.
+            LiveActivityController.shared.begin(game, teams: store.teams)
+        }
+        // Reopened into overtime from the final divider (#201): live again.
+        .onChange(of: game.lifecycle) { _, lifecycle in
+            if lifecycle == .inProgress {
+                LiveActivityController.shared.begin(game, teams: store.teams)
+            }
+        }
         // Taps from the owner's other device arrive in the store (#229); show
         // them. Safe to adopt the store's copy wholesale: every change here
         // is saved to the store the moment it's made.
