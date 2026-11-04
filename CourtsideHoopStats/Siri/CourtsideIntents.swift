@@ -1,10 +1,13 @@
 import AppIntents
+import CoreSpotlight
 
 // Siri and Shortcuts (#255): read-only questions about your own teams. Nothing
 // here writes to the store, so none of it can touch saved games or sync.
 
-/// One of the owner's teams, as Siri and Shortcuts see it.
-struct TeamEntity: AppEntity {
+/// One of the owner's teams, as Siri and Shortcuts see it. Indexed in
+/// Spotlight so Siri can search for it by name (#256); without the index
+/// Siri "had nothing to search".
+struct TeamEntity: AppEntity, IndexedEntity {
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "Team"
     static let defaultQuery = TeamQuery()
 
@@ -39,6 +42,14 @@ struct TeamQuery: EntityStringQuery {
     static var current: AppStore?
 
     static var teams: [Team] { current?.teams ?? [] }
+
+    /// Replaces the indexed teams with `teams`: cleared first, so a deleted
+    /// or renamed team doesn't linger, nor the demo season after a UI test.
+    static func index(_ teams: [Team]) async {
+        let index = CSSearchableIndex.default()
+        try? await index.deleteAppEntities(ofType: TeamEntity.self)
+        try? await index.indexAppEntities(teams.map(TeamEntity.init))
+    }
 
     /// What a question about `entity` answers — the team named, or else the
     /// active team (the one the Games tab shows).

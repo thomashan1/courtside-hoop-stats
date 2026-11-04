@@ -5,6 +5,7 @@ import SiriEvaluations
 
 // Siri Evaluations (#256): scripted requests run through real Siri, checking
 // which of the #255 intents it calls and what it says back.
+// https://developer.apple.com/documentation/sirievaluations
 //
 // - Device only: the framework ships for iPhone, Mac and Vision Pro, not the
 //   simulator, so this file compiles to nothing for a simulator build.
@@ -52,6 +53,19 @@ final class SiriEvaluationTests: XCTestCase {
         app.launch()
     }
 
+    /// Prints the per-scenario grades and attaches the full result, transcripts
+    /// included, so a failure says what Siri did rather than just a number.
+    @available(iOS 27.3, *)
+    private func report(_ result: EvaluationResult) throws {
+        print(result.groupedSummary)
+        let attachment = XCTAttachment(data: try result.jsonData(includeTranscripts: true),
+                                       uniformTypeIdentifier: "public.json")
+        attachment.name = "\(result.evaluationID).json"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: .intentsAllPass)), 0.66)
+    }
+
     func testLastGameScoreRequests() async throws {
         guard #available(iOS 27.3, *) else { throw XCTSkip("Siri Evaluations needs iOS 27.3") }
         let result = try await CourtsideSiriEvaluation(
@@ -77,9 +91,23 @@ final class SiriEvaluationTests: XCTestCase {
                         SiriResponse(.contains("Eastside Eagles"))
                     }
                 }
+                // Not one of the built-in phrases: Siri has to work it out.
+                SiriScenario {
+                    UserTurn("How did we do in our last game in Courtside") {
+                        Calls { Courtside.lastGameScore }
+                        SiriResponse(.contains("48"))
+                    }
+                }
+                SiriScenario {
+                    UserTurn("Did Eastside Eagles win their last game? Check Courtside") {
+                        Calls { Courtside.lastGameScore }
+                        Finds { Courtside.team }
+                        SiriResponse(.contains("Northgate Falcons"))
+                    }
+                }
             }
         ).run()
-        XCTAssertGreaterThanOrEqual(try XCTUnwrap(result.aggregateValue(.mean(of: .intentsAllPass))), 0.66)
+        try report(result)
     }
 
     func testTeamRecordRequests() async throws {
@@ -106,9 +134,16 @@ final class SiriEvaluationTests: XCTestCase {
                         SiriResponse(.contains("Eastside Eagles"))
                     }
                 }
+                // Not one of the built-in phrases.
+                SiriScenario {
+                    UserTurn("How many games have we won this season in Courtside") {
+                        Calls { Courtside.teamRecord }
+                        SiriResponse(.contains("2–1–1"))
+                    }
+                }
             }
         ).run()
-        XCTAssertGreaterThanOrEqual(try XCTUnwrap(result.aggregateValue(.mean(of: .intentsAllPass))), 0.66)
+        try report(result)
     }
 }
 #endif
