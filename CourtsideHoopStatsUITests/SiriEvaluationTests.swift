@@ -11,6 +11,9 @@ import SiriEvaluations
 //   simulator, so this file compiles to nothing for a simulator build.
 // - Needs iOS 27.3, Developer Mode, Settings ▸ Developer ▸ Enable UI
 //   Automation, and Apple Intelligence on. Older systems skip.
+// - Opt-in: skipped unless the run sets TEST_RUNNER_SIRI_EVALS=1, e.g.
+//     TEST_RUNNER_SIRI_EVALS=1 xcodebuild test -destination 'id=<device>' \
+//       -only-testing:CourtsideHoopStatsUITests/SiriEvaluationTests …
 // - Siri varies between runs, so these measure rather than gate: each test
 //   wants two of its three scenarios, not all three every time.
 
@@ -47,6 +50,12 @@ final class SiriEvaluationTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
         guard #available(iOS 27.3, *) else { throw XCTSkip("Siri Evaluations needs iOS 27.3") }
+        // Opt-in only: each run drives real Siri for a minute or more and
+        // replaces the TestFlight build on the device. xcodebuild hands the
+        // runner any TEST_RUNNER_-prefixed variable without the prefix.
+        guard ProcessInfo.processInfo.environment["SIRI_EVALS"] == "1" else {
+            throw XCTSkip("Siri evaluations run only when asked: TEST_RUNNER_SIRI_EVALS=1 xcodebuild test …")
+        }
         // Siri answers from the running app's store, so it must be the demo one.
         let app = XCUIApplication()
         app.launchArguments += ["-uiTestSeedDemo"]
