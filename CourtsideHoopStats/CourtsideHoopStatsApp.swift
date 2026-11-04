@@ -62,6 +62,12 @@ struct CourtsideHoopStatsApp: App {
                 // Lets the store push edits to followers. Set here rather than
                 // in AppStore.init so tests and previews stay offline.
                 .task { store.sharingService = sharing }
+                // Teams in Spotlight, so Siri can find one by name (#256).
+                // Keyed on names, not the whole team, so a roster edit
+                // doesn't re-index.
+                .task(id: store.teams.map { "\($0.id)\($0.name)" }) {
+                    await SiriStore.index(store.teams)
+                }
                 // `$pending` replays what's already waiting, so an invite
                 // that launched the app is accepted too.
                 .onReceive(ShareInbox.shared.$pending) { pending in
