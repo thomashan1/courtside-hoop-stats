@@ -311,7 +311,9 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-**One open issue, paused.** #175 (shooting percentages) needs 2P/3P *attempts*,
+**Siri** is next: #255 adds App Intents (view-only — scores, season averages), then #256 tests them with Apple's Siri Evaluations framework (needs Xcode 27.3 beta).
+
+**Paused:** #175 (shooting percentages) needs 2P/3P *attempts*,
 i.e. tracking misses — and the field evidence from v1.7 is that even rebounds
 are too much to catch while scoring live, which is what pauses it. The narrow
 version (one team number per period) is still available if it comes back. There
