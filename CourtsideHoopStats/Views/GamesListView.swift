@@ -149,6 +149,11 @@ struct GamesListView: View {
             }
         }
 
+        // Below Playing Now and Coming Up, so it never pushes a game down.
+        if !finished.isEmpty {
+            SiriTipRow()
+        }
+
         if let groups = finishedByTournament {
             ForEach(groups) { group in
                 Section {

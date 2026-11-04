@@ -78,6 +78,20 @@ struct SettingsView: View {
                     Text("Makes text throughout the app larger. Also follows your device's text size if that's set higher.")
                 }
 
+                // A follower's teams aren't in Siri's answers (#255), so
+                // there's nothing to point them at.
+                if !store.isViewOnly {
+                    Section {
+                        NavigationLink {
+                            SiriHelpView()
+                        } label: {
+                            Label("Siri & Shortcuts", systemImage: "mic")
+                        }
+                    } footer: {
+                        Text("Ask Siri for the last score or your record without opening the app.")
+                    }
+                }
+
                 // The invite link is the way in, and it brings the Following
                 // tab with it. This is the way back when the link didn't
                 // take, for someone with no Following tab to look in.
