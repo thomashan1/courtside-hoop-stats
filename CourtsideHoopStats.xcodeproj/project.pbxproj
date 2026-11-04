@@ -6,7 +6,18 @@
 	objectVersion = 70;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		CA08CA08CA08CA08CA08CA08 /* CourtsideLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = CA03CA03CA03CA03CA03CA03 /* CourtsideLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		CA11CA11CA11CA11CA11CA11 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CA02CA02CA02CA02CA02CA02;
+			remoteInfo = CourtsideLiveActivity;
+		};
 		EA11EA11EA11EA11EA11EA11 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AB01AB01AB01AB01AB01AB01 /* Project object */;
@@ -23,7 +34,22 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		CA07CA07CA07CA07CA07CA07 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CA08CA08CA08CA08CA08CA08 /* CourtsideLiveActivity.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		CA03CA03CA03CA03CA03CA03 /* CourtsideLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CourtsideLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CourtsideHoopStats.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC02DC02DC02DC02DC02DC02 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 		DC03DC03DC03DC03DC03DC03 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -39,10 +65,19 @@
 			);
 			target = AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */;
 		};
+		CA12CA12CA12CA12CA12CA12 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CA02CA02CA02CA02CA02CA02 /* CourtsideLiveActivity */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E9FB6C603023D55800D95922 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStats; sourceTree = "<group>"; };
+		CA09CA09CA09CA09CA09CA09 /* CourtsideLiveActivity */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (CA12CA12CA12CA12CA12CA12 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = CourtsideLiveActivity; sourceTree = "<group>"; };
+		CB09CB09CB09CB09CB09CB09 /* CourtsideShared */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideShared; sourceTree = "<group>"; };
 		DC01DC01DC01DC01DC01DC01 /* docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = docs; sourceTree = "<group>"; };
 		EA09EA09EA09EA09EA09EA09 /* CourtsideHoopStatsUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStatsUITests; sourceTree = "<group>"; };
 		FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CourtsideHoopStatsTests; sourceTree = "<group>"; };
@@ -70,6 +105,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA05CA05CA05CA05CA05CA05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -80,6 +122,8 @@
 				DC03DC03DC03DC03DC03DC03 /* README.md */,
 				DC01DC01DC01DC01DC01DC01 /* docs */,
 				AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */,
+				CB09CB09CB09CB09CB09CB09 /* CourtsideShared */,
+				CA09CA09CA09CA09CA09CA09 /* CourtsideLiveActivity */,
 				FA09FA09FA09FA09FA09FA09 /* CourtsideHoopStatsTests */,
 				EA09EA09EA09EA09EA09EA09 /* CourtsideHoopStatsUITests */,
 				AB08AB08AB08AB08AB08AB08 /* Products */,
@@ -92,6 +136,7 @@
 				AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */,
 				FA03FA03FA03FA03FA03FA03 /* CourtsideHoopStatsTests.xctest */,
 				EA03EA03EA03EA03EA03EA03 /* CourtsideHoopStatsUITests.xctest */,
+				CA03CA03CA03CA03CA03CA03 /* CourtsideLiveActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -106,13 +151,16 @@
 				AB04AB04AB04AB04AB04AB04 /* Sources */,
 				AB05AB05AB05AB05AB05AB05 /* Frameworks */,
 				AB06AB06AB06AB06AB06AB06 /* Resources */,
+				CA07CA07CA07CA07CA07CA07 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CA10CA10CA10CA10CA10CA10 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				AB09AB09AB09AB09AB09AB09 /* CourtsideHoopStats */,
+				CB09CB09CB09CB09CB09CB09 /* CourtsideShared */,
 			);
 			name = CourtsideHoopStats;
 			packageProductDependencies = (
@@ -120,6 +168,29 @@
 			productName = CourtsideHoopStats;
 			productReference = AB03AB03AB03AB03AB03AB03 /* CourtsideHoopStats.app */;
 			productType = "com.apple.product-type.application";
+		};
+		CA02CA02CA02CA02CA02CA02 /* CourtsideLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CA0BCA0BCA0BCA0BCA0BCA0B /* Build configuration list for PBXNativeTarget "CourtsideLiveActivity" */;
+			buildPhases = (
+				CA04CA04CA04CA04CA04CA04 /* Sources */,
+				CA05CA05CA05CA05CA05CA05 /* Frameworks */,
+				CA06CA06CA06CA06CA06CA06 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CA09CA09CA09CA09CA09CA09 /* CourtsideLiveActivity */,
+				CB09CB09CB09CB09CB09CB09 /* CourtsideShared */,
+			);
+			name = CourtsideLiveActivity;
+			packageProductDependencies = (
+			);
+			productName = CourtsideLiveActivity;
+			productReference = CA03CA03CA03CA03CA03CA03 /* CourtsideLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		EA02EA02EA02EA02EA02EA02 /* CourtsideHoopStatsUITests */ = {
 			isa = PBXNativeTarget;
@@ -180,6 +251,9 @@
 					AB02AB02AB02AB02AB02AB02 = {
 						CreatedOnToolsVersion = 16.0;
 					};
+					CA02CA02CA02CA02CA02CA02 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					EA02EA02EA02EA02EA02EA02 = {
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = AB02AB02AB02AB02AB02AB02;
@@ -207,6 +281,7 @@
 				AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */,
 				FA02FA02FA02FA02FA02FA02 /* CourtsideHoopStatsTests */,
 				EA02EA02EA02EA02EA02EA02 /* CourtsideHoopStatsUITests */,
+				CA02CA02CA02CA02CA02CA02 /* CourtsideLiveActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -227,6 +302,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		FA06FA06FA06FA06FA06FA06 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA06CA06CA06CA06CA06CA06 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -257,9 +339,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA04CA04CA04CA04CA04CA04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		CA10CA10CA10CA10CA10CA10 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CA02CA02CA02CA02CA02CA02 /* CourtsideLiveActivity */;
+			targetProxy = CA11CA11CA11CA11CA11CA11 /* PBXContainerItemProxy */;
+		};
 		EA10EA10EA10EA10EA10EA10 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = AB02AB02AB02AB02AB02AB02 /* CourtsideHoopStats */;
@@ -534,6 +628,58 @@
 			};
 			name = Release;
 		};
+		CA0ECA0ECA0ECA0ECA0ECA0E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 22;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CourtsideLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Courtside;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStats.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CA0FCA0FCA0FCA0FCA0FCA0F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 22;
+				DEVELOPMENT_TEAM = GYW462KLR5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CourtsideLiveActivity/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Courtside;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.17;
+				PRODUCT_BUNDLE_IDENTIFIER = com.thomashan.CourtsideHoopStats.LiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -569,6 +715,15 @@
 			buildConfigurations = (
 				FA0EFA0EFA0EFA0EFA0EFA0E /* Debug */,
 				FA0FFA0FFA0FFA0FFA0FFA0F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0BCA0BCA0BCA0BCA0BCA0B /* Build configuration list for PBXNativeTarget "CourtsideLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CA0ECA0ECA0ECA0ECA0ECA0E /* Debug */,
+				CA0FCA0FCA0FCA0FCA0FCA0F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

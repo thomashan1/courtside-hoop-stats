@@ -114,6 +114,31 @@ iPhone ten:
 
 Promote and upload all ten at each submission, like the iPhone set.
 
+## Live Activity (#260)
+
+Two sources, because the iPhone 14 Plus that takes the store shots has a
+notch, not a Dynamic Island:
+
+- **`LiveActivityUITests`** (iPhone only) scores the in-progress demo game,
+  locks the simulator and captures the **real Lock Screen**
+  (`60-live-activity-lock-screen`), taps the activity back into Live Scoring,
+  then deletes the game and captures the Lock Screen without it
+  (`61-live-activity-deleted`). The first activity on a simulator brings up
+  iOS's "Allow Live Activities from Courtside?", which the test accepts.
+  Locking needs `pressLockButton`, and the test goes Home before locking and
+  waits a few seconds after waking: locking straight from the app, or looking
+  too soon, finds the activity list not yet on screen.
+- **`LiveActivitySnapshotTests`** (a unit test) renders the real views with
+  `ImageRenderer` inside the system's frames, drawn at their sizes: the Lock
+  Screen card (live, final, largest text) and the Dynamic Island compact,
+  minimal and expanded, light and dark. They're attached to the result
+  bundle; set `TEST_RUNNER_LIVE_ACTIVITY_SNAPSHOT_DIR=/some/folder` on the
+  `xcodebuild test` command to also write them as PNGs.
+
+The committed set is `docs/img/live-activity/`, unnumbered because it isn't
+part of the App Store upload: `lock-screen.png` and `lock-screen-dark.png`
+(real captures, light and dark appearance), and the island and card renders.
+
 ## App Store sizes
 
 **iPhone: this listing uses the 6.5" bucket, `1284 × 2778`.** (iPad: above.)

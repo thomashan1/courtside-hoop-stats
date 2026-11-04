@@ -642,7 +642,9 @@ point. `Product ▸ Archive` is the fallback above, for when Xcode Cloud isn't
 available.
 
 - [ ] Bump **`MARKETING_VERSION`** (not just the build) — a closed train rejects
-  uploads with `ITMS-90186` / `ITMS-90062`
+  uploads with `ITMS-90186` / `ITMS-90062`. Every target's, the
+  `CourtsideLiveActivity` extension included: an extension whose version
+  differs from the app's fails validation
 - [ ] Select the **newest** build App Store Connect offers, not the one these
   docs happen to name — every push to `main` produces one, so a build from an
   hour ago has already been superseded by any docs commit since. The app code

@@ -113,11 +113,34 @@ struct GamesListView: View {
                 // Live Scoring's own Back button dismisses this cover.
                 NavigationStack { LiveScoringView(gameID: game.id) }
             }
+            .onAppear(perform: openRequestedGame)
+            .onChange(of: store.gameRequest) { _, _ in openRequestedGame() }
         } else {
             NavigationStack(path: $path) {
                 gameList(List { listContent })
                     .navigationDestination(for: GameRoute.self) { destination($0) }
             }
+            .onAppear(perform: openRequestedGame)
+            .onChange(of: store.gameRequest) { _, _ in openRequestedGame() }
+        }
+    }
+
+    /// Open the game a Live Activity tap asked for (#260): straight into Live
+    /// Scoring while it's being played, otherwise wherever its row goes.
+    /// Checked on appear too, since a cold launch can ask before this tab
+    /// has been built.
+    private func openRequestedGame() {
+        guard let id = store.gameRequest else { return }
+        store.gameRequest = nil
+        guard let game = store.game(id: id) else { return }
+        let route = route(for: game)
+        if case .live = route {
+            startScoring(id)
+        } else if isSplit {
+            scoringGameID = nil
+            selection = route
+        } else {
+            path = [route]
         }
     }
 

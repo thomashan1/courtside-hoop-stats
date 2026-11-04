@@ -65,6 +65,9 @@ final class AppStore: ObservableObject {
     /// A tab the welcome screen wants shown, taken (and cleared) by
     /// `ContentView`.
     @Published var tabRequest: WelcomeChoice?
+    /// A game to open, from a tap on its Live Activity (#260), taken (and
+    /// cleared) by `GamesListView`. Never persisted.
+    @Published var gameRequest: UUID?
     /// What a brand-new user said they're here for, on the welcome screen.
     /// `nil` until they choose — and for everyone who installed before it
     /// existed, which is harmless: `needsWelcome` only asks a device with

@@ -20,12 +20,9 @@ extension Color {
             : UIColor(red: 0.118, green: 0.373, blue: 0.812, alpha: 1)  // #1E5FCF
     })
 
-    /// Fixed deep navy (#0C2C5E) used *only* for the scoreboard banner — an
-    /// intentionally-dark, always-high-contrast element.
-    static let scoreboardBackground = Color(red: 0.047, green: 0.173, blue: 0.369)
-    /// The bright blue (#5B9CF5) used on the always-dark scoreboard, regardless
-    /// of the system appearance.
-    static let scoreboardAccent = Color(red: 0.357, green: 0.612, blue: 0.961)
+    // `scoreboardBackground` (navy) and `scoreboardAccent` live in
+    // `CourtsideShared/ScoreboardColors.swift`, since the Live Activity
+    // extension draws with them too.
 }
 
 // MARK: - In-app text size

@@ -35,6 +35,16 @@ visible. Absent players are benched so the grid stays uncluttered.
 |---|---|---|
 | <img src="docs/img/02-game-live-scoring.png" width="240"> | <img src="docs/img/03-game-score-pad.png" width="240"> | <img src="docs/img/04-game-assist.png" width="240"> |
 
+### On the Lock Screen
+
+While a game is being scored, its score stays on the Lock Screen and in the
+Dynamic Island, and a tap goes straight back to it. The Lock Screen shows the
+teams and the score, never a player's name.
+
+| Lock Screen | Dynamic Island |
+|---|---|
+| <img src="docs/img/live-activity/lock-screen.png" width="240"> | <img src="docs/img/live-activity/island-expanded-light.png" width="360"><br><br><img src="docs/img/live-activity/island-compact-light.png" width="360"> |
+
 ### Starting a game
 
 Every field is optional — **Start Game** to score right now, or **Save** to
@@ -80,6 +90,10 @@ chose **Follow a Team** on the welcome screen.
   the end of that quarter) and badges 3-pointers 🎉 so they read at a glance;
   players sit in the thumb zone. Bench absent
   players; reorder or edit any entry.
+- **Live Activity** — the game being scored stays on the Lock Screen and in
+  the Dynamic Island, from the first basket to the final score, with the
+  opponent's total marked as of the last break. Tap it to get back to the
+  game.
 - **Games** — tap **+** to open the New Game form, where every field is optional.
   Hit **Start Game** to begin scoring right away, or **Save** to schedule it for
   later.
