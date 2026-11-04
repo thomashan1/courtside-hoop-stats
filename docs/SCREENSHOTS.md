@@ -119,7 +119,7 @@ Promote and upload all ten at each submission, like the iPhone set.
 Two sources, because the iPhone 14 Plus that takes the store shots has a
 notch, not a Dynamic Island:
 
-- **`LiveActivityUITests`** (iPhone only) scores the in-progress demo game,
+- **`LiveActivityUITests`** (iPhone and iPad) scores the in-progress demo game,
   locks the simulator and captures the **real Lock Screen**
   (`60-live-activity-lock-screen`), taps the activity back into Live Scoring,
   then deletes the game and captures the Lock Screen without it

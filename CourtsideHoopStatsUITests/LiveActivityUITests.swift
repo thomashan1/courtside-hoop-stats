@@ -4,15 +4,14 @@ import XCTest
 /// the game there, End Period updates the opponent and the period, a tap goes
 /// back into that game's Live Scoring, and deleting the game takes it down.
 ///
-/// iPhone only — the app starts no activity on an iPad. Captures
-/// `60-live-activity-lock-screen` and `61-live-activity-deleted`.
+/// iPhone and iPad. Captures `60-live-activity-lock-screen` and
+/// `61-live-activity-deleted` (on an iPad, `40-ipad-live-activity-…`).
 final class LiveActivityUITests: XCTestCase {
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+    private let isPad = UIDevice.current.userInterfaceIdiom == .pad
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        try XCTSkipIf(UIDevice.current.userInterfaceIdiom != .phone,
-                      "Live Activities are iPhone only in this app")
     }
 
     func testTheGameOnTheLockScreen() throws {
@@ -42,8 +41,7 @@ final class LiveActivityUITests: XCTestCase {
         app.buttons["Next Period"].tap()
 
         // Leave the game, so the tap below has somewhere to come back from.
-        XCTAssertTrue(app.buttons["Back"].waitForExistence(timeout: 5))
-        app.buttons["Back"].tap()
+        leaveGame(app)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
 
         // The Lock Screen: 12–14, in Q3, theirs as of Q2. No player names.
@@ -60,7 +58,7 @@ final class LiveActivityUITests: XCTestCase {
             springboard.buttons[answer].tap()
             sleep(2)
         }
-        snap("60-live-activity-lock-screen")
+        snap(isPad ? "40-ipad-live-activity-lock-screen" : "60-live-activity-lock-screen")
 
         // A tap opens that game's Live Scoring.
         card.tap()
@@ -71,7 +69,7 @@ final class LiveActivityUITests: XCTestCase {
                       "…for the game it shows")
 
         // Deleting the game takes it off the Lock Screen at once.
-        app.buttons["Back"].tap()
+        leaveGame(app)
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         row.swipeLeft()
         app.buttons["Delete"].firstMatch.tap()
@@ -86,12 +84,20 @@ final class LiveActivityUITests: XCTestCase {
                                evaluatedWith: activity(containing: "Northgate Falcons"))
         XCTAssertEqual(XCTWaiter().wait(for: [gone], timeout: 10), .completed,
                        "a deleted game's activity should be gone")
-        snap("61-live-activity-deleted")
+        snap(isPad ? "40-ipad-live-activity-deleted" : "61-live-activity-deleted")
         XCUIDevice.shared.press(.home)   // unlock, for whatever runs next
         sleep(1)
     }
 
     // MARK: - Helpers
+
+    /// Back to the Games list. Live Scoring has Back on an iPhone and on a
+    /// portrait iPad, where it covers the list; a landscape iPad keeps the
+    /// list beside it.
+    private func leaveGame(_ app: XCUIApplication) {
+        let back = app.buttons["Back"]
+        if back.waitForExistence(timeout: isPad ? 3 : 5) { back.tap() } else { XCTAssertTrue(isPad, "no Back") }
+    }
 
     private func activity(containing text: String) -> XCUIElement {
         springboard.descendants(matching: .any)

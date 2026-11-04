@@ -53,8 +53,9 @@ enum LiveActivityPlan: Equatable {
 ///   deleted, or isn't there.
 ///
 /// Owner only by construction: a follower's games are `FollowedTeam`s, never
-/// in `store.games`, and Live Scoring never opens one. iPhone only: on iPad
-/// and Mac it does nothing at all (`REQUIREMENTS.md` §3.12).
+/// in `store.games`, and Live Scoring never opens one. iPhone and iPad; an
+/// iPhone app on a Mac does nothing, and a system without Live Activities
+/// reports them disabled, so it does nothing there too (`REQUIREMENTS.md` §3.12).
 @MainActor
 final class LiveActivityController {
     static let shared = LiveActivityController()
@@ -78,14 +79,11 @@ final class LiveActivityController {
     /// twice as it appears, and that mustn't make two.
     private var requested: [GameActivity] = []
 
-    /// The device can show one: an iPhone (not iPad, not Mac), with Live
-    /// Activities allowed for the app in Settings.
+    /// The device can show one: an iPhone or iPad (not an iPhone app on a
+    /// Mac) with Live Activities allowed for the app. An iPadOS without them
+    /// reports them disabled, which makes this false there.
     private var canStart: Bool {
-        isPhone && ActivityAuthorizationInfo().areActivitiesEnabled
-    }
-
-    private var isPhone: Bool {
-        UIDevice.current.userInterfaceIdiom == .phone && !ProcessInfo.processInfo.isiOSAppOnMac
+        !ProcessInfo.processInfo.isiOSAppOnMac && ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
     /// Everything still on screen: live, or ended with its final showing.
@@ -105,7 +103,7 @@ final class LiveActivityController {
     /// Keep every activity in step with `store` from now on, starting with
     /// whatever an earlier launch left behind.
     func follow(_ store: AppStore) {
-        guard isPhone, subscription == nil else { return }
+        guard !ProcessInfo.processInfo.isiOSAppOnMac, subscription == nil else { return }
         // `@Published` emits the current value on subscribing, which is the
         // launch reconcile; after that, every change to a game or a team.
         subscription = store.$games.combineLatest(store.$teams)

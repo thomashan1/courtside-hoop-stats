@@ -485,16 +485,13 @@ straight back into Live Scoring.
   `store.games`, and Live Scoring never opens them. A follower's Live Activity
   would need ActivityKit **push** updates sent to APNs from a server, against
   the no-server design. That's the open question, and it's separate from this.
-- **iPad and Mac: nothing.** `LiveActivityController` only acts on an iPhone
-  (`userInterfaceIdiom == .phone`, not an iPhone app on a Mac), so Live
-  Scoring on an iPad starts nothing and nothing fails
-  (`LiveActivityDeviceTests`). That's a choice, not a platform limit: on the
-  iPad Pro 13-inch (M5) simulator with iPadOS 27.2, `ActivityAuthorizationInfo().areActivitiesEnabled`
-  is **true**, a direct `Activity.request` succeeds, and the iPad Lock Screen
-  shows the card (there's no Dynamic Island). Letting an iPad that's scoring
-  show it would mean dropping the idiom check and checking the card on an
-  iPad Lock Screen. iPadOS 26 hasn't been checked, since no iPadOS 26
-  simulator is installed.
+- **iPhone and iPad.** An iPad that's scoring shows the same Lock Screen
+  card (there's no Dynamic Island). `LiveActivityController` acts wherever
+  `ActivityAuthorizationInfo().areActivitiesEnabled` is true, so an iPadOS
+  without Live Activities simply starts nothing and nothing fails. An iPhone
+  app running on a Mac does nothing. `LiveActivityUITests` runs on both the
+  iPhone 14 Plus and the iPad Pro 13-inch (M5) simulators; `LiveActivityDeviceTests`
+  checks an iPad starts one.
 - **Nothing stored.** No change to `Game` or the wire format. The content
   (`GameActivityState`, built by `init(game:team:)`) is derived from what's
   already saved and lives only as long as the activity. `LiveActivityTests`
