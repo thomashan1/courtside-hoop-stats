@@ -420,6 +420,15 @@ against Production.
   phrase with the active team's name and opens Shortcuts. Followers get
   neither, since their teams aren't in Siri's answers. The screenshot harness
   hides the tip unless it passes `-uiTestShowSiriTip`.
+- `TeamEntity` is an `IndexedEntity`: teams are re-indexed in Spotlight when
+  one is added, renamed or removed, so Siri can find a team by name.
+- **Siri Evaluations** (#256, [Apple docs](https://developer.apple.com/documentation/sirievaluations),
+  `SiriEvaluationTests`): real Siri on a physical iPhone (iOS 27.3; not in the
+  simulator SDK), opt-in with `TEST_RUNNER_SIRI_EVALS=1`. Findings so far:
+  "What was the score of the last game in Courtside" goes to Siri's sports
+  answers every time, so the tip leads with "Last game score in Courtside";
+  free wording never reaches our intents; built-in phrase matches aren't
+  recorded as intent calls, so those are graded on the reply.
 - Works on iOS 26. Testing it with Siri Evaluations (#256) needs iOS 27.3 on
   the test machine only.
 

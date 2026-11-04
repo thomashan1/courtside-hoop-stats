@@ -62,9 +62,15 @@ struct TeamQuery: EntityStringQuery {
 
 struct LastGameScoreIntent: AppIntent {
     static let title: LocalizedStringResource = "Last Game Score"
-    static let description = IntentDescription("Tells you the final score of a team's most recent finished game.")
+    // Siri's planner reads these to choose an intent (#256): without them it
+    // answered "how did we do" from the open screen, or from the web.
+    static let description = IntentDescription(
+        "Tells you the final score of a youth basketball team's most recent finished game, kept in Courtside: who won, the opponent, and the date.",
+        categoryName: "Basketball Games",
+        searchKeywords: ["score", "last game", "result", "won", "lost", "basketball"])
 
-    @Parameter(title: "Team") var team: TeamEntity?
+    @Parameter(title: "Team", description: "One of your teams in Courtside. Leave empty for the team open in the app.")
+    var team: TeamEntity?
 
     @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
         let answer = SiriStore.answer(about: team, SiriAnswers.lastGame)
@@ -74,9 +80,13 @@ struct LastGameScoreIntent: AppIntent {
 
 struct TeamRecordIntent: AppIntent {
     static let title: LocalizedStringResource = "Team Record"
-    static let description = IntentDescription("Tells you a team's wins and losses across its finished games.")
+    static let description = IntentDescription(
+        "Tells you a youth basketball team's season record in Courtside: wins, losses and ties across its finished games.",
+        categoryName: "Basketball Games",
+        searchKeywords: ["record", "wins", "losses", "season", "standings", "basketball"])
 
-    @Parameter(title: "Team") var team: TeamEntity?
+    @Parameter(title: "Team", description: "One of your teams in Courtside. Leave empty for the team open in the app.")
+    var team: TeamEntity?
 
     @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
         let answer = SiriStore.answer(about: team, SiriAnswers.record)
@@ -91,9 +101,14 @@ struct CourtsideShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: LastGameScoreIntent(),
             phrases: [
-                "What was the score of the last game in \(.applicationName)",
+                // First, because the in-app tip shows the first phrase. "What
+                // was the score of the last game…" stays, but Siri Evaluations
+                // found Siri answering it as a sports question every time.
                 "Last game score in \(.applicationName)",
+                "What was the score of the last game in \(.applicationName)",
                 "How did \(\.$team) do in \(.applicationName)",
+                "How did we do in our last game in \(.applicationName)",
+                "Did \(\.$team) win their last game in \(.applicationName)",
             ],
             shortTitle: "Last Game Score",
             systemImageName: "basketball"
@@ -104,6 +119,7 @@ struct CourtsideShortcuts: AppShortcutsProvider {
                 "What's our record in \(.applicationName)",
                 "\(.applicationName) record",
                 "What's \(\.$team)'s record in \(.applicationName)",
+                "How many games have we won in \(.applicationName)",
             ],
             shortTitle: "Team Record",
             systemImageName: "trophy"

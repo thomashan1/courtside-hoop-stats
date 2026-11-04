@@ -12,7 +12,7 @@ struct SiriHelpView: View {
     var body: some View {
         List {
             Section {
-                phrase("What was the score of the last game in Courtside?")
+                phrase("Last game score in Courtside")
                 phrase("How did \(teamName) do in Courtside?")
             } header: {
                 Text("Last Game Score")
