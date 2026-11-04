@@ -4,6 +4,7 @@
 //   swift scripts/asc.swift POST /v1/reviewSubmissions body.json
 //   swift scripts/asc.swift screenshots <versionLocalizationID> APP_IPHONE_65 docs/img/*.png
 //   swift scripts/asc.swift banner <versionLocalizationID> PRODUCT_PAGE_HEADER_ASSET docs/img/store-header-3840x1646.png
+//   swift scripts/asc.swift testflight [buildNumber] [group]
 //
 // Reads ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_PATH (the .p8) from the
 // environment, or else `.asc.local.json` ({"keyID", "issuerID", "keyPath"}),
@@ -186,8 +187,43 @@ if args.first == "screenshots" {
     exit(0)
 }
 
+// swift scripts/asc.swift testflight [buildNumber] [group]
+// Puts a build in a TestFlight group: the newest build and "Thomas" unless
+// named. Xcode Cloud builds land in no group, so TestFlight keeps offering
+// the last one someone added. Waits up to 30 minutes for a build number that
+// hasn't finished processing yet.
+if args.first == "testflight" {
+    let app = "6791865094"
+    let number = args.count > 1 ? args[1] : nil
+    let groupName = args.count > 2 ? args[2] : "Thomas"
+    let (_, groupsData) = try await call("GET", "/v1/apps/\(app)/betaGroups?fields[betaGroups]=name")
+    let groups = (json(groupsData)["data"] as? [[String: Any]]) ?? []
+    guard let group = groups.first(where: { ($0["attributes"] as? [String: Any])?["name"] as? String == groupName }),
+          let groupID = group["id"] as? String else { fail("no TestFlight group named \(groupName)") }
+    let filter = number.map { "&filter[version]=\($0)" } ?? ""
+    var build: [String: Any]?
+    for attempt in 0..<180 {
+        let (_, data) = try await call("GET", "/v1/builds?filter[app]=\(app)\(filter)&sort=-uploadedDate&limit=1&fields[builds]=version,processingState")
+        if let found = (json(data)["data"] as? [[String: Any]])?.first,
+           (found["attributes"] as? [String: Any])?["processingState"] as? String == "VALID" {
+            build = found; break
+        }
+        if attempt == 0 { print("waiting for build \(number ?? "newest") to finish processing…") }
+        try await Task.sleep(for: .seconds(10))
+    }
+    guard let build, let buildID = build["id"] as? String,
+          let version = (build["attributes"] as? [String: Any])?["version"] as? String else {
+        fail("build \(number ?? "newest") didn't finish processing")
+    }
+    let body = try JSONSerialization.data(withJSONObject: ["data": [["type": "builds", "id": buildID]]])
+    let (status, data) = try await call("POST", "/v1/betaGroups/\(groupID)/relationships/builds", body)
+    guard (200..<300).contains(status) else { fail("add build \(version): HTTP \(status) \(String(decoding: data, as: UTF8.self))") }
+    print("build \(version) is in \(groupName)")
+    exit(0)
+}
+
 guard args.count >= 2 else {
-    FileHandle.standardError.write("usage: asc.swift METHOD PATH [body.json] | screenshots LOC TYPE files... | banner LOC PLACEMENT file\n".data(using: .utf8)!)
+    FileHandle.standardError.write("usage: asc.swift METHOD PATH [body.json] | screenshots LOC TYPE files... | banner LOC PLACEMENT file | testflight [build] [group]\n".data(using: .utf8)!)
     exit(2)
 }
 let method = args[0], path = args[1]

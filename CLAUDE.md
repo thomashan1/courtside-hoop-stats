@@ -373,11 +373,12 @@ still open.
   changed nothing).
 - **Backlog = GitHub Issues.** Every feature/bug/idea is tracked as an issue.
   Work from `gh issue list`, implement one, close it with "Closes #N" in the PR.
-- **Merging to `main` ships a TestFlight build.** Xcode Cloud builds every push
-  and distributes it to the *Han family* internal group — no Archive step, and
-  it assigns its own build numbers rather than following
-  `CURRENT_PROJECT_VERSION`. So a merge is externally visible: testers can
-  install it. See `docs/APP_STORE_LISTING.md` §11.
+- **Merging to `main` builds for TestFlight.** Xcode Cloud builds every push —
+  no Archive step — and assigns its own build numbers rather than following
+  `CURRENT_PROJECT_VERSION`. **A build lands in no TestFlight group**, so after
+  each merge run `swift scripts/asc.swift testflight <build>` to put it in the
+  *Thomas* group; until then TestFlight keeps offering the last build someone
+  added. See `docs/APP_STORE_LISTING.md` §11.
 - **Change flow:** feature work lands via **PRs**, not direct commits to `main`.
   Docs/metadata-only tweaks may go straight to `main`. Thomas device-tests builds
   before they're considered shippable.

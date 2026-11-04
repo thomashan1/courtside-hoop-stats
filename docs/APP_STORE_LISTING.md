@@ -591,8 +591,11 @@ ever exercised the Development schema.
 1. **Merge to `main`.** The build starts on its own.
 2. Watch it under the app's **Xcode Cloud** tab, or **TestFlight ▸ iOS Builds**.
    Expect processing to take a few minutes after the build succeeds.
-3. It appears for the **Han family** internal group automatically. Internal
-   testers need no Beta App Review; external testers do (about a day).
+3. **Add it to the Thomas group:** `swift scripts/asc.swift testflight <build>`
+   (the newest build if none is named; it waits for processing). Xcode Cloud
+   puts a build in no group, so without this TestFlight keeps offering the
+   last build added. Internal testers need no Beta App Review; external
+   testers do (about a day).
 4. Testers install through the **TestFlight app**.
 
 **Xcode Cloud assigns its own build numbers** — they run in their own sequence
