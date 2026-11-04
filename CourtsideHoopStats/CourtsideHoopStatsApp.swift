@@ -1,5 +1,6 @@
 import SwiftUI
 import CloudKit
+import AppIntents
 
 @main
 struct CourtsideHoopStatsApp: App {
@@ -18,6 +19,9 @@ struct CourtsideHoopStatsApp: App {
     /// startup work, which silently skipped the first sync.
     init() {
         let appStore = AppStore()
+        // Siri answers from this same store (#255), so it says what the app shows.
+        SiriStore.current = appStore
+        CourtsideShortcuts.updateAppShortcutParameters()
         #if DEBUG
         // The screenshot harness runs offline against seeded data, so it gets a
         // stand-in service. Without it the seeded team reports zero followers
