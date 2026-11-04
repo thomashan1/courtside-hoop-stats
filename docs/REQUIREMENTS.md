@@ -413,6 +413,13 @@ against Production.
 - The intents read the app's own `AppStore` (`SiriStore`), so Siri says what
   the app shows. Nothing writes, so saved games and sync are untouched. The
   wording lives in `SiriAnswers`, which the unit tests cover.
+- **In the app:** Apple's `SiriTipView` ("Say 'What was the score of the last
+  game in Courtside'") sits above Final Scores once there's a finished game,
+  never above Playing Now or Coming Up; closing it hides it for good
+  (`chs.siriTipDismissed`). Settings ▸ **Siri & Shortcuts** lists every
+  phrase with the active team's name and opens Shortcuts. Followers get
+  neither, since their teams aren't in Siri's answers. The screenshot harness
+  hides the tip unless it passes `-uiTestShowSiriTip`.
 - Works on iOS 26. Testing it with Siri Evaluations (#256) needs iOS 27.3 on
   the test machine only.
 
