@@ -166,7 +166,7 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   and in the Dynamic Island as the navy scoreboard, with the opponent's total
   marked "thru Q2". It runs from when Live Scoring opens the game until it
   finishes (the final, W/L/T) or is deleted, and a tap goes back into Live
-  Scoring. Local updates only, owner only, iPhone only; the Lock Screen names
+  Scoring. Local updates only, owner only, iPhone and iPad; the Lock Screen names
   no players. It's a `CourtsideLiveActivity` widget extension, with
   `CourtsideShared/` compiled into both targets. See `docs/REQUIREMENTS.md`
   §3.12.
