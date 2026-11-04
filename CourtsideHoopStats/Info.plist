@@ -8,6 +8,19 @@
 	     that only shows up when a real invitee taps a real link. -->
 	<key>CKSharingSupported</key>
 	<true/>
+	<!-- Other names Siri accepts for the app in a phrase (#255): the
+	     home-screen label is "Courtside", the App Store name is longer. -->
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Courtside Hoop Stats</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Hoop Stats</string>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

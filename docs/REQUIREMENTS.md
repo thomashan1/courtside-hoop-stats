@@ -398,6 +398,24 @@ against Production.
   scope. Full detail, gotchas, and single-device testing notes in
   [`SHARING.md`](SHARING.md).
 
+### 3.11 Siri and Shortcuts (#255)
+
+- Two read-only questions about the owner's own teams, as App Intents
+  (`Siri/CourtsideIntents.swift`): **Last Game Score** ("Swish beat Lakeside
+  42–30 on Oct 18.") and **Team Record** ("Swish is 7–2 across 9 finished
+  games."). Each takes an optional team and otherwise answers for the active
+  team; only finished games count, newest first.
+- Phrases work with no setup but must name the app — "What was the score of
+  the last game in Courtside", "Courtside record" — since Apple won't let an
+  app claim a bare phrase. Siri also accepts "Courtside Hoop Stats" and "Hoop
+  Stats" (`INAlternativeAppNames`). Each team gets its own shortcut in the
+  Shortcuts app.
+- The intents read the app's own `AppStore` (`SiriStore`), so Siri says what
+  the app shows. Nothing writes, so saved games and sync are untouched. The
+  wording lives in `SiriAnswers`, which the unit tests cover.
+- Works on iOS 26. Testing it with Siri Evaluations (#256) needs iOS 27.3 on
+  the test machine only.
+
 ---
 
 ## 4. Data Model (`Models.swift`)

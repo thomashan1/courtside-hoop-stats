@@ -159,6 +159,10 @@ before. See `docs/REQUIREMENTS.md` §3.13.
   shared with you (#189) or you chose Follow a Team — a tracker's bar is
   unchanged. Leftmost is not the same as default-selected: an
   owner lands on Games, and after that the app reopens on the last tab used.
+- **Siri and Shortcuts (#255).** "What was the score of the last game in
+  Courtside" and "Courtside record" answer from the app's own store, for the
+  active team or a named one. Read-only; works on iOS 26. See
+  `docs/REQUIREMENTS.md` §3.11.
 - **Also live:** each Score Log period closing with its score (`End Q1  Swish 10 – Harbor 8`, as on the PDF), the
   REB column hidden when a game has no rebounds, edit-a-finished-game,
   score-log reorder + movable dividers,
@@ -311,7 +315,8 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-**Siri** is next: #255 adds App Intents (view-only — scores, season averages), then #256 tests them with Apple's Siri Evaluations framework (needs Xcode 27.3 beta).
+**Siri** is next: #256 tests the #255 intents with Apple's Siri Evaluations
+framework (needs Xcode 27.3 beta; the app itself stays on iOS 26).
 
 **Paused:** #175 (shooting percentages) needs 2P/3P *attempts*,
 i.e. tracking misses — and the field evidence from v1.7 is that even rebounds
