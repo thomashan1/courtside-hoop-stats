@@ -20,7 +20,7 @@ surnames; resubmitted at 6:44 PM with everything through #228.
 
 | Version | Build | Commit | Submitted | Approved | Total | Queued | In review |
 |---|---|---|---|---|---|---|---|
-| v1.16 | 254 | `618ced9` | Wed 2026-11-04, 11:01 AM | *in review* | | | |
+| v1.16 | 254 | `618ced9` | Wed 2026-11-04, 11:01 AM | Wed 2026-11-04, 4:23 PM | 5h 22m | 5h 21m | **1m** |
 | v1.15 | 246 | `ebc3c96` | Wed 2026-10-21, 8:36 PM | Thu 2026-10-22, 11:07 AM | 14h 31m | 14h 30m | **1m** |
 | v1.14 | 240 | `219c660` | Wed 2026-10-21, 12:54 PM | Wed 2026-10-21, 3:28 PM | 2h 34m | 1h 53m | 41m |
 | v1.13 | 219 | `aee54ca` | Tue 2026-10-13, 11:39 AM | Wed 2026-10-21, 11:06 AM | **7d 23h 27m** | 7d 23h 20m | **7m** |
@@ -74,9 +74,8 @@ evening and both waited out the night — 10h 34m and 16h 23m queued. v1.9 went
 in on a weekday morning and was picked up in 42 minutes. One data point each
 way, so it's a hint, not a rule.
 
-v1.7 was the fastest total until v1.9's 2h 25m, and still holds the
-**fastest review at 27 minutes** — it went in overnight and was queued
-9h 36m, which is most of it.
+v1.7 was the fastest total until v1.9's 2h 25m. The **fastest review is
+1 minute**, shared by v1.15 and v1.16; before them it was v1.7's 27 minutes.
 
 ## The wait is the queue. The review is hours.
 

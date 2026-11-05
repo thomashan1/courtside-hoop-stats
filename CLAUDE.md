@@ -49,6 +49,11 @@ the welcome screen, Export Everything, and a backup that keeps deletions for
 stats tables that fit narrow iPhones (#252), a used "My Test Team" renamed
 "My Team" (#253), and store banners with their text in Apple's safe area.
 
+**v1.16 was approved 2026-11-04** (build 254; 5h 22m, 1 minute in review):
+**Siri and Shortcuts** (#255) — the last score and the team record, by
+phrase — with the Siri tip on the Games list and Settings ▸ Siri &
+Shortcuts (#258), tested by Siri Evaluations (#256).
+
 **v1.11 was approved 2026-10-05** after eight days in the queue and 15 minutes
 in review: overtime on a game that already finished level (#201), the fix for
 v1.10's finished games claiming OT, and the follower's game date (#203).
@@ -330,8 +335,8 @@ before. See `docs/REQUIREMENTS.md` §3.13.
 The backlog lives in **GitHub Issues** — see `gh issue list` — grouped by
 milestone.
 
-**Siri** is next: #256 tests the #255 intents with Apple's Siri Evaluations
-framework (needs Xcode 27.3 beta; the app itself stays on iOS 26).
+**v1.17 is open** (milestone v1.17): the **Live Activity** (#260) is merged
+and on TestFlight, on iPhone and iPad.
 
 **Paused:** #175 (shooting percentages) needs 2P/3P *attempts*,
 i.e. tracking misses — and the field evidence from v1.7 is that even rebounds
