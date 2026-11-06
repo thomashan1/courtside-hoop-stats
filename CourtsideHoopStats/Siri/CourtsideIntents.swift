@@ -12,7 +12,11 @@ struct TeamEntity: AppEntity, IndexedEntity {
     static let defaultQuery = TeamQuery()
 
     let id: UUID
-    let name: String
+    /// A `@Property`, not a plain `let`, so Siri, Shortcuts and App Intents
+    /// Testing can read it: a plain property is invisible outside the app.
+    // TODO(iOS 27): add `description:` — that overload needs iOS 27.3.
+    @Property(title: "Name")
+    var name: String
 
     var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
 
@@ -72,9 +76,12 @@ struct LastGameScoreIntent: AppIntent {
     @Parameter(title: "Team", description: "One of your teams in Courtside. Leave empty for the team open in the app.")
     var team: TeamEntity?
 
-    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+    /// The sentence is returned as well as said: the value is what a Shortcuts
+    /// action can pass on, and what `CourtsideIntentsTests` reads back, since
+    /// neither can see a dialog.
+    @MainActor func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let answer = SiriStore.answer(about: team, SiriAnswers.lastGame)
-        return .result(dialog: "\(answer)")
+        return .result(value: answer, dialog: "\(answer)")
     }
 }
 
@@ -88,9 +95,9 @@ struct TeamRecordIntent: AppIntent {
     @Parameter(title: "Team", description: "One of your teams in Courtside. Leave empty for the team open in the app.")
     var team: TeamEntity?
 
-    @MainActor func perform() async throws -> some IntentResult & ProvidesDialog {
+    @MainActor func perform() async throws -> some IntentResult & ReturnsValue<String> & ProvidesDialog {
         let answer = SiriStore.answer(about: team, SiriAnswers.record)
-        return .result(dialog: "\(answer)")
+        return .result(value: answer, dialog: "\(answer)")
     }
 }
 

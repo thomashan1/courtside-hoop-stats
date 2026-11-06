@@ -404,7 +404,8 @@ against Production.
   (`Siri/CourtsideIntents.swift`): **Last Game Score** ("Swish beat Lakeside
   42–30 on Oct 18.") and **Team Record** ("Swish is 7–2 across 9 finished
   games."). Each takes an optional team and otherwise answers for the active
-  team; only finished games count, newest first.
+  team; only finished games count, newest first. Each also returns its
+  sentence as a value, so a Shortcuts action can pass it on.
 - Phrases work with no setup but must name the app — "What was the score of
   the last game in Courtside", "Courtside record" — since Apple won't let an
   app claim a bare phrase. Siri also accepts "Courtside Hoop Stats" and "Hoop
@@ -413,15 +414,22 @@ against Production.
 - The intents read the app's own `AppStore` (`SiriStore`), so Siri says what
   the app shows. Nothing writes, so saved games and sync are untouched. The
   wording lives in `SiriAnswers`, which the unit tests cover.
-- **In the app:** Apple's `SiriTipView` ("Say 'What was the score of the last
-  game in Courtside'") sits above Final Scores once there's a finished game,
+- **In the app:** Apple's `SiriTipView` ("Say 'Last game score in
+  Courtside'") sits above Final Scores once there's a finished game,
   never above Playing Now or Coming Up; closing it hides it for good
   (`chs.siriTipDismissed`). Settings ▸ **Siri & Shortcuts** lists every
   phrase with the active team's name and opens Shortcuts. Followers get
   neither, since their teams aren't in Siri's answers. The screenshot harness
   hides the tip unless it passes `-uiTestShowSiriTip`.
 - `TeamEntity` is an `IndexedEntity`: teams are re-indexed in Spotlight when
-  one is added, renamed or removed, so Siri can find a team by name.
+  one is added, renamed or removed, so Siri can find a team by name. Its
+  `name` is an `@Property`, so the system can read it.
+- **App Intents Testing** ([Apple docs](https://developer.apple.com/documentation/appintentstesting),
+  `CourtsideIntentsTests`, UI-test target): runs both intents out of process
+  the way Siri and Shortcuts do, in the simulator with every test run, against
+  the demo season — the active team's and a named team's answers, the team
+  query (part of a name, any case; not an opponent), suggested teams, a team
+  found again by its identifier, and both teams in the Spotlight index.
 - **Siri Evaluations** (#256, [Apple docs](https://developer.apple.com/documentation/sirievaluations),
   `SiriEvaluationTests`): real Siri on a physical iPhone (iOS 27.3; not in the
   simulator SDK), opt-in with `TEST_RUNNER_SIRI_EVALS=1`. Findings so far:
